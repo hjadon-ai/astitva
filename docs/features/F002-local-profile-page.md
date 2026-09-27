@@ -10,7 +10,7 @@ Connect the local React application to authentication and show a sample profile 
 
 ## User flow
 
-1. A visitor opens the public portfolio page.
+1. A visitor opens the public landing page.
 2. The visitor signs up or logs in.
 3. A logged-in user sees the local profile layout.
 4. Refreshing restores the active session.
@@ -30,12 +30,12 @@ Connect the local React application to authentication and show a sample profile 
 
 - Editing profile information
 - Real projects and notes
-- Portfolio-content APIs
+- Public-content APIs
 - Profile image uploads
 
 ## Wireframe or UI changes
 
-- Public portfolio header, introduction, project placeholders, and about section
+- Public landing-page header, introduction, project placeholders, and about section
 - Login and signup panel on the public page
 - Authenticated sidebar, account card, summary cards, and workspace placeholder
 

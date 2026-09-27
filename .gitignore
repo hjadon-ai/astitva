@@ -18,7 +18,6 @@ coverage/
 
 # Firebase local state
 .firebase/
-.firebaserc
 
 # Logs
 *.log

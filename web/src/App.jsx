@@ -310,7 +310,7 @@ function PublicHome({ onAuthenticated }) {
       <main id="top" className="shell">
         <section className="hero">
           <div>
-            <p className="eyebrow">Portfolio & personal workspace</p>
+            <p className="eyebrow">Personal workspace</p>
             <h1>Your private workspace, <em>organized around your life.</em></h1>
             <p className="lede">Projects, health, finance, and notes in one private application that keeps you in control.</p>
           </div>

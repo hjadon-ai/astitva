@@ -5,10 +5,10 @@ This guide prepares the F012 Firebase Hosting, Render, and MongoDB Atlas environ
 ## Architecture
 
 ```text
-PROJECT_ID.web.app -> SERVICE_NAME.onrender.com -> MongoDB Atlas / SMTP
+astitva-live.web.app -> portfolio-84ul.onrender.com -> MongoDB Atlas / SMTP
 ```
 
-Firebase serves the static `web/dist` build. Render runs Express. Atlas stores only Production data in `astitva_prod`. Finance starts disabled.
+Firebase serves the static `web/dist` build. Render runs Express. Atlas stores only Production data in `astitva_prod`. Finance uses Plaid Production when it is enabled in Render.
 
 ## 1. Prepare the application
 
@@ -40,14 +40,12 @@ Firebase serves the static `web/dist` build. Render runs Express. Atlas stores o
 Use `render.yaml` and keep automatic deployment disabled. Enter these values in Render:
 
 - `MONGODB_URL`: Atlas URI for `astitva_prod`
-- `WEB_URL`: `https://PROJECT_ID.web.app`
-- `CORS_ORIGINS`: `https://PROJECT_ID.web.app`
+- `WEB_URL`: `https://astitva-live.web.app`
+- `CORS_ORIGINS`: `https://astitva-live.web.app`
 - `INVITED_EMAILS`: comma-separated normalized email addresses
 - SMTP values from the email provider
 
-The Blueprint fixes `ASTITVA_ENV=production`, `PLAID_ENABLED=false`, `PLAID_ENV=production`, and the Production cookie name. Do not add Plaid credentials during the core rollout.
-
-When Finance is approved for a later rollout, add `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_REDIRECT_URI`, and a unique `FINANCE_TOKEN_ENCRYPTION_KEY`, then set `PLAID_ENABLED=true`. Add the exact HTTPS redirect URI to the Plaid Dashboard allowlist before deploying that change.
+The Blueprint fixes `ASTITVA_ENV=production`, `PLAID_ENV=production`, and the Production cookie name. For Finance, configure `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_REDIRECT_URI`, and a unique `FINANCE_TOKEN_ENCRYPTION_KEY`, then set `PLAID_ENABLED=true`. Add the exact HTTPS redirect URI to the Plaid Dashboard allowlist before deploying that change.
 
 After Render assigns its URL, add all listed Render outbound CIDRs to Atlas, deploy the service manually, and verify `GET /api/health` reports `production`, `cloud`, and Finance disabled.
 
@@ -80,7 +78,7 @@ In GitHub, open **Settings → Secrets and variables → Actions** and configure
 
 | Type | Name | Value |
 | --- | --- | --- |
-| Repository or `production` environment variable | `FIREBASE_PROJECT_ID` | Firebase project ID, without `.web.app` |
+| Repository or `production` environment variable | `FIREBASE_PROJECT_ID` | `astitva-live` |
 | Repository or `production` environment variable | `VITE_API_BASE_URL` | Exact HTTPS Render service origin |
 | Repository or `production` environment secret | `FIREBASE_SERVICE_ACCOUNT` | Complete Firebase deployment service-account JSON |
 | Repository or `production` environment secret | `RENDER_DEPLOY_HOOK_URL` | Render service deploy hook URL from **Settings → Deploy Hook** |

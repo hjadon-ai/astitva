@@ -382,7 +382,7 @@ Manual visual review remains:
 
 ## Approved decisions
 
-1. Include the public portfolio and all authentication screens alongside the authenticated workspace.
+1. Include the public landing page and all authentication screens alongside the authenticated workspace.
 2. Use the local system sans-serif stack throughout the application.
 3. Keep desktop navigation expanded and use a drawer on mobile without a collapsed-desktop preference.
 4. Use `lucide-react` as the single icon source with text labels for important actions.

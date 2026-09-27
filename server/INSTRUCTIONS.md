@@ -2,7 +2,7 @@
 
 ## Context
 
-This folder will contain the Node.js backend for the Astitva portfolio.
+This folder contains the Node.js backend for the Astitva personal workspace.
 
 ## Instructions
 

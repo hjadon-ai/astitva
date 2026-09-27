@@ -4,7 +4,7 @@ Updated: 2026-09-21
 
 ## Product
 
-Astitva is a local portfolio and personal workspace. It began as a simple single-page portfolio and is growing through small, reviewed features. The public page contains portfolio placeholders and local authentication. A verified user can enter a private profile area.
+Astitva is a personal workspace. It began as a simple single-page application and is growing through small, reviewed features. The public page contains placeholder content and local authentication. A verified user can enter a private profile area.
 
 The project owner is a technical developer and designer. He prefers to understand and approve the user flow, wireframe, API contract, database changes, and architecture before implementation. Early work should proceed slowly; speed may increase after scope and decisions are approved.
 

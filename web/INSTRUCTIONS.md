@@ -2,7 +2,7 @@
 
 ## Context
 
-This folder will contain the single-page frontend for the Astitva portfolio.
+This folder contains the single-page frontend for the Astitva personal workspace.
 
 ## Instructions
 

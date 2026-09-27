@@ -2,7 +2,7 @@
   "name": "astitva-server",
   "version": "1.0.0",
   "private": true,
-  "description": "Local Express backend for the Astitva portfolio",
+  "description": "Local Express backend for the Astitva personal workspace",
   "main": "src/server.js",
   "engines": {
     "node": ">=22.20.0 <25"
