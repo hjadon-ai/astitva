@@ -117,6 +117,24 @@ test('Production accepts Atlas and disables Plaid without requiring Plaid secret
   });
 });
 
+test('Production can use Gmail API without blocked SMTP ports', () => {
+  const config = validateRuntimeEnvironment({
+    ...productionBase,
+    EMAIL_PROVIDER: 'gmail-api',
+    SMTP_HOST: '', SMTP_PORT: '', SMTP_SECURE: '', SMTP_USER: '', SMTP_PASSWORD: '',
+    GMAIL_CLIENT_ID: 'gmail-client-id',
+    GMAIL_CLIENT_SECRET: 'gmail-client-secret',
+    GMAIL_REFRESH_TOKEN: 'gmail-refresh-token'
+  });
+  assert.equal(config.emailProvider, 'gmail-api');
+  assert.deepEqual(config.gmailApi, {
+    clientId: 'gmail-client-id', clientSecret: 'gmail-client-secret', refreshToken: 'gmail-refresh-token'
+  });
+  assert.throws(() => validateRuntimeEnvironment({
+    ...productionBase, EMAIL_PROVIDER: 'gmail-api'
+  }), /GMAIL_CLIENT_ID/);
+});
+
 test('Production rejects local data, insecure origins, reused cookies, and missing invitations', () => {
   assert.throws(() => validateRuntimeEnvironment({
     ...productionBase,

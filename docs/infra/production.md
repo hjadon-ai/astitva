@@ -31,9 +31,11 @@ Firebase serves the static `web/dist` build. Render runs Express. Atlas stores o
 
 ## 3. Prepare email
 
-1. For Gmail, enable 2-Step Verification on the sending account and create a Google App Password for Astitva.
-2. In the Render `astitva-api` service, open **Environment** and set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER` to the full Gmail address, `SMTP_PASSWORD` to the App Password, and `EMAIL_FROM` to `Astitva <the-same-gmail-address>`. Render's Blueprint already declares these six keys. Port 465 with `SMTP_SECURE=true` is also supported.
-3. Save the environment changes and deploy the service manually. Keep `WEB_URL` set to the production web origin so verification and reset links point there. Do not copy the local `.env.stage` file into Render; its MongoDB, Plaid, and web settings belong to Stage.
+Render Free blocks outbound SMTP on ports 25, 465, and 587. Production therefore sends Gmail messages through the Gmail HTTPS API. Local Dev and Stage continue to use SMTP.
+
+1. In a Google Cloud project, enable the Gmail API. Configure the OAuth consent screen with the `https://www.googleapis.com/auth/gmail.send` scope and create a **Web application** OAuth client with `https://developers.google.com/oauthplayground` as an authorized redirect URI. In [Google's OAuth Playground](https://developers.google.com/oauthplayground/), select **Use your own OAuth credentials**, enter that client ID and secret, authorize only `https://www.googleapis.com/auth/gmail.send` while signed in as the sending Gmail account, and exchange the authorization code for a refresh token. For an external OAuth app, leave Testing status before relying on it for ongoing production mail: Testing refresh tokens for this scope expire after seven days.
+2. In Render's `astitva-api` **Environment**, set `EMAIL_PROVIDER=gmail-api`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and `EMAIL_FROM=Astitva <your-address@gmail.com>`. The address must be the authorized Gmail account or a configured send-as alias. Keep the OAuth client secret and refresh token only in Render; never put them in GitHub, Firebase Hosting, or a checked-in `.env` file.
+3. Save the environment changes and manually deploy server version `1.0.2`. Confirm `/api/health` reports `1.0.2`, then test signup or resend for an invited address and confirm delivery. Keep `WEB_URL` set to the production web origin. Do not copy the local `.env.stage` file into Render; its MongoDB, Plaid, and web settings belong to Stage.
 
 ## 4. Create the Render service
 
@@ -43,7 +45,7 @@ Use `render.yaml` and keep automatic deployment disabled. Enter these values in 
 - `WEB_URL`: `https://astitva-live.web.app`
 - `CORS_ORIGINS`: `https://astitva-live.web.app`
 - `INVITED_EMAILS`: comma-separated normalized email addresses
-- SMTP values from the email provider
+- Gmail API OAuth values and `EMAIL_FROM` from the sending account
 
 The Blueprint fixes `ASTITVA_ENV=production`, `PLAID_ENV=production`, and the Production cookie name. For Finance, configure `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_REDIRECT_URI`, and a unique `FINANCE_TOKEN_ENCRYPTION_KEY`, then set `PLAID_ENABLED=true`. Add the exact HTTPS redirect URI to the Plaid Dashboard allowlist before deploying that change.
 

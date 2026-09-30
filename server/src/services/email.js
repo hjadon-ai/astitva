@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const { getRuntimeConfig } = require('../config/runtime');
+const { sendWithGmailApi } = require('./gmailApi');
 
 let cachedTransport;
 let cachedSmtp;
@@ -18,11 +19,19 @@ function emailTransport() {
   return cachedTransport;
 }
 
+async function sendEmail(message) {
+  const runtime = getRuntimeConfig();
+  if (runtime.emailProvider === 'gmail-api') {
+    return sendWithGmailApi(message, runtime.gmailApi);
+  }
+  return emailTransport().sendMail(message);
+}
+
 async function sendVerificationEmail(user, token) {
   const runtime = getRuntimeConfig();
   const verificationUrl = `${runtime.webUrl}/verify-email?token=${encodeURIComponent(token)}`;
 
-  await emailTransport().sendMail({
+  await sendEmail({
     from: runtime.smtp.from,
     to: user.email,
     subject: 'Verify your Astitva email',
@@ -41,7 +50,7 @@ async function sendPasswordResetEmail(user, token) {
   const runtime = getRuntimeConfig();
   const resetUrl = `${runtime.webUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
-  await emailTransport().sendMail({
+  await sendEmail({
     from: runtime.smtp.from,
     to: user.email,
     subject: 'Reset your Astitva password',

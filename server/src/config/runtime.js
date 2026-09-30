@@ -158,6 +158,8 @@ function localConfig(name, profile, environment) {
     webUrl: (environment.WEB_URL || 'http://localhost:3000').replace(/\/$/, ''),
     corsOrigins: Object.freeze(['http://localhost:3000', 'http://127.0.0.1:3000']),
     invitedEmails: Object.freeze([]),
+    emailProvider: 'smtp',
+    gmailApi: null,
     smtp: localSmtpConfig(environment)
   };
 }
@@ -198,8 +200,12 @@ function productionConfig(profile, environment) {
     financeProviderConfigured = true;
   }
 
-  const smtpPort = Number(required('SMTP_PORT', environment));
-  if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535) {
+  const emailProvider = environment.EMAIL_PROVIDER?.trim() || 'smtp';
+  if (!['smtp', 'gmail-api'].includes(emailProvider)) {
+    throw new Error('EMAIL_PROVIDER must be smtp or gmail-api.');
+  }
+  const smtpPort = emailProvider === 'smtp' ? Number(required('SMTP_PORT', environment)) : null;
+  if (emailProvider === 'smtp' && (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535)) {
     throw new Error('SMTP_PORT must be a valid TCP port.');
   }
 
@@ -219,14 +225,20 @@ function productionConfig(profile, environment) {
     webUrl,
     corsOrigins: Object.freeze(corsOrigins),
     invitedEmails: Object.freeze(invitedEmails(environment)),
-    smtp: Object.freeze({
+    emailProvider,
+    gmailApi: emailProvider === 'gmail-api' ? Object.freeze({
+      clientId: required('GMAIL_CLIENT_ID', environment),
+      clientSecret: required('GMAIL_CLIENT_SECRET', environment),
+      refreshToken: required('GMAIL_REFRESH_TOKEN', environment)
+    }) : null,
+    smtp: emailProvider === 'smtp' ? Object.freeze({
       host: required('SMTP_HOST', environment),
       port: smtpPort,
       secure: booleanValue('SMTP_SECURE', required('SMTP_SECURE', environment)),
       user: required('SMTP_USER', environment),
       password: required('SMTP_PASSWORD', environment),
       from: required('EMAIL_FROM', environment)
-    })
+    }) : Object.freeze({ from: required('EMAIL_FROM', environment) })
   };
 }
 
