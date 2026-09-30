@@ -31,9 +31,9 @@ Firebase serves the static `web/dist` build. Render runs Express. Atlas stores o
 
 ## 3. Prepare email
 
-1. Verify the sender domain with the selected SMTP provider.
-2. Store `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, and `EMAIL_FROM` in Render.
-3. Keep verification and reset links pointed to `WEB_URL`.
+1. For Gmail, enable 2-Step Verification on the sending account and create a Google App Password for Astitva.
+2. In the Render `astitva-api` service, open **Environment** and set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER` to the full Gmail address, `SMTP_PASSWORD` to the App Password, and `EMAIL_FROM` to `Astitva <the-same-gmail-address>`. Render's Blueprint already declares these six keys. Port 465 with `SMTP_SECURE=true` is also supported.
+3. Save the environment changes and deploy the service manually. Keep `WEB_URL` set to the production web origin so verification and reset links point there. Do not copy the local `.env.stage` file into Render; its MongoDB, Plaid, and web settings belong to Stage.
 
 ## 4. Create the Render service
 
