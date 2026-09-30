@@ -71,8 +71,8 @@ firebase deploy --only hosting
 
 The repository contains two manually triggered production workflows:
 
-- `.github/workflows/deploy-server-render.yml` tests the Express server and asks Render to deploy the selected `main` commit.
-- `.github/workflows/deploy-web-firebase.yml` builds the React application with the Production API origin and deploys `web/dist` to Firebase Hosting's live channel.
+- `.github/workflows/deploy-server-render.yml` tests the Express server, asks Render to deploy the selected `main` commit, and waits for the requested version to appear at `/api/health`.
+- `.github/workflows/deploy-web-firebase.yml` builds the React application with the Production API origin and deploys `web/dist` to Firebase Hosting's live channel. The deployed `/version.json` contains its version and commit.
 
 In GitHub, open **Settings → Secrets and variables → Actions** and configure:
 
@@ -85,12 +85,13 @@ In GitHub, open **Settings → Secrets and variables → Actions** and configure
 
 The deploy hook is a credential. Never put it in `render.yaml`, a workflow file, logs, or source control. Keep Render automatic deploys disabled because the workflow triggers a specific commit explicitly.
 
+Each workflow requires a `version` input. The first version is `1.0.1`. Before every later deployment, increment the relevant `server/package.json` or `web/package.json` version and its lockfile, merge that change to `main`, then enter the same version when running that component's action. Versions must increase independently for server and web; a repeated or lower version is rejected. Successful deployments are recorded as Git tags such as `server/v1.0.1` and `web/v1.0.1`.
+
 Run a deployment from **GitHub → Actions** while viewing the `main` branch:
 
-1. Run **Deploy server to Render** and confirm the resulting deploy becomes healthy in Render.
-2. Confirm `GET /api/health` succeeds at the Render URL.
-3. Run **Deploy web to Firebase Hosting** so the bundle receives that Render origin.
-4. Complete the smoke test below.
+1. Run **Deploy server to Render** with the server version and confirm the resulting deploy becomes healthy in Render. The action checks that `/api/health` reports the requested version before tagging it.
+2. Run **Deploy web to Firebase Hosting** with the web version so the bundle receives the Render origin. Check `/version.json` at the Firebase web origin for its version and commit.
+3. Complete the smoke test below.
 
 Both workflows use the GitHub `production` environment. Add required reviewers to that environment if deployment approval should be enforced in GitHub. A successful Render workflow response means the deploy was accepted or queued; confirm completion and health in the Render dashboard.
 

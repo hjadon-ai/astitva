@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { getRuntimeConfig } = require('./config/runtime');
 const { securityHeaders, unsafeOriginGuard } = require('./middleware/security');
+const { version } = require('../package.json');
 
 function createApp() {
   const runtime = getRuntimeConfig();
@@ -28,6 +29,7 @@ function createApp() {
   app.get('/api/health', (request, response) => {
     response.status(200).json({
       status: 'ok',
+      version,
       message: 'Astitva server is running',
       environment: runtime.environment,
       dataLocation: runtime.isProduction ? 'cloud' : 'local',
