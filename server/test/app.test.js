@@ -36,6 +36,7 @@ test('Production health, origin, invitation, and disabled Finance behavior are e
     assert.equal(health.headers.get('x-content-type-options'), 'nosniff');
     assert.deepEqual(await health.json(), {
       status: 'ok',
+      version: require('../package.json').version,
       message: 'Astitva server is running',
       environment: 'production',
       dataLocation: 'cloud',

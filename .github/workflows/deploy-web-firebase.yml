@@ -2,9 +2,14 @@ name: Deploy web to Firebase Hosting
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Web version (must match web/package.json and exceed the last deployment)'
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: deploy-web-production
@@ -20,6 +25,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate deployment version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+        run: node scripts/check-deploy-version.js web "$DEPLOY_VERSION"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -38,6 +50,12 @@ jobs:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
         run: npm run build:production
 
+      - name: Write deployed web version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+          DEPLOY_COMMIT: ${{ github.sha }}
+        run: node -e "require('node:fs').writeFileSync('web/dist/version.json', JSON.stringify({version:process.env.DEPLOY_VERSION,commit:process.env.DEPLOY_COMMIT})+'\\n')"
+
       - name: Deploy live Firebase Hosting channel
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -45,3 +63,36 @@ jobs:
           projectId: ${{ vars.FIREBASE_PROJECT_ID }}
           channelId: live
           entryPoint: .
+
+      - name: Verify deployed web version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          node - <<'NODE'
+          const expected = process.env.DEPLOY_VERSION;
+          const url = `https://${process.env.FIREBASE_PROJECT_ID}.web.app/version.json`;
+          const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          (async () => {
+            for (let attempt = 0; attempt < 30; attempt += 1) {
+              try {
+                const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+                if (response.ok && (await response.json()).version === expected) {
+                  console.log(`Web version ${expected} is live.`);
+                  return;
+                }
+              } catch (error) {
+                console.log(`Waiting for web: ${error.message}`);
+              }
+              await delay(10000);
+            }
+            throw new Error(`Web version ${expected} did not become live within 5 minutes.`);
+          })().catch((error) => { console.error(error.message); process.exitCode = 1; });
+          NODE
+
+      - name: Record deployed web version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+        run: |
+          git tag "web/v${DEPLOY_VERSION}" "$GITHUB_SHA"
+          git push origin "web/v${DEPLOY_VERSION}"

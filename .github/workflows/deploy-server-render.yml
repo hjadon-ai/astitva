@@ -2,9 +2,14 @@ name: Deploy server to Render
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Server version (must match server/package.json and exceed the last deployment)'
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: deploy-server-production
@@ -20,6 +25,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate deployment version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+        run: node scripts/check-deploy-version.js server "$DEPLOY_VERSION"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -54,3 +66,36 @@ jobs:
           curl --fail-with-body --silent --show-error \
             --request POST \
             "${RENDER_DEPLOY_HOOK_URL}${separator}ref=${DEPLOY_REF}"
+
+      - name: Wait for the deployed server version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+          API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: |
+          node - <<'NODE'
+          const expected = process.env.DEPLOY_VERSION;
+          const url = `${process.env.API_BASE_URL.replace(/\/$/, '')}/api/health`;
+          const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+          (async () => {
+            for (let attempt = 0; attempt < 60; attempt += 1) {
+              try {
+                const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+                if (response.ok && (await response.json()).version === expected) {
+                  console.log(`Server version ${expected} is live.`);
+                  return;
+                }
+              } catch (error) {
+                console.log(`Waiting for server: ${error.message}`);
+              }
+              await delay(10000);
+            }
+            throw new Error(`Server version ${expected} did not become healthy within 10 minutes.`);
+          })().catch((error) => { console.error(error.message); process.exitCode = 1; });
+          NODE
+
+      - name: Record deployed server version
+        env:
+          DEPLOY_VERSION: ${{ inputs.version }}
+        run: |
+          git tag "server/v${DEPLOY_VERSION}" "$GITHUB_SHA"
+          git push origin "server/v${DEPLOY_VERSION}"
