@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { ListChecks, Home, LogOut, Menu, Utensils, WalletCards, X } from 'lucide-react';
+import { ListChecks, Home, LogOut, Menu, UsersRound, Utensils, WalletCards, X } from 'lucide-react';
 
 const classes = (...values) => values.filter(Boolean).join(' ');
 
@@ -155,7 +155,8 @@ const navigation = [
   { id: 'profile', label: 'Overview', icon: Home },
   { id: 'priorities', label: 'Daily Priorities', icon: ListChecks },
   { id: 'diet', label: 'Diet', icon: Utensils },
-  { id: 'finance', label: 'Finance', icon: WalletCards }
+  { id: 'finance', label: 'Finance', icon: WalletCards },
+  { id: 'family', label: 'Family', icon: UsersRound }
 ];
 
 export function AppShell({ page, user, runtime, onLogout, children }) {

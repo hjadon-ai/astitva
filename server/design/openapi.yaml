@@ -19,8 +19,35 @@ tags:
   - name: Authentication
   - name: Finance
   - name: Daily Priorities
+  - name: Family
 
 paths:
+  /api/family:
+    $ref: './family.openapi.json#/paths/~1api~1family'
+  /api/family/invitations:
+    $ref: './family.openapi.json#/paths/~1api~1family~1invitations'
+  /api/family/invitations/{invitationId}/accept:
+    $ref: './family.openapi.json#/paths/~1api~1family~1invitations~1{invitationId}~1accept'
+  /api/family/{familyId}:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}'
+  /api/family/{familyId}/self:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1self'
+  /api/family/{familyId}/people:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people'
+  /api/family/{familyId}/people/{personId}:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}'
+  /api/family/{familyId}/people/{personId}/role:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}~1role'
+  /api/family/{familyId}/relations/{relationId}:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1relations~1{relationId}'
+  /api/family/{familyId}/people/{personId}/invite:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}~1invite'
+  /api/family/invitations/accept:
+    $ref: './family.openapi.json#/paths/~1api~1family~1invitations~1accept'
+  /api/family/{familyId}/shares/{feature}/{recipientId}:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1shares~1{feature}~1{recipientId}'
+  /api/family/{familyId}/shared/{ownerId}/{feature}:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1shared~1{ownerId}~1{feature}'
   /api/priorities/days/{date}:
     $ref: './priorities.openapi.json#/paths/~1api~1priorities~1days~1{date}'
   /api/priorities/days/{date}/priorities:
@@ -81,7 +108,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
-          description: Production signup requires an invited email address.
+          description: Production signup requires an allowlisted email or an active Family invitation token for the same email.
           content:
             application/json:
               schema:
@@ -342,6 +369,9 @@ components:
           format: password
           minLength: 8
           example: local-demo-password
+        familyInviteToken:
+          type: string
+          description: Optional active Family invitation token for Production signup when the email is not on the account allowlist. Family access still requires email verification and invitation acceptance.
 
     LoginRequest:
       type: object

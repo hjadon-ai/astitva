@@ -65,4 +65,21 @@ async function sendPasswordResetEmail(user, token) {
   });
 }
 
-module.exports = { sendPasswordResetEmail, sendVerificationEmail };
+async function sendFamilyInvitationEmail(inviter, person, token) {
+  const runtime = getRuntimeConfig();
+  const invitationUrl = `${runtime.webUrl}/family-invite?token=${encodeURIComponent(token)}`;
+  await sendEmail({
+    from: runtime.smtp.from,
+    to: person.email,
+    subject: `${inviter.name} invited you to their Astitva family`,
+    text: [
+      `Hello ${person.name},`, '',
+      `${inviter.name} invited you to connect as a family member in Astitva.`,
+      'Sign in or create an account with this email address, verify it, then accept the invitation:',
+      invitationUrl, '',
+      'This link expires in seven days. Your Diet and Finance information stays private unless you choose to share it.'
+    ].join('\n')
+  });
+}
+
+module.exports = { sendPasswordResetEmail, sendVerificationEmail, sendFamilyInvitationEmail };

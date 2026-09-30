@@ -7,6 +7,16 @@ Databases on local MongoDB port `27017`:
 
 The application connects to only one database per process. It never copies or queries data across profiles.
 
+## families and familyInvitations (F018)
+
+`families` stores a creator User ID and embedded `people`, `relations`, and `shares`. A person has one stable embedded ObjectId, name, optional invitation email, optional linked User ID, chosen male/female/neutral relationship label, ADMIN/EDITOR/READONLY role, and NON_USER/PENDING/ACCEPTED status. Only an accepted linked person can authenticate into a family. Relations are directed parent-to-child or symmetric sibling/partner pairs; labels and Born in/Spouse grouping are calculated from the signed-in person's perspective. A child added under a partner pair receives a parent edge from each partner. One current partner per person is enforced by the API. Siblings are never inferred.
+
+`shares` contains an owner User ID, recipient User ID, and `diet` or `finance` feature. It starts empty; only the owner can add or remove a grant. The read endpoint checks both accounts are still accepted members and the grant on every request. Finance reads project display fields and exclude connections, encrypted access tokens, and provider credentials. Removing a relationship prunes people no longer connected to the creator and removes their grants and pending invitations; it never deletes Astitva user accounts.
+
+`familyInvitations` stores family ID, person ID, normalized email, SHA-256 hash of a random single-use token, and seven-day expiration. A TTL index expires old invitations. Acceptance checks the logged-in verified User email, exactly one matching User record, the pending person, and no existing link to that User in the family before filling the existing person's `userId`. Neither a matching email nor a pending invite grants access. Resending replaces the prior token.
+
+The verified recipient can see active invitations in the Family tab and accept there without retaining the emailed URL. The email link remains valid too. When an invited account created an empty personal family before accepting, acceptance removes that self-only document so the shared family becomes its single view. A personal family with actual relationships is preserved as a separate view.
+
 ## Finance collections (F006)
 
 `financeConnections` stores one Plaid Item per user, provider environment, and institution. It contains `providerEnvironment` (`sandbox` or `production`), provider and institution identifiers, status, incremental transaction cursor, sync timestamps, excluded provider account IDs, and the Plaid access token encrypted with AES-256-GCM. Plaid credentials and each profile's separate encryption key remain in server environment variables. The server rejects a connection whose stored provider environment does not match the running profile before attempting to decrypt its token.

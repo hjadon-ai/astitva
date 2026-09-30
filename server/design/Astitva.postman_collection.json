@@ -1919,6 +1919,30 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Family (F018)",
+      "description": "Log in with a verified account. Set familyId, personId, relationId, ownerId, recipientId, invitationId and invitationToken from responses or the emailed link. All unsafe requests require the active webUrl Origin.",
+      "item": [
+        { "name": "List family views", "request": { "method": "GET", "url": "{{baseUrl}}/api/family" } },
+        { "name": "Create family", "request": { "method": "POST", "header": [{ "key": "Origin", "value": "{{webUrl}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"gender\":\"neutral\"}" }, "url": "{{baseUrl}}/api/family" } },
+        { "name": "Get family perspective", "request": { "method": "GET", "url": "{{baseUrl}}/api/family/{{familyId}}" } },
+        { "name": "Set my labels", "request": { "method": "PATCH", "header": [{ "key": "Origin", "value": "{{webUrl}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"gender\":\"male\"}" }, "url": "{{baseUrl}}/api/family/{{familyId}}/self" } },
+        { "name": "Add family person", "request": { "method": "POST", "header": [{ "key": "Origin", "value": "{{webUrl}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"name\":\"Family member\",\"relationship\":\"sibling\",\"email\":\"\"}" }, "url": "{{baseUrl}}/api/family/{{familyId}}/people" } },
+        { "name": "Edit family person", "request": { "method": "PATCH", "header": [{ "key": "Origin", "value": "{{webUrl}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"name\":\"Family member\",\"gender\":\"neutral\"}" }, "url": "{{baseUrl}}/api/family/{{familyId}}/people/{{personId}}" } },
+        { "name": "Assign role (creator only)", "request": { "method": "PATCH", "header": [{ "key": "Origin", "value": "{{webUrl}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"role\":\"EDITOR\"}" }, "url": "{{baseUrl}}/api/family/{{familyId}}/people/{{personId}}/role" } },
+        { "name": "Send invitation (ADMIN)", "request": { "method": "POST", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/{{familyId}}/people/{{personId}}/invite" } },
+        { "name": "List my pending invitations", "request": { "method": "GET", "url": "{{baseUrl}}/api/family/invitations" } },
+        { "name": "Accept pending invitation from Family tab", "request": { "method": "POST", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/invitations/{{invitationId}}/accept" } },
+        { "name": "Accept invitation", "request": { "method": "POST", "header": [{ "key": "Origin", "value": "{{webUrl}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"token\":\"{{invitationToken}}\"}" }, "url": "{{baseUrl}}/api/family/invitations/accept" } },
+        { "name": "Remove relationship (ADMIN)", "request": { "method": "DELETE", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/{{familyId}}/relations/{{relationId}}" } },
+        { "name": "Share Diet read only", "request": { "method": "PUT", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/{{familyId}}/shares/diet/{{recipientId}}" } },
+        { "name": "Stop Diet sharing", "request": { "method": "DELETE", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/{{familyId}}/shares/diet/{{recipientId}}" } },
+        { "name": "Share Finance read only", "request": { "method": "PUT", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/{{familyId}}/shares/finance/{{recipientId}}" } },
+        { "name": "Stop Finance sharing", "request": { "method": "DELETE", "header": [{ "key": "Origin", "value": "{{webUrl}}" }], "url": "{{baseUrl}}/api/family/{{familyId}}/shares/finance/{{recipientId}}" } },
+        { "name": "View shared Diet", "request": { "method": "GET", "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/diet?date=2026-09-30" } },
+        { "name": "View shared Finance", "request": { "method": "GET", "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/finance?month=2026-09" } }
+      ]
     }
   ]
 }
