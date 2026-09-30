@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Session = require('../models/Session');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const PasswordResetToken = require('../models/PasswordResetToken');
+const { FamilyInvitation } = require('../models/Family');
 const { sendPasswordResetEmail, sendVerificationEmail } = require('../services/email');
 const { getRuntimeConfig } = require('../config/runtime');
 const { createRateLimit } = require('../middleware/security');
@@ -118,7 +119,16 @@ router.post('/signup', signupRateLimit, async (request, response) => {
   }
 
   const runtime = getRuntimeConfig();
-  if (runtime.isProduction && !runtime.invitedEmails.includes(email)) {
+  const familyInviteToken = typeof request.body.familyInviteToken === 'string' ? request.body.familyInviteToken.trim() : '';
+  let validFamilyInvite = false;
+  if (runtime.isProduction && !runtime.invitedEmails.includes(email) && /^[a-f0-9]{64}$/i.test(familyInviteToken)) {
+    validFamilyInvite = Boolean(await FamilyInvitation.exists({
+      email,
+      tokenHash: hashToken(familyInviteToken),
+      expiresAt: { $gt: new Date() }
+    }));
+  }
+  if (runtime.isProduction && !runtime.invitedEmails.includes(email) && !validFamilyInvite) {
     return response.status(403).json({
       error: 'This email address is not invited to Astitva.',
       code: 'INVITATION_REQUIRED'

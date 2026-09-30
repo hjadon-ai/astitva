@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Database, FolderKanban, LogIn, Mail, UserPlus,
 import Diet from './Diet';
 import Priorities from './Priorities';
 import Finance from './Finance';
+import Family from './Family';
 import { AppShell, Badge, Button, EnvironmentBanner, FormField, LoadingState, PageHeader, StatCard, Surface } from './ui';
 import { version as webVersion } from '../package.json';
 
@@ -46,7 +47,7 @@ function AuthPanel({ mode, onModeChange, onAuthenticated, onForgotPassword }) {
 
     try {
       const body = isSignup
-        ? form
+        ? { ...form, ...(window.location.pathname === '/family-invite' ? { familyInviteToken: new URLSearchParams(window.location.search).get('token') } : {}) }
         : { email: form.email, password: form.password };
       const result = await apiRequest(`/api/auth/${mode}`, {
         method: 'POST',
@@ -294,6 +295,31 @@ function ResetPassword({ token }) {
   );
 }
 
+function FamilyInvitation({ token, user, onAuthenticated, onLogout, runtime }) {
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  if (!user) return <PublicHome onAuthenticated={onAuthenticated} runtime={runtime} />;
+  if (!user.emailVerified) return <VerificationRequired user={user} onLogout={onLogout} runtime={runtime} />;
+  async function accept() {
+    setBusy(true);
+    setMessage('');
+    try {
+      await apiRequest('/api/family/invitations/accept', { method: 'POST', body: JSON.stringify({ token }) });
+      window.location.href = '/#family';
+    } catch (error) {
+      setMessage(error.message);
+      setBusy(false);
+    }
+  }
+  return <main className="verification-shell"><section className="verification-card">
+    <p className="eyebrow">Family invitation</p><h1>Join your family view.</h1>
+    <p>Signed in as {user.email}. Accepting links your account to the invited family person. Your Diet and Finance information stays private until you choose to share it.</p>
+    <div className="verification-actions"><Button variant="primary" type="button" disabled={busy || !token} onClick={accept}>{busy ? 'Accepting…' : 'Accept invitation'}</Button>
+      <Button variant="quiet" type="button" onClick={onLogout}>Use another account</Button></div>
+    {message && <p className="form-message" role="status">{message}</p>}
+  </section></main>;
+}
+
 function PublicHome({ onAuthenticated, runtime }) {
   const [mode, setMode] = useState('login');
 
@@ -352,7 +378,7 @@ function PublicHome({ onAuthenticated, runtime }) {
 }
 
 function Profile({ user, onLogout, runtime }) {
-  const pageFromHash = () => window.location.hash === '#priorities' ? 'priorities' : window.location.hash === '#diet' ? 'diet' : window.location.hash === '#finance' ? 'finance' : 'profile';
+  const pageFromHash = () => window.location.hash === '#priorities' ? 'priorities' : window.location.hash === '#diet' ? 'diet' : window.location.hash === '#finance' ? 'finance' : window.location.hash === '#family' ? 'family' : 'profile';
   const [page, setPage] = useState(pageFromHash);
   useEffect(() => {
     const change = () => setPage(pageFromHash());
@@ -361,7 +387,7 @@ function Profile({ user, onLogout, runtime }) {
   }, []);
   return (
     <AppShell page={page} user={user} runtime={runtime} onLogout={onLogout}>
-      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : <section className="profile-content" id="profile">
+      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
         <PageHeader
           eyebrow="Workspace / Overview"
           title={`Good to see you, ${user.name}.`}
@@ -422,6 +448,9 @@ export default function App() {
   }
 
   if (loading) return <div className="loading"><LoadingState>Loading Astitva…</LoadingState></div>;
+  if (location.pathname === '/family-invite') {
+    return <FamilyInvitation token={location.searchParams.get('token')} user={user} onAuthenticated={setUser} onLogout={logout} runtime={runtime} />;
+  }
   if (!user) return <PublicHome onAuthenticated={setUser} runtime={runtime} />;
   if (!user.emailVerified) return <VerificationRequired user={user} onLogout={logout} runtime={runtime} />;
   return <Profile user={user} onLogout={logout} runtime={runtime} />;
