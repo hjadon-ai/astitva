@@ -49,6 +49,39 @@ test('Stage selects Production, the stage database, and its own cookie', () => {
   assert.equal(config.sessionCookieName, 'astitva_stage_session');
 });
 
+test('Dev can use authenticated Gmail SMTP for account emails', () => {
+  const config = validateRuntimeEnvironment({
+    ...base,
+    ASTITVA_ENV: 'dev',
+    PLAID_ENV: 'sandbox',
+    MONGODB_URL: 'mongodb://127.0.0.1:27017/astitva',
+    SMTP_HOST: 'smtp.gmail.com',
+    SMTP_PORT: '465',
+    SMTP_SECURE: 'true',
+    SMTP_USER: 'sender@gmail.com',
+    SMTP_PASSWORD: 'app-password',
+    EMAIL_FROM: 'Astitva <sender@gmail.com>'
+  });
+  assert.deepEqual(config.smtp, {
+    host: 'smtp.gmail.com', port: 465, secure: true,
+    user: 'sender@gmail.com', password: 'app-password',
+    from: 'Astitva <sender@gmail.com>'
+  });
+});
+
+test('Dev rejects incomplete or insecure Gmail SMTP settings', () => {
+  const local = {
+    ...base, ASTITVA_ENV: 'dev', PLAID_ENV: 'sandbox',
+    MONGODB_URL: 'mongodb://127.0.0.1:27017/astitva',
+    SMTP_HOST: 'smtp.gmail.com', SMTP_PORT: '465', SMTP_SECURE: 'true',
+    SMTP_USER: 'sender@gmail.com'
+  };
+  assert.throws(() => validateRuntimeEnvironment(local), /SMTP_USER and SMTP_PASSWORD/);
+  assert.throws(() => validateRuntimeEnvironment({
+    ...local, SMTP_PASSWORD: 'app-password', SMTP_SECURE: 'false'
+  }), /Gmail SMTP/);
+});
+
 test('runtime validation rejects crossed profiles and remote MongoDB', () => {
   assert.throws(() => validateRuntimeEnvironment({
     ...base, ASTITVA_ENV: 'stage', PLAID_ENV: 'sandbox', MONGODB_URL: 'mongodb://127.0.0.1:27017/astitva_stage'

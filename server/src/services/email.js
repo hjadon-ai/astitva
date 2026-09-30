@@ -12,6 +12,7 @@ function emailTransport() {
     host: smtp.host,
     port: smtp.port,
     secure: smtp.secure,
+    ...(smtp.host.toLowerCase() === 'smtp.gmail.com' && smtp.port === 587 ? { requireTLS: true } : {}),
     ...(smtp.user ? { auth: { user: smtp.user, pass: smtp.password } } : {})
   });
   return cachedTransport;

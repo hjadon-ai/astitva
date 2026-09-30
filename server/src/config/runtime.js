@@ -103,6 +103,30 @@ function invitedEmails(environment) {
   return emails;
 }
 
+function localSmtpConfig(environment) {
+  const host = environment.SMTP_HOST?.trim() || '127.0.0.1';
+  const port = Number(environment.SMTP_PORT || 1025);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('SMTP_PORT must be a valid TCP port.');
+  }
+  const secure = environment.SMTP_SECURE === undefined
+    ? false
+    : booleanValue('SMTP_SECURE', environment.SMTP_SECURE.trim());
+  const user = environment.SMTP_USER?.trim() || '';
+  const password = environment.SMTP_PASSWORD?.trim() || '';
+  if (Boolean(user) !== Boolean(password)) {
+    throw new Error('SMTP_USER and SMTP_PASSWORD must both be configured for authenticated SMTP.');
+  }
+  if (host.toLowerCase() === 'smtp.gmail.com' && (!user ||
+      !((port === 465 && secure) || (port === 587 && !secure)))) {
+    throw new Error('Gmail SMTP requires credentials and TLS on port 465 or 587.');
+  }
+  return Object.freeze({
+    host, port, secure, user, password,
+    from: environment.EMAIL_FROM?.trim() || 'Astitva Local <no-reply@astitva.local>'
+  });
+}
+
 function localConfig(name, profile, environment) {
   const mongoUrl = required('MONGODB_URL', environment);
   if (mongoDatabase(mongoUrl, true) !== profile.databaseName) {
@@ -134,14 +158,7 @@ function localConfig(name, profile, environment) {
     webUrl: (environment.WEB_URL || 'http://localhost:3000').replace(/\/$/, ''),
     corsOrigins: Object.freeze(['http://localhost:3000', 'http://127.0.0.1:3000']),
     invitedEmails: Object.freeze([]),
-    smtp: Object.freeze({
-      host: environment.SMTP_HOST || '127.0.0.1',
-      port: Number(environment.SMTP_PORT || 1025),
-      secure: false,
-      user: '',
-      password: '',
-      from: environment.EMAIL_FROM || 'Astitva Local <no-reply@astitva.local>'
-    })
+    smtp: localSmtpConfig(environment)
   };
 }
 

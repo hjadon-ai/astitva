@@ -21,12 +21,25 @@ Review F009 Daily Priorities with the private per-day REST API and local MongoDB
 ## Run locally
 
 1. Start MongoDB on `localhost:27017`.
-2. Start Mailpit with SMTP on `localhost:1025` and its inbox on `http://localhost:8025`.
+2. Start Mailpit with SMTP on `localhost:1025` and its inbox on `http://localhost:8025`, or configure Gmail SMTP below.
 3. From this folder, run `npm install` once.
 4. From the repository root, run `./scripts/start-local.sh dev` or `./scripts/start-local.sh stage`.
 5. The API is available at `http://localhost:3001`.
 
 Copy `.env.dev.example` or `.env.stage.example` to the corresponding ignored environment file. Add the matching Plaid secret and a different 32-byte `FINANCE_TOKEN_ENCRYPTION_KEY` to each profile. Startup rejects missing, placeholder, remote, or crossed-profile configuration.
+
+To send signup verification, resend, and password reset emails from Gmail, set these values in the chosen ignored `.env.dev` or `.env.stage` file:
+
+```dotenv
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your-address@gmail.com
+SMTP_PASSWORD=your-google-app-password
+EMAIL_FROM=Astitva <your-address@gmail.com>
+```
+
+Use a Google App Password for `SMTP_PASSWORD` after enabling 2-Step Verification on the sending account. The Gmail address in `EMAIL_FROM` should match `SMTP_USER` (or be an authorized send-as alias). Port 587 with `SMTP_SECURE=false` also works with STARTTLS. Restart the server after editing `.env`. Keep the app password in the ignored environment file and never commit it. `WEB_URL` sets the origin of the links in those messages.
 
 Import the collection and matching Dev or Stage environment from `design/` into Postman. Postman keeps the profile-specific HTTP-only login session cookie. Copy tokens from Mailpit links into `verificationToken` or `resetToken` when testing those endpoints directly.
 
