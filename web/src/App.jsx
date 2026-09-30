@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Database, FolderKanban, LogIn, Mail, UserPlus,
 import Diet from './Diet';
 import Priorities from './Priorities';
 import Finance from './Finance';
+import { PrivacyPolicy, TermsOfService } from './Legal';
 import { AppShell, Badge, Button, EnvironmentBanner, FormField, LoadingState, PageHeader, StatCard, Surface } from './ui';
 import { version as webVersion } from '../package.json';
 
@@ -346,6 +347,8 @@ function PublicHome({ onAuthenticated, runtime }) {
       <footer className="site-footer shell" aria-label="Application versions">
         <span>Web v{webVersion}</span>
         {runtime?.version && <span>Server v{runtime.version}</span>}
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
       </footer>
     </>
   );
@@ -414,6 +417,8 @@ export default function App() {
   }
 
   const location = new URL(window.location.href);
+  if (location.pathname === '/privacy') return <PrivacyPolicy />;
+  if (location.pathname === '/terms') return <TermsOfService />;
   if (location.pathname === '/verify-email') {
     return <VerificationResult token={location.searchParams.get('token')} />;
   }
