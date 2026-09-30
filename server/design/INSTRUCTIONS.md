@@ -16,7 +16,7 @@ This folder will hold the design documents for the Astitva backend.
 
 Review the F009 Daily Priorities OpenAPI, Postman requests, and `dailyPriorityDays` collection design.
 
-F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `../../docs/features/F005-daily-diet-tracking.md` for manual checks.
+F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `../../docs/features/diet/F005-daily-diet-tracking.md` for manual checks.
 
 Use `Astitva.production.postman_environment.json` only after replacing its provider-domain placeholders. Production unsafe requests must include the exact `Origin` header, and Finance remains disabled during the core rollout.
 

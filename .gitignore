@@ -27,3 +27,6 @@ npm-debug.log*
 .idea/
 .vscode/
 *.swp
+
+# Local feature control center
+.local/control-center/
