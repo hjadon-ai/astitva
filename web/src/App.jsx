@@ -4,6 +4,7 @@ import Diet from './Diet';
 import Priorities from './Priorities';
 import Finance from './Finance';
 import { AppShell, Badge, Button, EnvironmentBanner, FormField, LoadingState, PageHeader, StatCard, Surface } from './ui';
+import { version as webVersion } from '../package.json';
 
 const emptyForm = { name: '', email: '', password: '' };
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
@@ -293,7 +294,7 @@ function ResetPassword({ token }) {
   );
 }
 
-function PublicHome({ onAuthenticated }) {
+function PublicHome({ onAuthenticated, runtime }) {
   const [mode, setMode] = useState('login');
 
   return (
@@ -342,6 +343,10 @@ function PublicHome({ onAuthenticated }) {
           <p>Your biography, experience, and interests can be added after the authenticated flow is reviewed.</p>
         </section>
       </main>
+      <footer className="site-footer shell" aria-label="Application versions">
+        <span>Web v{webVersion}</span>
+        {runtime?.version && <span>Server v{runtime.version}</span>}
+      </footer>
     </>
   );
 }
@@ -417,7 +422,7 @@ export default function App() {
   }
 
   if (loading) return <div className="loading"><LoadingState>Loading Astitva…</LoadingState></div>;
-  if (!user) return <PublicHome onAuthenticated={setUser} />;
+  if (!user) return <PublicHome onAuthenticated={setUser} runtime={runtime} />;
   if (!user.emailVerified) return <VerificationRequired user={user} onLogout={logout} runtime={runtime} />;
   return <Profile user={user} onLogout={logout} runtime={runtime} />;
 }
