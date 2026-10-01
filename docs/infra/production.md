@@ -87,12 +87,14 @@ In GitHub, open **Settings → Secrets and variables → Actions** and configure
 
 The deploy hook is a credential. Never put it in `render.yaml`, a workflow file, logs, or source control. Keep Render automatic deploys disabled because the workflow triggers a specific commit explicitly.
 
-Each workflow requires a `version` input. The first version is `1.0.1`. Before every later deployment, increment the relevant `server/package.json` or `web/package.json` version and its lockfile, merge that change to `main`, then enter the same version when running that component's action. Versions must increase independently for server and web; a repeated or lower version is rejected. Successful deployments are recorded as Git tags such as `server/v1.0.1` and `web/v1.0.1`.
+Each workflow reads its version from that component's `package.json`; there is no version field to enter in GitHub Actions. For a versioned release, leave **Deploy the current version without creating a new version tag** unchecked. Increase that component's package and lockfile version and merge the change to `main` before running the action. Versions increase independently for server and web; a repeated or lower version is rejected in this mode. Successful versioned deployments are recorded as Git tags such as `server/v1.0.1` and `web/v1.0.1`.
+
+For a deployment that does not change the product version, check **Deploy the current version without creating a new version tag**. The package version must match the latest deployed tag for that component. The workflow still deploys and verifies the selected commit, but creates no new version tag. Use a version bump for changes that should be identified by a new product version; the Git commit distinguishes deployments that reuse one version. Server `/api/health` and web `/version.json` report the deployed commit for this verification.
 
 Run a deployment from **GitHub → Actions** while viewing the `main` branch:
 
-1. Run **Deploy server to Render** with the server version and confirm the resulting deploy becomes healthy in Render. The action checks that `/api/health` reports the requested version before tagging it.
-2. Run **Deploy web to Firebase Hosting** with the web version so the bundle receives the Render origin. Check `/version.json` at the Firebase web origin for its version and commit.
+1. Run **Deploy server to Render** and confirm the resulting deploy becomes healthy in Render. The action checks that `/api/health` reports the package version and selected commit before tagging it.
+2. Run **Deploy web to Firebase Hosting** so the bundle receives the Render origin. Check `/version.json` at the Firebase web origin for its package version and commit.
 3. Complete the smoke test below.
 
 Both workflows use the GitHub `production` environment. Add required reviewers to that environment if deployment approval should be enforced in GitHub. A successful Render workflow response means the deploy was accepted or queued; confirm completion and health in the Render dashboard.
