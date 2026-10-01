@@ -16,6 +16,14 @@ const localDate = (date = new Date()) => `${date.getFullYear()}-${String(date.ge
 const label = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 const rounded = (value, places = 1) => Math.round(value * (10 ** places)) / (10 ** places);
 
+function requireCurrentDietResponse(result) {
+  if (!result || !Array.isArray(result.meals) || !result.totals ||
+      !result.water || !Array.isArray(result.water.entries)) {
+    throw new Error('Diet needs the current server version. Restart or deploy the server from this release, then retry.');
+  }
+  return result;
+}
+
 function calculateMacroCalories(targets) {
   const protein = Number(targets?.proteinGrams) * 4;
   const carbohydrates = Number(targets?.carbohydrateGrams) * 4;
@@ -52,7 +60,7 @@ function DietDay({ date, setDate, apiRequest }) {
     let active = true;
     setData(null);
     apiRequest(`/api/diet/days/${date}`).then((result) => {
-      if (active) { setData(result); setError(''); }
+      if (active) { setData(requireCurrentDietResponse(result)); setError(''); }
     }).catch((requestError) => { if (active) setError(requestError.message); });
     return () => { active = false; };
   }, [date, version, apiRequest]);
