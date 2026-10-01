@@ -10,6 +10,7 @@ const productionEnvironment = {
   INVITED_EMAILS: 'owner@example.com',
   PLAID_ENABLED: 'false',
   PLAID_ENV: 'production',
+  RENDER_GIT_COMMIT: '0123456789abcdef0123456789abcdef01234567',
   SMTP_HOST: 'smtp.example.com',
   SMTP_PORT: '587',
   SMTP_SECURE: 'false',
@@ -37,6 +38,7 @@ test('Production health, origin, invitation, and disabled Finance behavior are e
     assert.deepEqual(await health.json(), {
       status: 'ok',
       version: require('../package.json').version,
+      commit: productionEnvironment.RENDER_GIT_COMMIT,
       message: 'Astitva server is running',
       environment: 'production',
       dataLocation: 'cloud',

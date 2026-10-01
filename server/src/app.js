@@ -30,6 +30,7 @@ function createApp() {
     response.status(200).json({
       status: 'ok',
       version,
+      commit: process.env.RENDER_GIT_COMMIT || null,
       message: 'Astitva server is running',
       environment: runtime.environment,
       dataLocation: runtime.isProduction ? 'cloud' : 'local',

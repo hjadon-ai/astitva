@@ -87,7 +87,9 @@ In GitHub, open **Settings → Secrets and variables → Actions** and configure
 
 The deploy hook is a credential. Never put it in `render.yaml`, a workflow file, logs, or source control. Keep Render automatic deploys disabled because the workflow triggers a specific commit explicitly.
 
-Each workflow requires a `version` input. The first version is `1.0.1`. Before every later deployment, increment the relevant `server/package.json` or `web/package.json` version and its lockfile, merge that change to `main`, then enter the same version when running that component's action. Versions must increase independently for server and web; a repeated or lower version is rejected. Successful deployments are recorded as Git tags such as `server/v1.0.1` and `web/v1.0.1`.
+Each workflow requires a `version` input matching the component's `package.json`. For a versioned release, leave **Deploy the current version without creating a new version tag** unchecked. Increase that component's package and lockfile version, merge the change to `main`, and enter the new version. Versions increase independently for server and web; a repeated or lower version is rejected in this mode. Successful versioned deployments are recorded as Git tags such as `server/v1.0.1` and `web/v1.0.1`.
+
+For a deployment that does not change the product version, check **Deploy the current version without creating a new version tag** and enter the existing package version. It must match the latest deployed tag for that component. The workflow still deploys and verifies the selected commit, but creates no new version tag. Use a version bump for changes that should be identified by a new product version; the Git commit distinguishes deployments that reuse one version. Server `/api/health` and web `/version.json` report the deployed commit for this verification.
 
 Run a deployment from **GitHub → Actions** while viewing the `main` branch:
 
