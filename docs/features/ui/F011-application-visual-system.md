@@ -1,6 +1,6 @@
 # F011: Application visual system
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F011-application-visual-system`
 - **Pull request:** Not created
 

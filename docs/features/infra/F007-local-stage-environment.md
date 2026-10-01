@@ -1,6 +1,6 @@
 # F007: Local Stage environment
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F007-local-stage-environment`
 - **Pull request:** Not created
 

@@ -1,6 +1,6 @@
 # F006: Personal finance
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F006-personal-finance`
 - **Pull request:** Not created
 

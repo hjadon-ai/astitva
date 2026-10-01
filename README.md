@@ -48,12 +48,12 @@ Git workflow:
 3. Implement only the approved scope.
 4. Run and review the feature locally.
 5. Commit the reviewed changes.
-6. Push only after explicit approval.
-7. Create a pull request and record its link in the feature index.
-8. Merge after review, then mark the feature Done.
+6. Push only the feature branch when requested; never push directly to `main`.
+7. Give the user the branch name and ask them to create and review a pull request. Record its link in the feature index when it exists.
+8. The user merges the pull request manually; then mark the feature Done.
 
 Remote rule:
-- Do not initialize a remote, push a branch, create a pull request, or merge without an explicit request.
+- Do not initialize a remote, push a branch, or create a pull request without an explicit request. Never merge a pull request on the user's behalf or push directly to `main`.
 - A request to build, proceed, or test authorizes local work only.
 
 ChatGPT brainstorming project:
