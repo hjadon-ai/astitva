@@ -3,10 +3,6 @@ name: Deploy web to Firebase Hosting
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Web version (must match web/package.json)'
-        required: true
-        type: string
       skip_version_bump:
         description: 'Deploy the current version without creating a new version tag'
         required: false
@@ -33,11 +29,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate deployment version
+      - name: Read and validate web package version
         env:
-          DEPLOY_VERSION: ${{ inputs.version }}
           SKIP_VERSION_BUMP: ${{ inputs.skip_version_bump }}
-        run: node scripts/check-deploy-version.js web "$DEPLOY_VERSION" "$SKIP_VERSION_BUMP"
+        run: |
+          DEPLOY_VERSION="$(node -p "require('./web/package.json').version")"
+          node scripts/check-deploy-version.js web "$DEPLOY_VERSION" "$SKIP_VERSION_BUMP"
+          echo "DEPLOY_VERSION=$DEPLOY_VERSION" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -58,7 +56,6 @@ jobs:
 
       - name: Write deployed web version
         env:
-          DEPLOY_VERSION: ${{ inputs.version }}
           DEPLOY_COMMIT: ${{ github.sha }}
         run: node -e "require('node:fs').writeFileSync('web/dist/version.json', JSON.stringify({version:process.env.DEPLOY_VERSION,commit:process.env.DEPLOY_COMMIT})+'\\n')"
 
@@ -72,7 +69,6 @@ jobs:
 
       - name: Verify deployed web version
         env:
-          DEPLOY_VERSION: ${{ inputs.version }}
           DEPLOY_COMMIT: ${{ github.sha }}
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
         run: |
@@ -101,8 +97,6 @@ jobs:
 
       - name: Record deployed web version
         if: ${{ !inputs.skip_version_bump }}
-        env:
-          DEPLOY_VERSION: ${{ inputs.version }}
         run: |
           git tag "web/v${DEPLOY_VERSION}" "$GITHUB_SHA"
           git push origin "web/v${DEPLOY_VERSION}"
