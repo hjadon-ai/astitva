@@ -1,6 +1,6 @@
 # F018: Family members
 
-- **Status:** Ready for Stage manual review
+- **Status:** Done
 - **Branch:** `feature/F018-family-members`
 - **Pull request:** Not created
 

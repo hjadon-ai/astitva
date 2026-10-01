@@ -1,6 +1,6 @@
 # F012: Cloud production environment
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F012-cloud-production-environment`
 - **Pull request:** Not created
 

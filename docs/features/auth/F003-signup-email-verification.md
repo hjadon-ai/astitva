@@ -1,6 +1,6 @@
 # F003: Signup email verification
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F003-signup-email-verification`
 - **Pull request:** Not created
 

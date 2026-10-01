@@ -1,6 +1,6 @@
 # F004: Forgot password
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F004-forgot-password`
 - **Pull request:** Not created
 

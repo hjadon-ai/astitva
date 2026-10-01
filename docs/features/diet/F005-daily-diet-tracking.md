@@ -1,6 +1,6 @@
 # F005: Daily diet tracking
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F005-daily-diet-tracking`
 - **Pull request:** Not created
 

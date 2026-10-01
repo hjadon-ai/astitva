@@ -1,6 +1,6 @@
 # F002: Local profile page
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** Not created
 - **Pull request:** Not created
 

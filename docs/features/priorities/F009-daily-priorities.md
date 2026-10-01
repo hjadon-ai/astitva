@@ -1,6 +1,6 @@
 # F009: Daily Priorities
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F009-daily-priorities`
 - **Pull request:** Not created
 
