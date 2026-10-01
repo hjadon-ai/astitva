@@ -2,15 +2,16 @@
 const { execFileSync } = require('node:child_process');
 const { readFileSync } = require('node:fs');
 
-const [component, requested, skipVersionBump = 'false'] = process.argv.slice(2);
-if (!['server', 'web'].includes(component) || !/^\d+\.\d+\.\d+$/.test(requested || '') || !['true', 'false'].includes(skipVersionBump)) {
-  console.error('Usage: node scripts/check-deploy-version.js server|web MAJOR.MINOR.PATCH true|false');
+const [component, requested = '', skipVersionBump = 'false'] = process.argv.slice(2);
+if (!['server', 'web'].includes(component) || !['true', 'false'].includes(skipVersionBump)) {
+  console.error('Usage: node scripts/check-deploy-version.js server|web NEW_VERSION_OR_EMPTY true|false');
   process.exit(1);
 }
 
 const expected = JSON.parse(readFileSync(`${component}/package.json`, 'utf8')).version;
-if (requested !== expected) {
-  console.error(`Requested ${component} version ${requested} must match ${component}/package.json (${expected}).`);
+const workflow = readFileSync(`.github/workflows/deploy-${component === 'server' ? 'server-render' : 'web-firebase'}.yml`, 'utf8');
+if (!workflow.includes(`current ${component}/package.json: ${expected}`)) {
+  console.error(`Update the ${component} workflow input description to show package version ${expected}.`);
   process.exit(1);
 }
 
@@ -29,12 +30,24 @@ const tags = execFileSync('git', ['tag', '--list', `${component}/v*`], { encodin
   .filter(Boolean);
 const latest = tags.sort(compare).at(-1);
 if (skipVersionBump === 'true') {
-  if (requested !== latest) {
-    console.error(`${component} version must match the latest deployed tag (${latest || 'none'}) when skipping a version bump.`);
+  if (requested) {
+    console.error('Leave the new version field empty when skipping a version bump.');
     process.exit(1);
   }
-  console.log(`${component} ${requested} will be redeployed without a new version tag.`);
+  if (expected !== latest) {
+    console.error(`${component} package version must match the latest deployed tag (${latest || 'none'}) when skipping a version bump.`);
+    process.exit(1);
+  }
+  console.log(`${component} ${expected} will be redeployed without a new version tag.`);
   process.exit(0);
+}
+if (!/^\d+\.\d+\.\d+$/.test(requested)) {
+  console.error('Enter a new version, or check the box to deploy without a version bump.');
+  process.exit(1);
+}
+if (requested !== expected) {
+  console.error(`Requested ${component} version ${requested} must match ${component}/package.json (${expected}).`);
+  process.exit(1);
 }
 if (compare(requested, latest || '1.0.0') <= 0) {
   console.error(`${component} version must be greater than ${latest || '1.0.0'}.`);
