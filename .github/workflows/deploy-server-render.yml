@@ -3,8 +3,12 @@ name: Deploy server to Render
 on:
   workflow_dispatch:
     inputs:
+      new_version:
+        description: 'Upgrade only: enter the new version (current server/package.json: 1.0.3)'
+        required: false
+        type: string
       skip_version_bump:
-        description: 'Deploy the current version without creating a new version tag'
+        description: 'Required when no new version is entered: deploy without a version bump'
         required: false
         default: false
         type: boolean
@@ -31,10 +35,15 @@ jobs:
 
       - name: Read and validate server package version
         env:
+          NEW_VERSION: ${{ inputs.new_version }}
           SKIP_VERSION_BUMP: ${{ inputs.skip_version_bump }}
         run: |
           DEPLOY_VERSION="$(node -p "require('./server/package.json').version")"
-          node scripts/check-deploy-version.js server "$DEPLOY_VERSION" "$SKIP_VERSION_BUMP"
+          echo "### Server deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Package version: $DEPLOY_VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Requested upgrade: ${NEW_VERSION:-none}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Reuse current version: $SKIP_VERSION_BUMP" >> "$GITHUB_STEP_SUMMARY"
+          node scripts/check-deploy-version.js server "$NEW_VERSION" "$SKIP_VERSION_BUMP"
           echo "DEPLOY_VERSION=$DEPLOY_VERSION" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
