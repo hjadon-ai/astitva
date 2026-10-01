@@ -90,3 +90,5 @@ The automated MongoDB ownership and concurrency suite and the web build pass. Se
 `docs/features/priorities/F009-daily-priorities.md` for the manual browser checklist.
 
 F012 adds a locally reviewable Production profile and deployment configuration for Firebase Hosting, Render, MongoDB Atlas, invite-only signup, and provider-neutral SMTP. It does not deploy anything. See `docs/infra/production.md`.
+
+F008 Diet targets and Meal Library is implemented on `feature/F008-diet-targets-meal-library` and merged into main. It adds six daily targets, water tracking, a personal Meal Library, and CSV preview/import.

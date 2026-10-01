@@ -2,7 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Astitva Diet API",
-    "version": "0.5.0"
+    "version": "0.8.0",
+    "description": "Local Diet APIs for daily nutrition, water intake, reusable meals, and CSV import."
   },
   "servers": [
     {
@@ -313,6 +314,9 @@
                   "properties": {
                     "targets": {
                       "$ref": "#/components/schemas/Targets"
+                    },
+                    "macroCalories": {
+                      "$ref": "#/components/schemas/MacroCalories"
                     }
                   }
                 }
@@ -351,6 +355,840 @@
           }
         }
       }
+    },
+    "/api/diet/water-entries": {
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Record water for a calendar date",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "date",
+                  "amountMilliliters"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "amountMilliliters": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Water entry created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entry": {
+                      "$ref": "#/components/schemas/WaterEntry"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/water-entries/{entryId}": {
+      "parameters": [
+        {
+          "name": "entryId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Delete one owned water entry",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Water entry not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/library-meals": {
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "List, search, and filter personal library meals",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "breakfast",
+                "lunch",
+                "dinner",
+                "snack"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Library meals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "meals",
+                    "hasMore"
+                  ],
+                  "properties": {
+                    "meals": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LibraryMeal"
+                      }
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Create a one-serving library meal",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryMealInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Library meal created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "meal": {
+                      "$ref": "#/components/schemas/LibraryMeal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Normalized name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/library-meals/import-preview": {
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Validate and preview a CSV without saving",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "CSV preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "CSV exceeds 1 MB or 500 rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Upload is not a CSV",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/library-meals/import": {
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Revalidate and import selected preview rows as one all-or-none operation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "rows"
+                ],
+                "properties": {
+                  "rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "items": {
+                      "$ref": "#/components/schemas/CsvRow"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Selected meals imported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "importedCount",
+                    "meals"
+                  ],
+                  "properties": {
+                    "importedCount": {
+                      "type": "integer"
+                    },
+                    "meals": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LibraryMeal"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A submitted normalized name is duplicated or already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/library-meals/{mealId}": {
+      "parameters": [
+        {
+          "name": "mealId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Get one owned library meal",
+        "responses": {
+          "200": {
+            "description": "Library meal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "meal": {
+                      "$ref": "#/components/schemas/LibraryMeal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Library meal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Update supplied library meal fields",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryMealPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Library meal updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "meal": {
+                      "$ref": "#/components/schemas/LibraryMeal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Library meal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Normalized name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Delete a library meal without changing daily snapshots",
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Library meal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/library-meals/{mealId}/add-to-day": {
+      "parameters": [
+        {
+          "name": "mealId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Copy and scale a library meal into one daily record",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "date",
+                  "mealType",
+                  "quantity"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "mealType": {
+                    "type": "string",
+                    "enum": [
+                      "breakfast",
+                      "lunch",
+                      "dinner",
+                      "snack"
+                    ]
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100,
+                    "multipleOf": 0.01
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Daily snapshot created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "meal": {
+                      "$ref": "#/components/schemas/Meal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Email verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Library meal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -358,7 +1196,8 @@
       "sessionCookie": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "astitva_session"
+        "name": "astitva_session",
+        "description": "Dev uses astitva_dev_session; Stage uses astitva_stage_session."
       }
     },
     "schemas": {
@@ -407,7 +1246,8 @@
           "proteinGrams",
           "carbohydrateGrams",
           "fatGrams",
-          "fiberGrams"
+          "fiberGrams",
+          "waterMilliliters"
         ],
         "properties": {
           "calories": {
@@ -433,6 +1273,10 @@
             "type": "number",
             "minimum": 0.1,
             "multipleOf": 0.1
+          },
+          "waterMilliliters": {
+            "type": "integer",
+            "minimum": 1
           }
         }
       },
@@ -565,6 +1409,23 @@
           },
           "nutrition": {
             "$ref": "#/components/schemas/Nutrition"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "library"
+            ]
+          },
+          "sourceLibraryMealId": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 100,
+            "multipleOf": 0.01
           }
         }
       },
@@ -599,14 +1460,392 @@
             "items": {
               "$ref": "#/components/schemas/Meal"
             }
+          },
+          "macroCalories": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MacroCalories"
+              }
+            ],
+            "nullable": true
+          },
+          "water": {
+            "$ref": "#/components/schemas/WaterSummary"
           }
         }
       },
       "Error": {
         "type": "object",
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Legacy F005 error shape."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "fields": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/InvalidCsvRow"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "MacroCalories": {
+        "type": "object",
+        "required": [
+          "protein",
+          "carbohydrates",
+          "fat",
+          "total",
+          "differenceFromCalorieTarget"
+        ],
+        "properties": {
+          "protein": {
+            "type": "number"
+          },
+          "carbohydrates": {
+            "type": "number"
+          },
+          "fat": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          },
+          "differenceFromCalorieTarget": {
+            "type": "number"
+          }
+        }
+      },
+      "WaterEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "amountMilliliters",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
             "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amountMilliliters": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WaterSummary": {
+        "type": "object",
+        "required": [
+          "consumedMilliliters",
+          "targetMilliliters",
+          "remainingMilliliters",
+          "overTargetMilliliters",
+          "entries"
+        ],
+        "properties": {
+          "consumedMilliliters": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "targetMilliliters": {
+            "type": "integer",
+            "nullable": true
+          },
+          "remainingMilliliters": {
+            "type": "integer",
+            "nullable": true
+          },
+          "overTargetMilliliters": {
+            "type": "integer",
+            "nullable": true
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaterEntry"
+            }
+          }
+        }
+      },
+      "LibraryMealInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "category",
+          "servingDescription",
+          "nutrition"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "servingDescription": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "nutrition": {
+            "$ref": "#/components/schemas/Nutrition"
+          },
+          "ingredients": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "LibraryMealPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "servingDescription": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "nutrition": {
+            "$ref": "#/components/schemas/Nutrition"
+          },
+          "ingredients": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "minProperties": 1
+      },
+      "LibraryMeal": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "servingDescription",
+          "nutrition",
+          "ingredients",
+          "notes",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "servingDescription": {
+            "type": "string"
+          },
+          "nutrition": {
+            "$ref": "#/components/schemas/Nutrition"
+          },
+          "ingredients": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CsvRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceRowNumber",
+          "name",
+          "category",
+          "servingDescription",
+          "calories",
+          "proteinGrams",
+          "carbohydrateGrams",
+          "fatGrams",
+          "fiberGrams",
+          "ingredients",
+          "notes"
+        ],
+        "properties": {
+          "sourceRowNumber": {
+            "type": "integer",
+            "minimum": 2
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "breakfast",
+              "lunch",
+              "dinner",
+              "snack"
+            ]
+          },
+          "servingDescription": {
+            "type": "string"
+          },
+          "calories": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "proteinGrams": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.1
+          },
+          "carbohydrateGrams": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.1
+          },
+          "fatGrams": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.1
+          },
+          "fiberGrams": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.1
+          },
+          "ingredients": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "InvalidCsvRow": {
+        "type": "object",
+        "required": [
+          "rowNumber",
+          "fields"
+        ],
+        "properties": {
+          "rowNumber": {
+            "type": "integer",
+            "nullable": true
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CsvPreview": {
+        "type": "object",
+        "required": [
+          "fileName",
+          "totalRows",
+          "validRows",
+          "invalidRows"
+        ],
+        "properties": {
+          "fileName": {
+            "type": "string"
+          },
+          "totalRows": {
+            "type": "integer"
+          },
+          "validRows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CsvRow"
+            }
+          },
+          "invalidRows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvalidCsvRow"
+            }
           }
         }
       }

@@ -17,7 +17,7 @@ This file is the current list of Astitva features.
 | F005 | [Daily diet tracking](diet/F005-daily-diet-tracking.md) | Review | `feature/F005-daily-diet-tracking` | Not created |
 | F006 | [Personal finance](finance/F006-personal-finance.md) | Review | `feature/F006-personal-finance` | Not created |
 | F007 | [Local Stage environment](infra/F007-local-stage-environment.md) | Review | `feature/F007-local-stage-environment` | Not created |
-| F008 | [Diet targets and Meal Library](diet/F008-diet-targets-and-meal-library.md) | Approved | Not created | Not created |
+| F008 | [Diet targets and Meal Library](diet/F008-diet-targets-and-meal-library.md) | Done | `feature/F008-diet-targets-meal-library` | Not created |
 | F009 | [Daily Priorities](priorities/F009-daily-priorities.md) | Review | `feature/F009-daily-priorities` | Not created |
 | F010 | [Quick Notes](notes/F010-quick-notes.md) | Approved | Not created | Not created |
 | F011 | [Application visual system](ui/F011-application-visual-system.md) | Review | `feature/F011-application-visual-system` | Not created |
