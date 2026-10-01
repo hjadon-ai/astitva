@@ -61,7 +61,7 @@ ChatGPT brainstorming project:
 - Use that ChatGPT Project to brainstorm and produce copy-ready Codex feature prompts.
 - Keep repository implementation and Git actions in Codex under the workflow above.
 
-F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `docs/features/F005-daily-diet-tracking.md` for manual checks.
+F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `docs/features/diet/F005-daily-diet-tracking.md` for manual checks.
 
 ## Local environments
 
@@ -87,6 +87,6 @@ F009 Daily Priorities is ready for manual review on `feature/F009-daily-prioriti
 The private page supports up to three priorities per day, completion progress,
 past-date navigation, inline editing and deletion, and local MongoDB persistence.
 The automated MongoDB ownership and concurrency suite and the web build pass. See
-`docs/features/F009-daily-priorities.md` for the manual browser checklist.
+`docs/features/priorities/F009-daily-priorities.md` for the manual browser checklist.
 
 F012 adds a locally reviewable Production profile and deployment configuration for Firebase Hosting, Render, MongoDB Atlas, invite-only signup, and provider-neutral SMTP. It does not deploy anything. See `docs/infra/production.md`.

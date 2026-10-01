@@ -383,7 +383,7 @@ The Plaid flow follows the official [Link overview](https://plaid.com/docs/link/
 
 Implementation is ready for project-owner review. Automated checks, the React production build, authenticated local API checks, and a provider-mocked MongoDB synchronization passed. A live Plaid Sandbox Link flow still requires the project owner's own Sandbox credentials.
 
-Before manual testing, copy [`server/.env.example`](../../server/.env.example) to `server/.env`, then set `PLAID_CLIENT_ID`, `PLAID_SECRET`, and a 32-byte `FINANCE_TOKEN_ENCRYPTION_KEY` in that ignored local file.
+Before manual testing, copy [`server/.env.example`](../../../server/.env.example) to `server/.env`, then set `PLAID_CLIENT_ID`, `PLAID_SECRET`, and a 32-byte `FINANCE_TOKEN_ENCRYPTION_KEY` in that ignored local file.
 
 Manual verification should use Plaid Sandbox and cover:
 

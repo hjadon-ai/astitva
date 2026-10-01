@@ -43,12 +43,12 @@ Use a Google App Password for `SMTP_PASSWORD` after enabling 2-Step Verification
 
 Import the collection and matching Dev or Stage environment from `design/` into Postman. Postman keeps the profile-specific HTTP-only login session cookie. Copy tokens from Mailpit links into `verificationToken` or `resetToken` when testing those endpoints directly.
 
-F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `../docs/features/F005-daily-diet-tracking.md` for manual checks.
+F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `../docs/features/diet/F005-daily-diet-tracking.md` for manual checks.
 
-F006 is ready for manual review: Finance uses Plaid Sandbox for connect/sync and stores the normalized result in local MongoDB. See `../docs/features/F006-personal-finance.md`.
+F006 is ready for manual review: Finance uses Plaid Sandbox for connect/sync and stores the normalized result in local MongoDB. See `../docs/features/finance/F006-personal-finance.md`.
 
-F007 is ready for manual review: the two profiles have isolated configuration, databases, cookies, and finance-provider environments. See `../docs/features/F007-local-stage-environment.md`.
+F007 is ready for manual review: the two profiles have isolated configuration, databases, cookies, and finance-provider environments. See `../docs/features/infra/F007-local-stage-environment.md`.
 
-F009 is ready for manual review: verified users can manage up to three private priorities for today or a past date. See `../docs/features/F009-daily-priorities.md`.
+F009 is ready for manual review: verified users can manage up to three private priorities for today or a past date. See `../docs/features/priorities/F009-daily-priorities.md`.
 
 F012 adds a strict Production runtime for Render and MongoDB Atlas. Production secrets belong only in Render, Finance starts disabled, and unsafe writes require the exact configured web origin. See `../docs/infra/production.md`.
