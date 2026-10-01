@@ -1,7 +1,7 @@
 # F008: Diet targets and Meal Library
 
-- **Status:** Approved
-- **Branch:** Not created
+- **Status:** Done
+- **Branch:** `feature/F008-diet-targets-meal-library`
 - **Pull request:** Not created
 
 ## Goal
@@ -481,19 +481,26 @@ These decisions were approved by the project owner:
 
 ## Local verification
 
-Not implemented. After implementation is approved:
+Completed locally on September 23, 2026:
 
-1. Run the existing web, server, and local MongoDB services and log in with a verified account.
-2. Confirm existing F005 meals and manual add/edit/delete behavior are unchanged.
-3. Save all six targets and verify the 4/4/9 calculation with known values, including a target mismatch.
-4. Add 250 ml, 500 ml, and a custom water amount; verify totals, remaining/over-target display, deletion, date separation, and reload persistence.
-5. Create, inspect, edit, search, filter, and delete a library meal.
-6. Add a library meal at quantities `1`, `0.5`, and `1.5`; verify scaled/rounded daily snapshots and totals.
-7. Edit and delete the source library meal and confirm previously copied daily meals remain unchanged.
-8. Preview one fully valid CSV and one mixed CSV. Confirm preview writes no documents.
-9. Import selected valid rows, then test invalid, duplicate, oversized, wrong-type, and over-500-row files. Confirm failures create no partial records.
-10. Repeat ownership checks with another verified user and authentication checks with logged-out and unverified users.
-11. Run the server tests and web build, then exercise the documented requests in Postman.
+- `npm test` in `server/`: 18 tests passed, including eight F008 calculation, validation, scaling, and CSV tests.
+- `npm run build` in `web/`: Vite production build completed successfully.
+- Node syntax checks, JSON artifact parsing, and `git diff --check` completed successfully.
+- The Dev server connected to local MongoDB and both the web page and Vite API proxy returned `200`.
+- MongoDB-backed requests verified six targets and the `4/4/9` difference, water create/delete, library create/edit/delete, a `1.5` quantity snapshot, historical snapshot independence, mixed valid/invalid CSV preview, selected-row import, duplicate rejection, and the 1 MB upload limit. Temporary meal, library, import, and water records were removed after the checks.
+
+Manual review checklist:
+
+1. Open `http://localhost:3000`, log in with a verified account, and open **Diet**.
+2. Confirm existing manual meal add/edit/delete and date navigation still feel correct.
+3. Edit all six targets and review the live macro explanation and mismatch display.
+4. Add 250 ml, 500 ml, and a custom water amount; delete one entry and review remaining/over-target states.
+5. Create, inspect, search, filter, edit, and delete a Meal Library item.
+6. Add a library meal to today and to the selected date with a fractional quantity; review the scaled nutrition before saving.
+7. Preview a valid and a mixed UTF-8 CSV, choose valid rows, and confirm the import.
+8. Import `server/design/Astitva.postman_collection.json` with the matching Dev environment and exercise the F008 Diet requests.
+
+Browser automation was unavailable in the local tool session, so responsive appearance and keyboard interaction remain part of the owner's manual review.
 
 ## Open questions
 

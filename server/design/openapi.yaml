@@ -17,6 +17,7 @@ servers:
 tags:
   - name: System
   - name: Authentication
+  - name: Diet
   - name: Finance
   - name: Daily Priorities
   - name: Family
@@ -74,6 +75,20 @@ paths:
     $ref: './diet.openapi.json#/paths/~1api~1diet~1meals~1{mealId}'
   /api/diet/targets:
     $ref: './diet.openapi.json#/paths/~1api~1diet~1targets'
+  /api/diet/water-entries:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1water-entries'
+  /api/diet/water-entries/{entryId}:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1water-entries~1{entryId}'
+  /api/diet/library-meals:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1library-meals'
+  /api/diet/library-meals/import-preview:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1library-meals~1import-preview'
+  /api/diet/library-meals/import:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1library-meals~1import'
+  /api/diet/library-meals/{mealId}:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1library-meals~1{mealId}'
+  /api/diet/library-meals/{mealId}/add-to-day:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1library-meals~1{mealId}~1add-to-day'
   /api/health:
     get:
       tags: [System]

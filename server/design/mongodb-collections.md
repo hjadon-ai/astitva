@@ -29,11 +29,15 @@ The verified recipient can see active invitations in the Family tab and accept t
 
 Finance collection indexes enforce provider-ID uniqueness within the owner/account boundary and support owner, account, connection, asset-class, and date queries. Disconnecting an institution deletes its four local data groups after Plaid confirms Item removal. Stopping one account records its provider account ID on the connection exclusion list and deletes only that account's local data.
 
-## dietMeals and dietNutritionTargets (F005)
+## Diet collections (F005 and F008)
 
-`dietMeals` stores `userId`, `consumedOn` (YYYY-MM-DD), `name`, `mealType`, optional `servingDescription`, and numeric `calories`, `proteinGrams`, `carbohydrateGrams`, `fatGrams`, `fiberGrams`, plus timestamps. Index `(userId, consumedOn)` supports private daily queries.
+`dietMeals` stores `userId`, `consumedOn` (YYYY-MM-DD), `name`, `mealType`, optional `servingDescription`, and numeric `calories`, `proteinGrams`, `carbohydrateGrams`, `fatGrams`, `fiberGrams`, plus timestamps. F008 adds `source`, optional `sourceLibraryMealId`, and `quantity` as snapshot metadata. A library meal is copied into these fields, so later library edits and deletion do not change history. Index `(userId, consumedOn)` supports private daily queries.
 
-`dietNutritionTargets` stores one unique `userId`, the five nutrition targets, and timestamps. Targets apply to all dates, including past dates. Calories are whole numbers; grams have at most one decimal place. Meals allow zero; targets must be positive. Daily totals are calculated, not persisted.
+`dietNutritionTargets` stores one unique `userId`, the five nutrition targets, `waterMilliliters`, and timestamps. Existing F005 documents may omit water until the owner saves the enhanced form. Targets apply to all dates, including past dates. Calories and water are whole numbers; grams have at most one decimal place. Meals allow zero; targets must be positive. Daily totals and the 4/4/9 macro comparison are calculated, not persisted.
+
+`dietWaterEntries` stores each intake action with `userId`, `consumedOn`, positive whole-number `amountMilliliters`, and timestamps. Amounts are limited to 5,000 ml per entry. Index `(userId, consumedOn)` supports daily totals and entry deletion.
+
+`dietLibraryMeals` stores private, reusable one-serving meals. Each document has `userId`, display `name`, unique-per-owner `normalizedName`, category, serving description, the five nutrition values, optional ingredients and notes, and timestamps. Indexes on `(userId, normalizedName)` and `(userId, category, name)` support duplicate prevention, listing, filtering, and search. Uploaded CSV data is validated in memory and is never stored as a file or preview document.
 
 ## users
 

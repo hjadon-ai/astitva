@@ -217,6 +217,52 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
 .diet-editor h2 { margin-top: 0; }
 .diet-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; padding: 0; border: 0; }
 .diet-form-grid .diet-toolbar { align-self: end; }
+.diet-target-section, .daily-meals { margin-top: 30px; }
+.macro-summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 24px; padding: 18px 20px; border-color: var(--color-primary-100); background: linear-gradient(135deg, var(--color-primary-50), #faf5ff); box-shadow: none; }
+.macro-summary > div { min-width: 0; display: grid; gap: 3px; }
+.macro-summary span, .macro-summary small { color: var(--color-muted); }
+.macro-summary small { grid-column: 1 / -1; }
+.water-card { margin: 22px 0; padding: 22px; box-shadow: none; }
+.water-card .section-header { margin-bottom: 10px; }
+.water-card > progress { width: 100%; height: 10px; accent-color: var(--color-primary); }
+.water-card > p { margin: 7px 0 18px; color: var(--color-muted); font-size: .86rem; }
+.water-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.water-actions form { display: flex; gap: 8px; }
+.water-actions form input { width: 140px; }
+.water-entries { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.water-entries span { display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--color-primary-100); border-radius: 999px; color: #1e40af; background: var(--color-primary-50); font-size: .8rem; font-weight: 650; }
+.water-entries button { display: inline-grid; place-items: center; padding: 1px; border: 0; color: var(--color-muted); background: transparent; cursor: pointer; }
+.water-entries button:hover { color: var(--color-danger); }
+.meal-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.meal-library { margin: 24px 0 34px; padding: 24px; border-color: #ddd6fe; }
+.library-filters { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px); gap: 10px; margin-bottom: 20px; }
+.library-filters label { position: relative; }
+.library-filters label svg { position: absolute; z-index: 1; top: 13px; left: 12px; color: var(--color-subtle); }
+.library-filters label input { padding-left: 38px; }
+.library-list { display: grid; gap: 12px; }
+.library-meal { padding: 18px; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; }
+.library-meal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.library-meal h3, .library-meal p { margin: 0 0 6px; }
+.library-meal-heading p { color: var(--color-muted); font-size: .84rem; }
+.library-details { margin: 12px 0; padding: 12px 14px; border-left: 3px solid var(--color-purple); border-radius: 0 8px 8px 0; background: #faf5ff; }
+.library-details p:last-child { margin-bottom: 0; }
+.library-editor { margin: 18px 0; padding: 20px; border-color: var(--color-primary-100); box-shadow: none; }
+.library-editor h3, .csv-import h3 { margin: 0 0 6px; }
+.library-editor > p, .csv-import > p { margin: 0 0 18px; color: var(--color-muted); }
+.diet-form-grid .wide-field { grid-column: 1 / -1; }
+.wide-field textarea { min-height: 92px; resize: vertical; }
+.macro-form-preview, .scaled-result { display: grid; align-content: center; gap: 3px; padding: 12px 14px; border: 1px solid var(--color-primary-100); border-radius: 10px; color: var(--color-muted); background: var(--color-primary-50); font-size: .82rem; }
+.macro-form-preview { grid-column: 1 / -1; }
+.macro-form-preview strong, .scaled-result strong { color: var(--color-ink); }
+.csv-import { margin: 18px 0; padding: 20px; border: 1px dashed #c4b5fd; border-radius: 12px; background: #fafaff; box-shadow: none; }
+.csv-picker { display: flex; align-items: center; gap: 10px; }
+.csv-picker input { background: #fff; }
+.csv-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+.csv-preview section { min-width: 0; padding: 14px; border: 1px solid var(--color-border); border-radius: 10px; background: #fff; }
+.csv-preview h4 { margin: 0 0 10px; }
+.csv-preview label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px; margin: 8px 0; font-size: .84rem; }
+.csv-preview label input { width: auto; margin-top: 4px; }
+.csv-preview article { display: grid; gap: 2px; margin: 9px 0; color: var(--color-danger); font-size: .82rem; }
 
 /* Finance */
 .finance-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -273,6 +319,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
   .hero { grid-template-columns: 1fr; min-height: auto; padding: 64px 0; }
   .project-grid, .about { grid-template-columns: 1fr; }
   .finance-detail-grid { grid-template-columns: 1fr; }
+  .csv-preview { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
@@ -299,6 +346,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
   .finance-table article > span { grid-column: 1; }
   .diet-toolbar .diet-date { order: -1; width: 100%; }
   .diet-date input { flex: 1; }
+  .macro-summary { grid-template-columns: 1fr; }
+  .macro-summary small { grid-column: auto; }
+  .water-actions, .water-actions form, .csv-picker { align-items: stretch; flex-direction: column; }
+  .water-actions form input { width: 100%; }
+  .library-filters { grid-template-columns: 1fr; }
+  .meal-library { padding: 18px; }
+  .library-meal-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -11,11 +11,12 @@ const emptyForm = { name: '', email: '', password: '' };
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
 
 async function apiRequest(path, options = {}) {
+  const formData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const response = await fetch(`${apiBaseUrl}${path}`, {
     credentials: 'include',
     ...options,
     headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body && !formData ? { 'Content-Type': 'application/json' } : {}),
       ...options.headers
     }
   });
@@ -23,8 +24,10 @@ async function apiRequest(path, options = {}) {
   if (response.status === 204) return null;
   const body = await response.json();
   if (!response.ok) {
-    const error = new Error(body.error || 'Something went wrong.');
+    const details = body.error;
+    const error = new Error(typeof details === 'string' ? details : details?.message || 'Something went wrong.');
     error.status = response.status;
+    if (details && typeof details === 'object') Object.assign(error, { code: details.code, details });
     throw error;
   }
   return body;

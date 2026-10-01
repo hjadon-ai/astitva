@@ -36,3 +36,5 @@ F011 is ready for manual review: the React application uses semantic visual toke
 F009 is ready for manual review: the sidebar opens a per-day list with up to three priorities, progress, inline add/edit/delete, completion controls, and past-date navigation. See `../docs/features/priorities/F009-daily-priorities.md`.
 
 F012 uses `VITE_API_BASE_URL` only for the Production build. Never place server credentials in a `VITE_` variable. Firebase serves the generated `dist/` files; deployment remains manual. See `../docs/infra/production.md`.
+
+F008 adds daily targets, water tracking, manual meals, and an expandable Meal Library to the Diet page. CSV preview does not save meals until the user confirms import.
