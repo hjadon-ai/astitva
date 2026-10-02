@@ -1,7 +1,7 @@
 # F015: Family sharing overview
 
-- **Status:** Review
-- **Branch:** `feature/family-approved-f014-f016`
+- **Status:** Done
+- **Branch:** `feature/consolidate-pending-changes`
 - **Pull request:** Not created
 
 ## Goal

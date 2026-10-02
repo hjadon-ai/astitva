@@ -22,9 +22,9 @@ This file is the current list of Astitva features.
 | F010 | [Quick Notes](notes/F010-quick-notes.md) | Approved | Not created | Not created |
 | F011 | [Application visual system](ui/F011-application-visual-system.md) | Done | `feature/F011-application-visual-system` | Not created |
 | F012 | [Cloud production environment](infra/F012-cloud-production-environment.md) | Done | `feature/F012-cloud-production-environment` | Not created |
-| F014 | [Family directory search](family/F014-family-directory.md) | Review | `feature/family-approved-f014-f016` | Not created |
-| F015 | [Family sharing overview](family/F015-family-sharing-overview.md) | Review | `feature/family-approved-f014-f016` | Not created |
-| F016 | [Family activity history](family/F016-family-activity-history.md) | Review | `feature/family-approved-f014-f016` | Not created |
+| F014 | [Family directory search](family/F014-family-directory.md) | Done | `feature/consolidate-pending-changes` | Not created |
+| F015 | [Family sharing overview](family/F015-family-sharing-overview.md) | Done | `feature/consolidate-pending-changes` | Not created |
+| F016 | [Family activity history](family/F016-family-activity-history.md) | Done | `feature/consolidate-pending-changes` | Not created |
 | F017 | [Family relationship corrections](family/F017-family-relationship-corrections.md) | Proposed | Not created | Not created |
 | F018 | [Family members](family/F018-family-members.md) | Done | Not created | Not created |
 | F019 | [Manage family invitations](family/F019-family-invitation-management.md) | Approved | Not created | Not created |
@@ -34,12 +34,14 @@ This file is the current list of Astitva features.
 | F023 | [Family Social feed](familysocial/F023.md) | Proposed | Not created | Not created |
 | F024 | [Family chat and notifications](familysocial/F024.md) | Proposed | Not created | Not created |
 | F027 | [Anonymous chat with PIN protection](chat/F027.md) | Proposed | Not created | Not created |
+| F028 | [Relevant home pages](ui/F028-relevant-home-pages.md) | Approved | Not created | Not created |
 
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.
 - Store infrastructure and deployment feature documents in `infra/`.
 - The project owner approves scope and architecture decisions.
+- When the owner asks to implement a feature, complete the implementation and mark its document and index row **Done** in the same work. Keep approved but unimplemented features **Approved**.
 - Record the same active work branch for features implemented together. Create the next branch only after the current branch is merged into `main`.
 - Update this table when a status, branch, or pull request changes.
 - Do not push or create a pull request without explicit approval.

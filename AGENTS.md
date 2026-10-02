@@ -15,3 +15,7 @@
 - Batch independent reads and checks. Avoid repeating completed investigation or tests unless a change affects them.
 - Make focused edits and run only checks that address a real risk or a required project gate.
 - Keep updates and final reports concise. Avoid extra artifacts, duplicate documentation, and unnecessary tool calls.
+
+## Feature status
+
+- When implementing an approved FXX feature at the user's request, finish the implementation and mark both its feature document and `docs/features/README.md` row **Done** in the same work. Do not mark a proposal Done before its implementation exists.
