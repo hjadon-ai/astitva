@@ -40,6 +40,6 @@ This file is the current list of Astitva features.
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.
 - Store infrastructure and deployment feature documents in `infra/`.
 - The project owner approves scope and architecture decisions.
-- Keep one feature per Git branch when Git work begins.
+- Record the same active work branch for features implemented together. Create the next branch only after the current branch is merged into `main`.
 - Update this table when a status, branch, or pull request changes.
 - Do not push or create a pull request without explicit approval.
