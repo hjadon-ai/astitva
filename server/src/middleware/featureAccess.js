@@ -1,0 +1,25 @@
+const InvitedEmail = require('../models/InvitedEmail');
+
+const defaultFeatures = Object.freeze({
+  priorities: false, diet: false, finance: false, family: true, chat: false
+});
+
+async function featuresForEmail(email) {
+  const invitation = await InvitedEmail.findOne({ email: email.toLowerCase() });
+  const stored = invitation?.features || {};
+  return Object.fromEntries(Object.keys(defaultFeatures).map((feature) => [
+    feature, typeof stored[feature] === 'boolean' ? stored[feature] : defaultFeatures[feature]
+  ]));
+}
+
+function requireFeature(feature) {
+  return async (request, response, next) => {
+    const features = await featuresForEmail(request.featureUser.email);
+    if (!features[feature]) return response.status(403).json({
+      error: 'This feature is not enabled for your account.', code: 'FEATURE_NOT_ENABLED', feature
+    });
+    next();
+  };
+}
+
+module.exports = { defaultFeatures, featuresForEmail, requireFeature };

@@ -3,6 +3,8 @@ const express = require('express');
 const multer = require('multer');
 const Session = require('../models/Session');
 const { getRuntimeConfig } = require('../config/runtime');
+const { sessionToken } = require('../middleware/sessionToken');
+const { requireFeature } = require('../middleware/featureAccess');
 const { LibraryMeal, Meal, Targets, WaterEntry, categories, fields } = require('../models/Diet');
 const {
   macroCalories,
@@ -126,7 +128,7 @@ async function insertImportAllOrNothing(userId, rows) {
 }
 
 router.use(async (request, response, next) => {
-  const token = request.cookies[getRuntimeConfig().sessionCookieName];
+  const token = sessionToken(request);
   if (typeof token !== 'string') return response.status(401).json({ error: 'Authentication required.' });
   const session = await Session.findOne({
     tokenHash: crypto.createHash('sha256').update(token).digest('hex'),
@@ -134,9 +136,11 @@ router.use(async (request, response, next) => {
   }).populate('userId');
   if (!session?.userId) return response.status(401).json({ error: 'Authentication required.' });
   if (!session.userId.emailVerifiedAt) return response.status(403).json({ error: 'Email verification required.' });
+  request.featureUser = session.userId;
   request.dietUserId = session.userId._id;
   next();
 });
+router.use(requireFeature('diet'));
 
 router.get('/days/:date', async (request, response) => {
   if (!validDate(request.params.date)) return response.status(400).json({ error: 'Use a valid YYYY-MM-DD date.' });

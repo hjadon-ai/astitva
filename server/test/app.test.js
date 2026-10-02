@@ -7,7 +7,6 @@ const productionEnvironment = {
   WEB_URL: 'https://astitva-example.web.app',
   CORS_ORIGINS: 'https://astitva-example.web.app',
   SESSION_COOKIE_NAME: 'astitva_prod_session',
-  INVITED_EMAILS: 'owner@example.com',
   PLAID_ENABLED: 'false',
   PLAID_ENV: 'production',
   RENDER_GIT_COMMIT: '0123456789abcdef0123456789abcdef01234567',
@@ -19,10 +18,13 @@ const productionEnvironment = {
   EMAIL_FROM: 'Astitva <noreply@example.com>'
 };
 
-test('Production health, origin, invitation, and disabled Finance behavior are enforced before database access', async () => {
+test('Production health, origin, invitation, and disabled Finance behavior are enforced before database access', async (t) => {
   Object.assign(process.env, productionEnvironment);
   const { resetRuntimeConfigForTests } = require('../src/config/runtime');
   resetRuntimeConfigForTests();
+  const { mock } = t;
+  const InvitedEmail = require('../src/models/InvitedEmail');
+  mock.method(InvitedEmail, 'exists', async () => null);
   const { createApp } = require('../src/app');
   const server = createApp().listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));

@@ -14,7 +14,6 @@ const productionBase = {
   WEB_URL: 'https://astitva-example.web.app',
   CORS_ORIGINS: 'https://astitva-example.web.app',
   SESSION_COOKIE_NAME: 'astitva_prod_session',
-  INVITED_EMAILS: 'Owner@Example.com, second@example.com',
   PLAID_ENABLED: 'false',
   PLAID_ENV: 'production',
   SMTP_HOST: 'smtp.example.com',
@@ -108,7 +107,6 @@ test('Production accepts Atlas and disables Plaid without requiring Plaid secret
   assert.equal(config.databaseName, 'astitva_prod');
   assert.equal(config.financeEnabled, false);
   assert.equal(config.financeProviderConfigured, false);
-  assert.deepEqual(config.invitedEmails, ['owner@example.com', 'second@example.com']);
   assert.deepEqual(config.sessionCookieOptions, {
     httpOnly: true,
     sameSite: 'none',
@@ -135,7 +133,7 @@ test('Production can use Gmail API without blocked SMTP ports', () => {
   }), /GMAIL_CLIENT_ID/);
 });
 
-test('Production rejects local data, insecure origins, reused cookies, and missing invitations', () => {
+test('Production rejects local data, insecure origins, and reused cookies', () => {
   assert.throws(() => validateRuntimeEnvironment({
     ...productionBase,
     MONGODB_URL: 'mongodb://127.0.0.1:27017/astitva_prod'
@@ -148,10 +146,6 @@ test('Production rejects local data, insecure origins, reused cookies, and missi
     ...productionBase,
     SESSION_COOKIE_NAME: 'astitva_dev_session'
   }), /unique production cookie/);
-  assert.throws(() => validateRuntimeEnvironment({
-    ...productionBase,
-    INVITED_EMAILS: ''
-  }), /INVITED_EMAILS/);
   assert.throws(() => validateRuntimeEnvironment({
     ...productionBase,
     WEB_URL: 'https://PROJECT_ID.web.app',

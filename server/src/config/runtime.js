@@ -94,15 +94,6 @@ function commaSeparated(name, environment) {
   return required(name, environment).split(',').map((value) => value.trim()).filter(Boolean);
 }
 
-function invitedEmails(environment) {
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const emails = [...new Set(commaSeparated('INVITED_EMAILS', environment).map((email) => email.toLowerCase()))];
-  if (!emails.length || emails.some((email) => !emailPattern.test(email))) {
-    throw new Error('INVITED_EMAILS must contain at least one valid email address.');
-  }
-  return emails;
-}
-
 function localSmtpConfig(environment) {
   const host = environment.SMTP_HOST?.trim() || '127.0.0.1';
   const port = Number(environment.SMTP_PORT || 1025);
@@ -157,7 +148,6 @@ function localConfig(name, profile, environment) {
     plaidRedirectUri: environment.PLAID_REDIRECT_URI?.trim() || '',
     webUrl: (environment.WEB_URL || 'http://localhost:3000').replace(/\/$/, ''),
     corsOrigins: Object.freeze(['http://localhost:3000', 'http://127.0.0.1:3000']),
-    invitedEmails: Object.freeze([]),
     emailProvider: 'smtp',
     gmailApi: null,
     smtp: localSmtpConfig(environment)
@@ -224,7 +214,6 @@ function productionConfig(profile, environment) {
     plaidRedirectUri,
     webUrl,
     corsOrigins: Object.freeze(corsOrigins),
-    invitedEmails: Object.freeze(invitedEmails(environment)),
     emailProvider,
     gmailApi: emailProvider === 'gmail-api' ? Object.freeze({
       clientId: required('GMAIL_CLIENT_ID', environment),

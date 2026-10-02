@@ -3,11 +3,14 @@ const express = require('express');
 const Session = require('../models/Session');
 const User = require('../models/User');
 const { Family, FamilyInvitation, FamilyActivity } = require('../models/Family');
+const InvitedEmail = require('../models/InvitedEmail');
 const { Meal, Targets, fields } = require('../models/Diet');
 const { FinanceAccount, FinanceTransaction, FinanceHolding } = require('../models/Finance');
 const { getRuntimeConfig } = require('../config/runtime');
 const { sendFamilyInvitationEmail } = require('../services/email');
 const { createRateLimit } = require('../middleware/security');
+const { sessionToken } = require('../middleware/sessionToken');
+const { requireFeature } = require('../middleware/featureAccess');
 
 const router = express.Router();
 const objectId = (value) => /^[a-f0-9]{24}$/i.test(value || '');
@@ -29,7 +32,7 @@ const labelFor = (kind, gender) => ({
 })[kind][gender];
 
 router.use(async (request, response, next) => {
-  const token = request.cookies[getRuntimeConfig().sessionCookieName];
+  const token = sessionToken(request);
   if (typeof token !== 'string') return response.status(401).json({ error: 'Authentication required.' });
   const session = await Session.findOne({
     tokenHash: crypto.createHash('sha256').update(token).digest('hex'),
@@ -37,9 +40,11 @@ router.use(async (request, response, next) => {
   }).populate('userId');
   if (!session?.userId) return response.status(401).json({ error: 'Authentication required.' });
   if (!session.userId.emailVerifiedAt) return response.status(403).json({ error: 'Email verification required.' });
+  request.featureUser = session.userId;
   request.familyUser = session.userId;
   next();
 });
+router.use(requireFeature('family'));
 
 const acceptedPerson = (family, userId) => family.people.find((person) =>
   person.status === 'ACCEPTED' && person.userId && same(person.userId, userId));
@@ -391,12 +396,17 @@ router.post('/:familyId/people/:personId/invite', createRateLimit({ max: 10, win
   const invitation = await FamilyInvitation.create({ familyId: family._id, personId: person._id,
     email: person.email, tokenHash: crypto.createHash('sha256').update(token).digest('hex'),
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+  let invitedEmailWrite;
   try {
-    await sendFamilyInvitationEmail(request.familyUser, person, token);
+    invitedEmailWrite = await InvitedEmail.updateOne({ email: person.email }, {
+      $setOnInsert: { email: person.email }
+    }, { upsert: true });
+    await sendFamilyInvitationEmail(request.familyUser, person, token, matchingUsers.length === 1);
   } catch (error) {
     await invitation.deleteOne();
-    console.error('Unable to send family invitation:', error.message);
-    return reject(response, 'The invitation email could not be sent. Try again later.', 503);
+    if (invitedEmailWrite?.upsertedId) await InvitedEmail.deleteOne({ _id: invitedEmailWrite.upsertedId });
+    console.error('Unable to complete family invitation:', error.message);
+    return reject(response, 'The invitation could not be completed. Try again later.', 503);
   }
   person.status = 'PENDING';
   await family.save();

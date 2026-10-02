@@ -5,10 +5,12 @@ This guide prepares the F012 Firebase Hosting, Render, and MongoDB Atlas environ
 ## Architecture
 
 ```text
-astitva-live.web.app -> portfolio-84ul.onrender.com -> MongoDB Atlas / SMTP
+astitva-live.web.app -> portfolio-84ul.onrender.com -> MongoDB Atlas / Gmail API
 ```
 
 Firebase serves the static `web/dist` build. Render runs Express. Atlas stores only Production data in `astitva_prod`. Finance uses Plaid Production when it is enabled in Render.
+
+The Firebase and Render origins are on different sites. Some mobile browsers block Render's session cookie even after login, causing authenticated pages such as Family to return `401`. Production login therefore also returns the existing random session token to the web app, which keeps it in the current tab's `sessionStorage` and sends it as an `Authorization: Bearer` header. The API validates the same hashed, expiring MongoDB session for either transport. Logout deletes that session and clears browser storage. This fallback requires users to sign in again in a new tab or after closing the tab; never log or expose the token. A shared custom domain for web and API would allow returning to HTTP-only cookies alone later.
 
 ## 1. Prepare the application
 
@@ -35,7 +37,7 @@ Render Free blocks outbound SMTP on ports 25, 465, and 587. Production therefore
 
 1. In a Google Cloud project, enable the Gmail API. Configure the OAuth consent screen with the `https://www.googleapis.com/auth/gmail.send` scope and create a **Web application** OAuth client with `https://developers.google.com/oauthplayground` as an authorized redirect URI. In [Google's OAuth Playground](https://developers.google.com/oauthplayground/), select **Use your own OAuth credentials**, enter that client ID and secret, authorize only `https://www.googleapis.com/auth/gmail.send` while signed in as the sending Gmail account, and exchange the authorization code for a refresh token. For an external OAuth app, leave Testing status before relying on it for ongoing production mail: Testing refresh tokens for this scope expire after seven days.
 2. In Render's `astitva-api` **Environment**, set `EMAIL_PROVIDER=gmail-api`, `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and `EMAIL_FROM=Astitva <your-address@gmail.com>`. The address must be the authorized Gmail account or a configured send-as alias. Keep the OAuth client secret and refresh token only in Render; never put them in GitHub, Firebase Hosting, or a checked-in `.env` file.
-3. Save the environment changes and manually deploy server version `1.0.2`. Confirm `/api/health` reports `1.0.2`, then test signup or resend for an invited address and confirm delivery. Keep `WEB_URL` set to the production web origin. Do not copy the local `.env.stage` file into Render; its MongoDB, Plaid, and web settings belong to Stage.
+3. Save the environment changes and manually deploy the selected server release. Confirm `/api/health` reports that release's package version, then test signup or resend for an invited address and confirm delivery. Keep `WEB_URL` set to the production web origin. Do not copy the local `.env.stage` file into Render; its MongoDB, Plaid, and web settings belong to Stage.
 
 ## 4. Create the Render service
 
@@ -44,8 +46,19 @@ Use `render.yaml` and keep automatic deployment disabled. Enter these values in 
 - `MONGODB_URL`: Atlas URI for `astitva_prod`
 - `WEB_URL`: `https://astitva-live.web.app`
 - `CORS_ORIGINS`: `https://astitva-live.web.app`
-- `INVITED_EMAILS`: comma-separated normalized email addresses
 - Gmail API OAuth values and `EMAIL_FROM` from the sending account
+
+Production signup reads `astitva_prod.invitedEmails`, not a Render email list. Before deploying this change, copy every address from the existing Render `INVITED_EMAILS` value into that collection. In Atlas Data Explorer, add documents containing the normalized lowercase `email`, or use `mongosh` against `astitva_prod`:
+
+```js
+db.invitedEmails.updateOne(
+  { email: "owner@example.com" },
+  { $setOnInsert: { email: "owner@example.com", createdAt: new Date(), updatedAt: new Date() } },
+  { upsert: true }
+)
+```
+
+Repeat for each previously invited address, using the real addresses only in Atlas. Deploy the updated server, confirm an invited signup and an uninvited rejection, then delete `INVITED_EMAILS` from the live Render service environment. New Family invitations add or refresh their email record automatically after checking whether an account already exists. A new installation needs one manually inserted owner address before its first signup.
 
 The Blueprint fixes `ASTITVA_ENV=production`, `PLAID_ENV=production`, and the Production cookie name. For Finance, configure `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_REDIRECT_URI`, and a unique `FINANCE_TOKEN_ENCRYPTION_KEY`, then set `PLAID_ENABLED=true`. Add the exact HTTPS redirect URI to the Plaid Dashboard allowlist before deploying that change.
 
@@ -102,7 +115,7 @@ Both workflows use the GitHub `production` environment. Add required reviewers t
 ## Smoke test
 
 1. `GET /api/health` returns Production and cloud metadata.
-2. An email outside `INVITED_EMAILS` cannot create an account or trigger email.
+2. An email outside `invitedEmails` without an active matching Family invitation token cannot create an account or trigger email.
 3. An invited email can sign up, verify, log in, reload the page, reset its password, and log out.
 4. Profile and Diet read and write only Atlas Production data.
 5. Finance explains that it is disabled, and every Finance API returns `503 FINANCE_DISABLED`.

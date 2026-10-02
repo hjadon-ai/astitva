@@ -4,21 +4,25 @@ const mongoose = require('mongoose');
 const Session = require('../models/Session');
 const Day = require('../models/DailyPriorityDay');
 const { getRuntimeConfig } = require('../config/runtime');
+const { sessionToken } = require('../middleware/sessionToken');
+const { requireFeature } = require('../middleware/featureAccess');
 const { validDate, todayInZone, priorityInput, publicPriority, publicDay } = require('../services/priorities');
 const router = express.Router();
 const missing = (res) => res.status(404).json({ error: 'Priority not found.' });
 
 router.use(async (req, res, next) => {
-  const token = req.cookies?.[getRuntimeConfig().sessionCookieName];
+  const token = sessionToken(req);
   if (typeof token !== 'string') return res.status(401).json({ error: 'Authentication required.' });
   const session = await Session.findOne({
     tokenHash: crypto.createHash('sha256').update(token).digest('hex'), expiresAt: { $gt: new Date() }
   }).populate('userId');
   if (!session?.userId) return res.status(401).json({ error: 'Authentication required.' });
   if (!session.userId.emailVerifiedAt) return res.status(403).json({ error: 'Email verification required.' });
+  req.featureUser = session.userId;
   req.priorityOwner = session.userId._id;
   next();
 });
+router.use(requireFeature('priorities'));
 router.use(express.json());
 router.use('/days/:date', (req, res, next) => {
   if (!validDate(req.params.date)) return res.status(400).json({ error: 'Use a valid YYYY-MM-DD date.' });

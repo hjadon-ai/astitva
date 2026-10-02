@@ -2,6 +2,8 @@
 
 This file is the current list of Astitva features.
 
+For copyable prompts and the review-to-merge cycle, see [Efficient feature workflow](WORKFLOW.md).
+
 ## Status flow
 
 `Proposed → Approved → In Progress → Review → Done`
@@ -33,7 +35,7 @@ This file is the current list of Astitva features.
 | F022 | [Export the family directory](family/F022-export-family-directory.md) | Proposed | Not created | Not created |
 | F023 | [Family Social feed](familysocial/F023.md) | Proposed | Not created | Not created |
 | F024 | [Family chat and notifications](familysocial/F024.md) | Proposed | Not created | Not created |
-| F027 | [Anonymous chat with PIN protection](chat/F027.md) | Proposed | Not created | Not created |
+| F027 | [Anonymous chat with PIN protection](chat/F027.md) | Done | Not created | Not created |
 | F028 | [Relevant home pages](ui/F028-relevant-home-pages.md) | Approved | Not created | Not created |
 
 ## Rules
@@ -43,5 +45,6 @@ This file is the current list of Astitva features.
 - The project owner approves scope and architecture decisions.
 - When the owner asks to implement a feature, complete the implementation and mark its document and index row **Done** in the same work. Keep approved but unimplemented features **Approved**.
 - Record the same active work branch for features implemented together. Create the next branch only after the current branch is merged into `main`.
+- Keep feature branch name as feature/{date}-A, keep commit message with Fxx implemented 
 - Update this table when a status, branch, or pull request changes.
 - Do not push or create a pull request without explicit approval.

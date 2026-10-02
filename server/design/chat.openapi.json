@@ -1,0 +1,519 @@
+{
+  "paths": {
+    "/api/chat/invitations": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Create an invitation URL",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "alias"
+                ],
+                "properties": {
+                  "alias": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "List pending invitations",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/chat/invitations/{token}/accept": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Accept an invitation",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "alias"
+                ],
+                "properties": {
+                  "alias": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/invitations/{token}/decline": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Decline an invitation",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chat/conversations": {
+      "get": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "List conversations",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Delete all my conversations",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}/pin": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Set my conversation PIN",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pin"
+                ],
+                "properties": {
+                  "pin": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}/unlock": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Unlock my conversation",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pin"
+                ],
+                "properties": {
+                  "pin": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}/alias": {
+      "patch": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Change my alias",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Chat-Unlock",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Short-lived token from unlock; required for message and alias operations."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "alias"
+                ],
+                "properties": {
+                  "alias": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}/messages": {
+      "get": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Read messages after unlock",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Chat-Unlock",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Short-lived token from unlock; required for message and alias operations."
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Send a message after unlock",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Chat-Unlock",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Short-lived token from unlock; required for message and alias operations."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}": {
+      "delete": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Delete a conversation for both participants",
+        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized or PIN locked"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chat/conversations/{id}/lock": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Lock my conversation immediately",
+        "description": "Requires a verified signed-in participant. Revokes only the caller's unlock token; their PIN is needed to reopen the chat.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Locked"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "404": {
+            "description": "Conversation not found"
+          }
+        }
+      }
+    }
+  }
+}

@@ -47,6 +47,7 @@ function createApp() {
   app.use('/api/diet', require('./routes/diet'));
   app.use('/api/finance', require('./routes/finance'));
   app.use('/api/family', require('./routes/family'));
+  app.use('/api/chat', require('./routes/chat'));
 
   app.use((error, request, response, next) => {
     if (error.type === 'entity.too.large') {
