@@ -1,6 +1,6 @@
 # F019: Manage family invitations
 
-- **Status:** Proposed
+- **Status:** Approved
 - **Branch:** Not created
 - **Pull request:** Not created
 
@@ -62,7 +62,12 @@ Extend the existing family invitation record with status, `sentAt`, `expiresAt`,
 
 After approval and implementation, test pending, expired, cancelled, declined, and accepted states with two verified accounts and one unrelated account. Use the local inbox to confirm only the latest link works; verify ADMIN-only mutations and the unchanged person ID.
 
-## Open questions
+## Owner decisions
 
-1. What expiration and resend limit should family invitations use?
-2. Should a declined invitation be resendable to the same email, or require the ADMIN to start a new invitation?
+### 1. What expiration and resend limit should family invitations use?
+
+> expire in a week, resend limit 2 every day
+
+### 2. Should a declined invitation be resendable to the same email, or require the ADMIN to start a new invitation?
+
+> yes, invitation can be resendable to the same email

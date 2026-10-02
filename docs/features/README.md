@@ -27,10 +27,13 @@ This file is the current list of Astitva features.
 | F016 | [Family activity history](family/F016-family-activity-history.md) | Review | `feature/family-approved-f014-f016` | Not created |
 | F017 | [Family relationship corrections](family/F017-family-relationship-corrections.md) | Proposed | Not created | Not created |
 | F018 | [Family members](family/F018-family-members.md) | Done | Not created | Not created |
-| F019 | [Manage family invitations](family/F019-family-invitation-management.md) | Proposed | Not created | Not created |
+| F019 | [Manage family invitations](family/F019-family-invitation-management.md) | Approved | Not created | Not created |
 | F020 | [Family member profiles](family/F020-family-member-profiles.md) | Proposed | Not created | Not created |
 | F021 | [Leave an accepted family](family/F021-leave-family.md) | Proposed | Not created | Not created |
 | F022 | [Export the family directory](family/F022-export-family-directory.md) | Proposed | Not created | Not created |
+| F023 | [Family Social feed](familysocial/F023.md) | Proposed | Not created | Not created |
+| F024 | [Family chat and notifications](familysocial/F024.md) | Proposed | Not created | Not created |
+| F027 | [Anonymous chat with PIN protection](chat/F027.md) | Proposed | Not created | Not created |
 
 ## Rules
 
