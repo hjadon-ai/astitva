@@ -4,11 +4,23 @@ import Diet from './Diet';
 import Priorities from './Priorities';
 import Finance from './Finance';
 import Family from './Family';
+import Chat from './Chat';
 import { AppShell, Badge, Button, EnvironmentBanner, FormField, LoadingState, PageHeader, StatCard, Surface } from './ui';
 import { version as webVersion } from '../package.json';
 
 const emptyForm = { name: '', email: '', password: '' };
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '');
+const sessionKey = `astitva_session_token:${apiBaseUrl}`;
+let activeSessionToken;
+try { activeSessionToken = window.sessionStorage.getItem(sessionKey); } catch { activeSessionToken = null; }
+
+function setSessionToken(token) {
+  activeSessionToken = token || null;
+  try {
+    if (activeSessionToken) window.sessionStorage.setItem(sessionKey, activeSessionToken);
+    else window.sessionStorage.removeItem(sessionKey);
+  } catch { /* The current tab can continue while browser storage is unavailable. */ }
+}
 
 async function apiRequest(path, options = {}) {
   const formData = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -17,6 +29,7 @@ async function apiRequest(path, options = {}) {
     ...options,
     headers: {
       ...(options.body && !formData ? { 'Content-Type': 'application/json' } : {}),
+      ...(activeSessionToken && path !== '/api/auth/login' ? { Authorization: `Bearer ${activeSessionToken}` } : {}),
       ...options.headers
     }
   });
@@ -27,6 +40,7 @@ async function apiRequest(path, options = {}) {
     const details = body.error;
     const error = new Error(typeof details === 'string' ? details : details?.message || 'Something went wrong.');
     error.status = response.status;
+    if (body.retryAt) error.retryAt = body.retryAt;
     if (details && typeof details === 'object') Object.assign(error, { code: details.code, details });
     throw error;
   }
@@ -62,6 +76,7 @@ function AuthPanel({ mode, onModeChange, onAuthenticated, onForgotPassword }) {
         setForm({ ...emptyForm, email: form.email });
         onModeChange('login');
       } else {
+        if (result.sessionToken) setSessionToken(result.sessionToken);
         onAuthenticated(result.user);
       }
     } catch (error) {
@@ -381,7 +396,10 @@ function PublicHome({ onAuthenticated, runtime }) {
 }
 
 function Profile({ user, onLogout, runtime }) {
-  const pageFromHash = () => window.location.hash === '#priorities' ? 'priorities' : window.location.hash === '#diet' ? 'diet' : window.location.hash === '#finance' ? 'finance' : window.location.hash === '#family' ? 'family' : 'profile';
+  const pageFromHash = () => {
+    const requested = window.location.pathname === '/chat-invite' ? 'chat' : window.location.hash.slice(1);
+    return (user.features || { family: true })[requested] ? requested : 'profile';
+  };
   const [page, setPage] = useState(pageFromHash);
   useEffect(() => {
     const change = () => setPage(pageFromHash());
@@ -390,7 +408,7 @@ function Profile({ user, onLogout, runtime }) {
   }, []);
   return (
     <AppShell page={page} user={user} runtime={runtime} onLogout={onLogout}>
-      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
+      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} /> : page === 'chat' ? <Chat apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
         <PageHeader
           eyebrow="Workspace / Overview"
           title={`Good to see you, ${user.name}.`}
@@ -438,8 +456,8 @@ export default function App() {
   }, []);
 
   async function logout() {
-    await apiRequest('/api/auth/logout', { method: 'POST' });
-    setUser(null);
+    try { await apiRequest('/api/auth/logout', { method: 'POST' }); }
+    finally { setSessionToken(null); setUser(null); }
   }
 
   const location = new URL(window.location.href);

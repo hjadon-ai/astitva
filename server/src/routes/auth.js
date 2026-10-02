@@ -6,9 +6,12 @@ const Session = require('../models/Session');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const { FamilyInvitation } = require('../models/Family');
+const InvitedEmail = require('../models/InvitedEmail');
 const { sendPasswordResetEmail, sendVerificationEmail } = require('../services/email');
 const { getRuntimeConfig } = require('../config/runtime');
 const { createRateLimit } = require('../middleware/security');
+const { sessionToken } = require('../middleware/sessionToken');
+const { featuresForEmail } = require('../middleware/featureAccess');
 
 const router = express.Router();
 const cookieName = () => getRuntimeConfig().sessionCookieName;
@@ -22,12 +25,13 @@ const signupRateLimit = createRateLimit({ max: 5, windowMs: 60 * 60 * 1000 });
 const loginRateLimit = createRateLimit({ max: 10, windowMs: 15 * 60 * 1000 });
 const emailRateLimit = createRateLimit({ max: 5, windowMs: 60 * 60 * 1000 });
 
-function publicUser(user) {
+async function publicUser(user) {
   return {
     id: user.id,
     name: user.name,
     email: user.email,
-    emailVerified: Boolean(user.emailVerifiedAt)
+    emailVerified: Boolean(user.emailVerifiedAt),
+    features: await featuresForEmail(user.email)
   };
 }
 
@@ -83,7 +87,7 @@ async function createPasswordResetToken(user) {
 }
 
 async function authenticatedUser(request, response) {
-  const token = request.cookies[cookieName()];
+  const token = sessionToken(request);
   if (!token) return null;
 
   const session = await Session.findOne({
@@ -120,15 +124,16 @@ router.post('/signup', signupRateLimit, async (request, response) => {
 
   const runtime = getRuntimeConfig();
   const familyInviteToken = typeof request.body.familyInviteToken === 'string' ? request.body.familyInviteToken.trim() : '';
-  let validFamilyInvite = false;
-  if (runtime.isProduction && !runtime.invitedEmails.includes(email) && /^[a-f0-9]{64}$/i.test(familyInviteToken)) {
-    validFamilyInvite = Boolean(await FamilyInvitation.exists({
+  let invited = !runtime.isProduction;
+  if (runtime.isProduction) invited = Boolean(await InvitedEmail.exists({ email }));
+  if (runtime.isProduction && !invited && /^[a-f0-9]{64}$/i.test(familyInviteToken)) {
+    invited = Boolean(await FamilyInvitation.exists({
       email,
       tokenHash: hashToken(familyInviteToken),
       expiresAt: { $gt: new Date() }
     }));
   }
-  if (runtime.isProduction && !runtime.invitedEmails.includes(email) && !validFamilyInvite) {
+  if (!invited) {
     return response.status(403).json({
       error: 'This email address is not invited to Astitva.',
       code: 'INVITATION_REQUIRED'
@@ -149,7 +154,7 @@ router.post('/signup', signupRateLimit, async (request, response) => {
     }
 
     return response.status(201).json({
-      user: publicUser(user),
+      user: await publicUser(user),
       message: emailDelivered
         ? 'Account created. Check your email to verify your address.'
         : 'Account created, but the verification email could not be sent.',
@@ -183,7 +188,9 @@ router.post('/login', loginRateLimit, async (request, response) => {
     ...getRuntimeConfig().sessionCookieOptions,
     maxAge: sessionDuration
   });
-  return response.status(200).json({ user: publicUser(user) });
+  response.setHeader('Cache-Control', 'no-store');
+  return response.status(200).json({ user: await publicUser(user),
+    ...(getRuntimeConfig().isProduction ? { sessionToken: token } : {}) });
 });
 
 router.get('/me', async (request, response) => {
@@ -192,7 +199,7 @@ router.get('/me', async (request, response) => {
     return response.status(401).json({ error: 'Session is invalid or expired.' });
   }
 
-  return response.status(200).json({ user: publicUser(user) });
+  return response.status(200).json({ user: await publicUser(user) });
 });
 
 router.post('/verify-email', async (request, response) => {
@@ -223,7 +230,7 @@ router.post('/verify-email', async (request, response) => {
 
   return response.status(200).json({
     message: 'Email verified successfully.',
-    user: publicUser(verification.userId)
+    user: await publicUser(verification.userId)
   });
 });
 
@@ -317,7 +324,7 @@ router.post('/reset-password', async (request, response) => {
 });
 
 router.post('/logout', async (request, response) => {
-  const token = request.cookies[cookieName()];
+  const token = sessionToken(request);
   if (token) {
     await Session.deleteOne({ tokenHash: hashToken(token) });
   }

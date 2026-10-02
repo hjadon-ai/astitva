@@ -14,7 +14,13 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const User = require('../src/models/User');
   const Session = require('../src/models/Session');
   const { Family, FamilyInvitation, FamilyActivity } = require('../src/models/Family');
+  const InvitedEmail = require('../src/models/InvitedEmail');
   const { Meal } = require('../src/models/Diet');
+  const sentInvites = [];
+  t.mock.method(require('../src/services/email'), 'sendFamilyInvitationEmail', async (...args) => {
+    if (args[1].name === 'Unsent') throw new Error('Fixture delivery failure');
+    sentInvites.push(args);
+  });
   const ids = Array.from({ length: 3 }, () => new mongoose.Types.ObjectId());
   const cookies = ids.map(() => crypto.randomBytes(32).toString('hex'));
   let server;
@@ -24,6 +30,9 @@ test('F018 invitation, perspective, roles, and private sharing', {
       const families = await Family.find({ creatorId: { $in: ids } }).select('_id').lean();
       await Promise.all([
         FamilyInvitation.deleteMany({ familyId: { $in: families.map((family) => family._id) } }),
+        InvitedEmail.deleteMany({ email: { $in: [
+          `f018-daisy-${ids[0]}@example.invalid`, `f018-${ids[1]}@example.invalid`
+        ] } }),
         FamilyActivity.deleteMany({ familyId: { $in: families.map((family) => family._id) } }),
         Family.deleteMany({ creatorId: { $in: ids } }), Meal.deleteMany({ userId: { $in: ids } }),
         Session.deleteMany({ userId: { $in: ids } }), User.deleteMany({ _id: { $in: ids } })
@@ -32,7 +41,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
     await mongoose.disconnect();
   });
   await mongoose.connect(process.env.MONGODB_URL, { serverSelectionTimeoutMS: 2500 });
-  await Promise.all([Family.createIndexes(), FamilyInvitation.createIndexes(), FamilyActivity.createIndexes()]);
+  await Promise.all([Family.createIndexes(), FamilyInvitation.createIndexes(), FamilyActivity.createIndexes(), InvitedEmail.createIndexes()]);
   for (let i = 0; i < ids.length; i++) {
     await User.create({ _id: ids[i], name: ['Alex', 'Blair', 'Casey'][i],
       email: `f018-${ids[i]}@example.invalid`, passwordHash: 'fixture', emailVerifiedAt: new Date() });
@@ -40,6 +49,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
       expiresAt: new Date(Date.now() + 3600000) });
   }
   const app = express();
+  app.locals.runtime = require('../src/config/runtime').getRuntimeConfig();
   app.use(require('cookie-parser')());
   app.use(express.json());
   app.use('/api/family', require('../src/routes/family'));
@@ -64,7 +74,19 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const child = await request('POST', `/${familyId}/people`, { name: 'Casey',
     email: `f018-${ids[2]}@example.invalid`, relationship: 'son' });
   assert.equal(child.status, 201);
-  assert.equal((await request('POST', `/${familyId}/people`, { name: 'Daisy', relationship: 'daughter' })).status, 201);
+  const daisyEmail = `f018-daisy-${ids[0]}@example.invalid`;
+  const daisy = await request('POST', `/${familyId}/people`, { name: 'Daisy', email: daisyEmail, relationship: 'daughter' });
+  assert.equal(daisy.status, 201);
+  const daisyId = daisy.body.family.connections.find((edge) => edge.person.name === 'Daisy').person.id;
+  assert.equal((await request('POST', `/${familyId}/people/${daisyId}/invite`)).status, 202);
+  assert.equal(sentInvites.at(-1)[3], false, 'a new email gets the create-account path');
+  assert.ok(await InvitedEmail.exists({ email: daisyEmail }));
+  const unsentEmail = `f018-unsent-${ids[0]}@example.invalid`;
+  const unsent = await request('POST', `/${familyId}/people`, { name: 'Unsent', email: unsentEmail, relationship: 'brother' });
+  const unsentId = unsent.body.family.connections.find((edge) => edge.person.name === 'Unsent').person.id;
+  assert.equal((await request('POST', `/${familyId}/people/${unsentId}/invite`)).status, 503);
+  assert.equal(await InvitedEmail.exists({ email: unsentEmail }), null, 'failed delivery does not authorize signup');
+  assert.equal(await FamilyInvitation.exists({ familyId, personId: unsentId }), null);
   const wife = await request('POST', `/${familyId}/people`, {
     name: 'Blair', email: `f018-${ids[1]}@example.invalid`, relationship: 'wife'
   });
@@ -74,10 +96,10 @@ test('F018 invitation, perspective, roles, and private sharing', {
   assert.equal(wifeConnection.label, 'Wife');
   assert.equal((await request('GET', `/${familyId}`, undefined, 1)).status, 404, 'email matching alone grants no access');
   assert.equal((await request('GET', `/${familyId}/activity`, undefined, 1)).status, 404);
-  const token = crypto.randomBytes(32).toString('hex');
-  await FamilyInvitation.create({ familyId, personId: wifeId, email: `f018-${ids[1]}@example.invalid`,
-    tokenHash: crypto.createHash('sha256').update(token).digest('hex'), expiresAt: new Date(Date.now() + 3600000) });
-  await Family.updateOne({ _id: familyId, 'people._id': wifeId }, { $set: { 'people.$.status': 'PENDING' } });
+  assert.equal((await request('POST', `/${familyId}/people/${wifeId}/invite`)).status, 202);
+  assert.equal(sentInvites.at(-1)[3], true, 'an existing account gets the sign-in path');
+  assert.ok(await InvitedEmail.exists({ email: `f018-${ids[1]}@example.invalid` }));
+  const token = sentInvites.at(-1)[2];
   const wifeOwnFamily = await request('POST', '', {}, 1);
   assert.equal(wifeOwnFamily.status, 201);
   assert.equal((await request('GET', '/invitations', undefined, 1)).body.invitations.length, 1);

@@ -7,6 +7,10 @@ Databases on local MongoDB port `27017`:
 
 The application connects to only one database per process. It never copies or queries data across profiles.
 
+## invitedEmails (F012)
+
+`invitedEmails` replaces the Production `INVITED_EMAILS` Render variable. It stores one normalized, unique email address and timestamps. A successful Family invitation upserts the address whether or not the account already exists. Production signup checks this collection before creating a User; an active matching Family invitation token remains a fallback for links sent before this change. Neither an invited-email record nor a matching account links a person to a family; verified login and explicit invitation acceptance remain required. For an initial owner signup, add that address to the collection manually in Atlas before removing the old Render variable.
+
 ## families and familyInvitations (F018)
 
 `families` stores a creator User ID and embedded `people`, `relations`, and `shares`. A person has one stable embedded ObjectId, name, optional invitation email, optional linked User ID, chosen male/female/neutral relationship label, ADMIN/EDITOR/READONLY role, and NON_USER/PENDING/ACCEPTED status. Only an accepted linked person can authenticate into a family. Relations are directed parent-to-child or symmetric sibling/partner pairs; labels and Born in/Spouse grouping are calculated from the signed-in person's perspective. A child added under a partner pair receives a parent edge from each partner. One current partner per person is enforced by the API. Siblings are never inferred.
@@ -113,3 +117,11 @@ array replacements, process locks, replica sets, or transactions are required.
 The browser-declared `X-Time-Zone` IANA zone determines today's server-side upper
 bound; it is a calendar preference, never authorization. Dates remain verbatim
 strings across timezone changes. No automatic carryover or day deletion exists.
+
+## Anonymous Chat collections (F027)
+
+`chatInvitations` stores the creator User ID, creator alias, SHA-256 hash of a 32-byte random invitation token, pending/accepted/declined state, and a 24-hour claim expiry. The raw token is returned once for manual sharing and is never stored. A TTL index removes invitations one day after expiry; claim atomically changes pending state so a URL can be accepted once.
+
+`chatConversations` stores two participant User IDs and aliases, one hashed six-digit PIN verifier and attempt/lockout/unlock state per participant, and messages containing sender ID, text, and timestamp. Unlock tokens are random, stored only as hashes, valid for 15 minutes, and scoped to a participant and conversation. No PIN or unlock token is stored in plaintext. Only accepted participants can list or access a conversation; messages require an active unlock. Deleting one or all conversations removes them for both participants.
+
+`chatDeletions` stores only the two normalized account email IDs, message count, serialized byte count deleted, and deletion time. A TTL index removes the record after 30 days. It contains no alias, PIN, invitation token, or message content.

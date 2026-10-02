@@ -11,6 +11,8 @@ const { financeProvider } = require('../services/finance');
 const { FinanceProviderError } = require('../services/finance/PlaidFinanceProvider');
 const { encryptToken, decryptToken } = require('../services/finance/tokenEncryption');
 const { getRuntimeConfig } = require('../config/runtime');
+const { sessionToken } = require('../middleware/sessionToken');
+const { requireFeature } = require('../middleware/featureAccess');
 const {
   calculateSpending,
   calculateTotals,
@@ -81,7 +83,7 @@ function publicTransaction(transaction) {
 }
 
 router.use(async (request, response, next) => {
-  const token = request.cookies[getRuntimeConfig().sessionCookieName];
+  const token = sessionToken(request);
   if (typeof token !== 'string') return response.status(401).json({ error: 'Authentication required.' });
   const session = await Session.findOne({
     tokenHash: crypto.createHash('sha256').update(token).digest('hex'),
@@ -89,9 +91,11 @@ router.use(async (request, response, next) => {
   }).populate('userId');
   if (!session?.userId) return response.status(401).json({ error: 'Authentication required.' });
   if (!session.userId.emailVerifiedAt) return response.status(403).json({ error: 'Email verification required.' });
+  request.featureUser = session.userId;
   request.financeUserId = session.userId._id;
   next();
 });
+router.use(requireFeature('finance'));
 
 router.get('/summary', async (request, response) => {
   const month = request.query.month || currentMonth();

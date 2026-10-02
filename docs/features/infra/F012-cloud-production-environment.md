@@ -13,7 +13,7 @@ Add a production environment in which Firebase Hosting serves the React/Vite app
 1. A visitor opens the HTTPS Firebase Hosting address or approved custom web domain.
 2. The browser loads the static Vite build and sends API requests only to the configured HTTPS Render service.
 3. Render validates the exact web origin, authenticates the user, and reads or writes only the production Atlas database.
-4. Production signup succeeds only when the normalized email is in a server-side invitation allowlist.
+4. Production signup succeeds only when the normalized email is in the `invitedEmails` MongoDB collection or has an active matching Family invitation token.
 5. Verification and password-reset links return to the production web address.
 6. Finance remains disabled during the initial core rollout and is enabled with Plaid Production only after core smoke tests pass.
 7. A deployment is promoted manually after local validation and owner approval.
@@ -52,7 +52,7 @@ Firebase Hosting supports static assets, SPA rewrites, preview channels, and liv
 - Use secure production session cookies and reject unsafe-method requests whose `Origin` is not an approved web origin.
 - Keep Plaid, Atlas, SMTP, encryption, and session secrets out of Firebase and Git.
 - Add production email configuration so verification and password-reset links use the Firebase/custom web origin.
-- Add a production-only invited-email allowlist in Render configuration. Keep the existing signup form and endpoint, but reject non-invited normalized emails without creating a user or sending email. Do not add invitation CRUD, invitation tokens, or an administration page in this version.
+- Use the production `invitedEmails` MongoDB collection instead of a Render email list. Keep the existing signup form and endpoint, but reject non-invited normalized emails without creating a user or sending email. Family invitations add addresses to this collection after checking for an existing account; the recipient must still verify their account and accept the Family invitation.
 - Add a Plaid Production redirect URI when required by OAuth institutions and document its Plaid Dashboard allowlist. Plaid requires Production redirect URIs to use HTTPS and appear in the dashboard allowlist: [Plaid Link API](https://plaid.com/docs/api/link/).
 - Allow Production to start with Finance explicitly disabled. Disabled Finance endpoints return a stable `503` response and the UI explains that Finance is not enabled; Plaid credentials become mandatory only when the production flag is enabled.
 - Add production smoke-test and rollback instructions without automatically deploying.
@@ -108,17 +108,16 @@ Production configuration will include:
 | `WEB_URL` | Render | Canonical Firebase/custom HTTPS web origin |
 | `CORS_ORIGINS` | Render | Exact comma-separated approved web origins |
 | `SESSION_COOKIE_NAME` | Render | Production-only cookie name |
-| `INVITED_EMAILS` | Render secret | Normalized email allowlist for Production signup |
 | `PLAID_ENABLED=false` | Render | Keep Finance off during the core rollout |
 | `PLAID_ENV=production` | Render | Require Plaid Production when Finance is enabled |
 | `PLAID_CLIENT_ID` | Render secret | Plaid credential |
 | `PLAID_SECRET` | Render secret | Plaid credential |
 | `PLAID_REDIRECT_URI` | Render | Approved HTTPS OAuth return URI when enabled |
 | `FINANCE_TOKEN_ENCRYPTION_KEY` | Render secret | Unique 32-byte production encryption key |
-| SMTP host/port/user/password/from | Render secrets/config | Production verification and reset email |
+| Gmail API credentials and `EMAIL_FROM` | Render secrets/config | Production verification, reset, and Family invitation email |
 | `VITE_API_BASE_URL` | Web build environment | Public Render API origin; never contains a secret |
 
-The server must fail startup when production uses localhost MongoDB, a non-TLS web origin, an empty invitation allowlist, the Dev/Stage cookie name, or a MongoDB database other than `astitva_prod`. When `PLAID_ENABLED=true`, it must also reject placeholder credentials or a Plaid environment other than Production. Dev and Stage must continue rejecting remote MongoDB.
+The server must fail startup when production uses localhost MongoDB, a non-TLS web origin, the Dev/Stage cookie name, or a MongoDB database other than `astitva_prod`. An empty `invitedEmails` collection is allowed but blocks new Production signup until an address is added. When `PLAID_ENABLED=true`, the server must also reject placeholder credentials or a Plaid environment other than Production. Dev and Stage must continue rejecting remote MongoDB.
 
 ## MongoDB Atlas
 
@@ -127,7 +126,7 @@ The server must fail startup when production uses localhost MongoDB, a non-TLS w
 - Add the Render service's outbound CIDR ranges from **Connect → Outbound** to the Atlas IP access list. Render documents that a service may use any address in its listed ranges: [Render outbound IPs](https://render.com/docs/outbound-ip-addresses). Do not use `0.0.0.0/0` for the steady-state configuration.
 - Use the Atlas `mongodb+srv://` connection string through a Render secret. Atlas requires the connecting address on its access list and enforces TLS for public connections: [Atlas connection](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/) and [network security](https://www.mongodb.com/docs/atlas/architecture/current/network-security/).
 - Keep production collections and indexes identical to the application models. Startup index creation must finish before readiness succeeds.
-- Start with an empty production database. Any future migration is a separate reviewed feature and must omit expired sessions/tokens and define how encrypted Plaid access tokens are re-encrypted with the production key.
+- Start with an empty production database except for an initial owner address in `invitedEmails` when the first account must sign up. Any future user-data migration is a separate reviewed feature and must omit expired sessions/tokens and define how encrypted Plaid access tokens are re-encrypted with the production key.
 
 ## Authentication and browser security
 
@@ -205,4 +204,4 @@ Cloud checks remain manual because no Firebase, Render, Atlas, or SMTP resource 
 
 ## Open questions
 
-None. The owner selected the default Firebase and Render provider domains with the documented cross-site-cookie limitation, invite-only Production signup, and a core-first rollout with an empty Atlas database. Releases remain manual, production email uses the provider-neutral SMTP configuration, and Plaid stays disabled until core smoke tests pass.
+None. The owner selected the default Firebase and Render provider domains with the documented cross-site-cookie limitation and invite-only Production signup backed by `invitedEmails`. Releases remain manual, production email uses Gmail API over HTTPS, and Plaid stays disabled until core smoke tests pass.

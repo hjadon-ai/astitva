@@ -21,8 +21,29 @@ tags:
   - name: Finance
   - name: Daily Priorities
   - name: Family
+  - name: Anonymous Chat
 
 paths:
+  /api/chat/invitations:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1invitations '
+  /api/chat/invitations/{token}/accept:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1invitations~1{token}~1accept '
+  /api/chat/invitations/{token}/decline:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1invitations~1{token}~1decline '
+  /api/chat/conversations:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations '
+  /api/chat/conversations/{id}/lock:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations~1{id}~1lock'
+  /api/chat/conversations/{id}/pin:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations~1{id}~1pin '
+  /api/chat/conversations/{id}/unlock:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations~1{id}~1unlock '
+  /api/chat/conversations/{id}/alias:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations~1{id}~1alias '
+  /api/chat/conversations/{id}/messages:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations~1{id}~1messages '
+  /api/chat/conversations/{id}:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1conversations~1{id} '
   /api/family:
     $ref: './family.openapi.json#/paths/~1api~1family'
   /api/family/invitations:
@@ -127,7 +148,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
-          description: Production signup requires an allowlisted email or an active Family invitation token for the same email.
+          description: Production signup requires an email in the invitedEmails collection or an active Family invitation token for the same email.
           content:
             application/json:
               schema:
@@ -181,6 +202,7 @@ paths:
       operationId: resendVerification
       security:
         - sessionCookie: []
+        - sessionBearer: []
       responses:
         "202":
           description: A replacement verification email was accepted for delivery.
@@ -218,7 +240,7 @@ paths:
               $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
-          description: Login succeeded. The response sets an HTTP-only session cookie.
+          description: Login succeeded. The response sets an HTTP-only session cookie and, in Production, returns a session token for browsers that block cross-site cookies. Do not cache or log the token.
           headers:
             Set-Cookie:
               schema:
@@ -226,7 +248,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/LoginResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "429":
@@ -239,6 +261,7 @@ paths:
       operationId: getCurrentUser
       security:
         - sessionCookie: []
+        - sessionBearer: []
       responses:
         "200":
           description: Current user details.
@@ -306,6 +329,7 @@ paths:
       operationId: logout
       security:
         - sessionCookie: []
+        - sessionBearer: []
       responses:
         "204":
           description: Logout completed.
@@ -317,6 +341,10 @@ components:
       in: cookie
       name: astitva_dev_session
       description: Dev, Stage, and Production use isolated cookie names. Production uses Secure and SameSite=None.
+    sessionBearer:
+      type: http
+      scheme: bearer
+      description: Production fallback when cross-site cookies are blocked. Send the session token returned by login in the Authorization header.
 
   responses:
     BadRequest:
@@ -390,7 +418,7 @@ components:
           example: local-demo-password
         familyInviteToken:
           type: string
-          description: Optional active Family invitation token for Production signup when the email is not on the account allowlist. Family access still requires email verification and invitation acceptance.
+          description: Optional active Family invitation token for Production signup when the email is not yet in invitedEmails. Family access still requires email verification and invitation acceptance.
 
     LoginRequest:
       type: object
@@ -481,6 +509,16 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/User"
+
+    LoginResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        sessionToken:
+          type: string
+          description: Production only. Hex-encoded session token; store only for the browser tab and never log it.
 
     ErrorResponse:
       type: object

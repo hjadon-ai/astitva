@@ -59,7 +59,8 @@
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
             },
-            "url": "{{baseUrl}}/api/auth/login"
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Production returns sessionToken alongside the HTTP-only cookie. When the browser blocks cross-site cookies, send Authorization: Bearer <sessionToken> on protected requests. Never log or share the token."
           },
           "response": []
         },
@@ -2440,6 +2441,226 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/finance?month=2026-09"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Anonymous Chat (F027)",
+      "item": [
+        {
+          "name": "Create an invitation URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/invitations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Sky\"}"
+            }
+          }
+        },
+        {
+          "name": "List pending invitations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/chat/invitations"
+          }
+        },
+        {
+          "name": "Accept an invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/invitations/{{chatToken}}/accept",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Sky\"}"
+            }
+          }
+        },
+        {
+          "name": "Decline an invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/invitations/{{chatToken}}/decline"
+          }
+        },
+        {
+          "name": "List conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/chat/conversations"
+          }
+        },
+        {
+          "name": "Delete all my conversations",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations"
+          }
+        },
+        {
+          "name": "Set my conversation PIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/pin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pin\": \"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "Unlock my conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/unlock",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"pin\": \"123456\"}"
+            }
+          }
+        },
+        {
+          "name": "Change my alias",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "X-Chat-Unlock",
+                "value": "{{chatUnlock}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/alias",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"alias\": \"Sky\"}"
+            }
+          }
+        },
+        {
+          "name": "Read messages after unlock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Chat-Unlock",
+                "value": "{{chatUnlock}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/messages"
+          }
+        },
+        {
+          "name": "Send a message after unlock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "X-Chat-Unlock",
+                "value": "{{chatUnlock}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/messages",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Hello\"}"
+            }
+          }
+        },
+        {
+          "name": "Delete a conversation for both participants",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}"
+          }
+        },
+        {
+          "name": "Lock my conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/lock"
           }
         }
       ]
