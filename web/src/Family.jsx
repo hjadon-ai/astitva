@@ -10,7 +10,7 @@ const relationshipOptions = [
 ];
 const initialPerson = { name: '', email: '', relationship: 'father' };
 
-export default function Family({ apiRequest }) {
+export default function Family({ apiRequest, features = { family: true } }) {
   const [families, setFamilies] = useState(null);
   const [invitations, setInvitations] = useState([]);
   const [selected, setSelected] = useState('');
@@ -31,6 +31,8 @@ export default function Family({ apiRequest }) {
   const canEdit = family && ['ADMIN', 'EDITOR'].includes(family.self.role);
   const canAdmin = family?.self.role === 'ADMIN';
   const isCreator = family?.self.userId === family?.creatorId;
+  const enabledDataFeatures = ['diet', 'finance'].filter((feature) => features[feature]);
+  const accessibleShares = family?.sharedWithMe.filter((share) => features[share.feature]) || [];
 
   useEffect(() => {
     Promise.all([apiRequest('/api/family'), apiRequest('/api/family/invitations')]).then(([result, pending]) => {
@@ -225,11 +227,11 @@ export default function Family({ apiRequest }) {
           <Button variant="primary" icon={Plus} type="submit" disabled={busy}>Add member</Button>
         </form>
       </Surface>}
-      <Surface className="family-sharing-overview">
+      {enabledDataFeatures.length > 0 && <><Surface className="family-sharing-overview">
         <SectionHeader title="Sharing" description="Your Diet and Finance permissions, separate from family roles." />
         {sharingError && <p role="alert">{sharingError}</p>}
         {!sharing && !sharingError && <LoadingState>Loading sharing…</LoadingState>}
-        {sharing && <div className="family-overview-grid">{['diet', 'finance'].map((feature) => <section key={feature}>
+        {sharing && <div className="family-overview-grid">{enabledDataFeatures.map((feature) => <section key={feature}>
           <h3>{feature === 'diet' ? 'Diet' : 'Finance'}</h3>
           <h4>Shared with</h4>
           {sharing[feature].sharedWith.length ? sharing[feature].sharedWith.map((entry) => <div className="family-overview-row" key={`${entry.familyId}-${entry.person.id}`}>
@@ -245,16 +247,16 @@ export default function Family({ apiRequest }) {
       <Surface className="family-sharing"><SectionHeader title="Share your information" description="Choose accepted members separately for Diet and Finance. They can only view what you share." />
         {family.acceptedMembers.filter((member) => member.id !== family.self.id).length === 0 ? <p>Accepted family members will appear here.</p> :
           <div className="family-list">{family.acceptedMembers.filter((member) => member.id !== family.self.id).map((member) => <div key={member.id} className="family-share-row"><strong>{member.name}</strong>
-            {['diet', 'finance'].map((feature) => {
+            {enabledDataFeatures.map((feature) => {
               const enabled = family.myShares.some((share) => share.feature === feature && share.recipientId === member.userId);
               return <label key={feature}><input type="checkbox" checked={enabled} disabled={busy} onChange={() => run(() => apiRequest(`/api/family/${family.id}/shares/${feature}/${member.userId}`, { method: enabled ? 'DELETE' : 'PUT' }), `${feature === 'diet' ? 'Diet' : 'Finance'} sharing ${enabled ? 'stopped' : 'enabled'}.`)} /> {feature === 'diet' ? 'Diet' : 'Finance'}</label>;
             })}</div>)}</div>}
       </Surface>
       <Surface className="family-shared"><SectionHeader title="Shared with you" description="Read only access to information each member chose to share." />
-        {family.sharedWithMe.length === 0 ? <p>No Diet or Finance information has been shared with you.</p> : <>
-          <div className="family-filters"><FormField label="Diet date"><input type="date" value={sharedDate} onChange={(event) => setSharedDate(event.target.value)} /></FormField>
-            <FormField label="Finance month"><input type="month" value={sharedMonth} onChange={(event) => setSharedMonth(event.target.value)} /></FormField></div>
-          <div className="family-actions">{family.sharedWithMe.map((share) => <Button key={`${share.ownerId}-${share.feature}`} disabled={busy} onClick={() => showShared(family.id, share.ownerId, share.feature)}>{family.acceptedMembers.find((person) => person.userId === share.ownerId)?.name || 'Member'} · {share.feature}</Button>)}</div>
+        {accessibleShares.length === 0 ? <p>No enabled Diet or Finance information has been shared with you.</p> : <>
+          <div className="family-filters">{features.diet && <FormField label="Diet date"><input type="date" value={sharedDate} onChange={(event) => setSharedDate(event.target.value)} /></FormField>}
+            {features.finance && <FormField label="Finance month"><input type="month" value={sharedMonth} onChange={(event) => setSharedMonth(event.target.value)} /></FormField>}</div>
+          <div className="family-actions">{accessibleShares.map((share) => <Button key={`${share.ownerId}-${share.feature}`} disabled={busy} onClick={() => showShared(family.id, share.ownerId, share.feature)}>{family.acceptedMembers.find((person) => person.userId === share.ownerId)?.name || 'Member'} · {share.feature}</Button>)}</div>
         </>}
         {shared && <div className="family-shared-data"><h3>{shared.owner.name}'s {shared.feature}</h3>
           {shared.feature === 'diet' ? <><p>{shared.date} · Targets: {shared.targets ? `${shared.targets.calories} calories` : 'not set'}</p>
@@ -265,6 +267,7 @@ export default function Family({ apiRequest }) {
           </>}
         </div>}
       </Surface>
+      </>}
       <Surface className="family-activity">
         <SectionHeader title="Family activity" description="Changes from the past week, newest first." />
         {activityError && <p role="alert">{activityError}</p>}

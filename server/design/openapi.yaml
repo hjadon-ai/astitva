@@ -456,7 +456,7 @@ components:
 
     User:
       type: object
-      required: [id, name, email, emailVerified]
+      required: [id, name, email, emailVerified, features]
       properties:
         id:
           type: string
@@ -467,6 +467,16 @@ components:
           format: email
         emailVerified:
           type: boolean
+        features:
+          type: object
+          required: [priorities, diet, finance, family, chat]
+          description: Current invited-email feature access. Missing flags default to Family only.
+          properties:
+            priorities: { type: boolean }
+            diet: { type: boolean }
+            finance: { type: boolean }
+            family: { type: boolean }
+            chat: { type: boolean }
 
     VerifyEmailRequest:
       type: object

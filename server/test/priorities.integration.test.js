@@ -13,12 +13,14 @@ test('F009 real MongoDB REST ownership, persistence, validation and concurrent w
   const User = require('../src/models/User');
   const Session = require('../src/models/Session');
   const Day = require('../src/models/DailyPriorityDay');
+  const InvitedEmail = require('../src/models/InvitedEmail');
   const owners = Array.from({ length: 4 }, () => new mongoose.Types.ObjectId());
   let server;
   t.after(async () => {
     if (server) await new Promise((resolve) => server.close(resolve));
     if (mongoose.connection.readyState === 1) {
-      await Promise.all([Day.deleteMany({ userId: { $in: owners } }), Session.deleteMany({ userId: { $in: owners } }), User.deleteMany({ _id: { $in: owners } })]);
+      await Promise.all([Day.deleteMany({ userId: { $in: owners } }), Session.deleteMany({ userId: { $in: owners } }),
+        InvitedEmail.deleteMany({ email: { $in: owners.map((id) => `f009-${id}@example.invalid`) } }), User.deleteMany({ _id: { $in: owners } })]);
     }
     await mongoose.disconnect();
   });
@@ -26,6 +28,7 @@ test('F009 real MongoDB REST ownership, persistence, validation and concurrent w
   await Day.createIndexes();
   const tokens = owners.map(() => crypto.randomBytes(32).toString('hex'));
   for (let index = 0; index < owners.length; index++) {
+    await InvitedEmail.create({ email: `f009-${owners[index]}@example.invalid`, priorities: true });
     await User.create({ _id: owners[index], name: 'F009 test', email: `f009-${owners[index]}@example.invalid`, passwordHash: 'test-only-not-a-login-hash', emailVerifiedAt: index === 2 ? null : new Date() });
     await Session.create({ userId: owners[index], tokenHash: crypto.createHash('sha256').update(tokens[index]).digest('hex'), expiresAt: new Date(Date.now() + (index === 3 ? -60000 : 3600000)) });
   }

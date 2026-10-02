@@ -53,12 +53,15 @@ Production signup reads `astitva_prod.invitedEmails`, not a Render email list. B
 ```js
 db.invitedEmails.updateOne(
   { email: "owner@example.com" },
-  { $setOnInsert: { email: "owner@example.com", createdAt: new Date(), updatedAt: new Date() } },
+  { $setOnInsert: { email: "owner@example.com", family: true, chat: false,
+      diet: false, finance: false, priorities: false, createdAt: new Date(), updatedAt: new Date() } },
   { upsert: true }
 )
 ```
 
 Repeat for each previously invited address, using the real addresses only in Atlas. Deploy the updated server, confirm an invited signup and an uninvited rejection, then delete `INVITED_EMAILS` from the live Render service environment. New Family invitations add or refresh their email record automatically after checking whether an account already exists. A new installation needs one manually inserted owner address before its first signup.
+
+Feature access uses top-level Boolean fields on each `invitedEmails` document. A missing document or field allows only Family by default. Before deploying feature gating, set `diet`, `finance`, `priorities`, or `chat` to `true` on any existing accounts that should retain access. For example, in Atlas Data Explorer set `chat: true` on one invited-email record to enable Anonymous Chat for that account. A change takes effect on the API immediately; the person reloads the web app to update its tabs. Overview and account verification remain available without feature flags.
 
 The Blueprint fixes `ASTITVA_ENV=production`, `PLAID_ENV=production`, and the Production cookie name. For Finance, configure `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_REDIRECT_URI`, and a unique `FINANCE_TOKEN_ENCRYPTION_KEY`, then set `PLAID_ENABLED=true`. Add the exact HTTPS redirect URI to the Plaid Dashboard allowlist before deploying that change.
 
