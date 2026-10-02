@@ -6,15 +6,15 @@ const defaultFeatures = Object.freeze({
 
 async function featuresForEmail(email) {
   const invitation = await InvitedEmail.findOne({ email: email.toLowerCase() });
-  const stored = invitation?.features || {};
   return Object.fromEntries(Object.keys(defaultFeatures).map((feature) => [
-    feature, typeof stored[feature] === 'boolean' ? stored[feature] : defaultFeatures[feature]
+    feature, typeof invitation?.[feature] === 'boolean' ? invitation[feature] : defaultFeatures[feature]
   ]));
 }
 
 function requireFeature(feature) {
   return async (request, response, next) => {
     const features = await featuresForEmail(request.featureUser.email);
+    request.features = features;
     if (!features[feature]) return response.status(403).json({
       error: 'This feature is not enabled for your account.', code: 'FEATURE_NOT_ENABLED', feature
     });

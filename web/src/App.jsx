@@ -408,7 +408,7 @@ function Profile({ user, onLogout, runtime }) {
   }, []);
   return (
     <AppShell page={page} user={user} runtime={runtime} onLogout={onLogout}>
-      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} /> : page === 'chat' ? <Chat apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
+      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
         <PageHeader
           eyebrow="Workspace / Overview"
           title={`Good to see you, ${user.name}.`}

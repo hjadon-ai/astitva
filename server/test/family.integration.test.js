@@ -31,7 +31,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
       await Promise.all([
         FamilyInvitation.deleteMany({ familyId: { $in: families.map((family) => family._id) } }),
         InvitedEmail.deleteMany({ email: { $in: [
-          `f018-daisy-${ids[0]}@example.invalid`, `f018-${ids[1]}@example.invalid`
+          `f018-daisy-${ids[0]}@example.invalid`, ...ids.map((id) => `f018-${id}@example.invalid`)
         ] } }),
         FamilyActivity.deleteMany({ familyId: { $in: families.map((family) => family._id) } }),
         Family.deleteMany({ creatorId: { $in: ids } }), Meal.deleteMany({ userId: { $in: ids } }),
@@ -43,6 +43,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
   await mongoose.connect(process.env.MONGODB_URL, { serverSelectionTimeoutMS: 2500 });
   await Promise.all([Family.createIndexes(), FamilyInvitation.createIndexes(), FamilyActivity.createIndexes(), InvitedEmail.createIndexes()]);
   for (let i = 0; i < ids.length; i++) {
+    await InvitedEmail.create({ email: `f018-${ids[i]}@example.invalid`, diet: true, finance: true });
     await User.create({ _id: ids[i], name: ['Alex', 'Blair', 'Casey'][i],
       email: `f018-${ids[i]}@example.invalid`, passwordHash: 'fixture', emailVerifiedAt: new Date() });
     await Session.create({ userId: ids[i], tokenHash: crypto.createHash('sha256').update(cookies[i]).digest('hex'),
@@ -160,6 +161,11 @@ test('F018 invitation, perspective, roles, and private sharing', {
   assert.equal(JSON.stringify(firstActivityPage.body).includes('f018-'), false, 'activity omits emails');
   assert.equal(JSON.stringify(firstActivityPage.body).includes(token), false, 'activity omits invitation token');
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-09-30`, undefined, 1)).status, 200);
+  await InvitedEmail.updateOne({ email: `f018-${ids[1]}@example.invalid` }, { $set: { diet: false } });
+  assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-09-30`, undefined, 1)).status, 403,
+    'Family sharing cannot bypass a disabled Diet flag');
+  assert.equal((await request('GET', '/sharing/summary', undefined, 1)).body.features.diet.sharedBy.length, 0);
+  await InvitedEmail.updateOne({ email: `f018-${ids[1]}@example.invalid` }, { $set: { diet: true } });
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-02-31`, undefined, 1)).status, 400);
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/finance?month=2026-09`, undefined, 1)).status, 403);
   assert.equal((await request('PUT', `/${familyId}/shares/finance/${ids[1]}`)).status, 200);

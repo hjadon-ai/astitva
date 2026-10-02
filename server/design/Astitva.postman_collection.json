@@ -60,7 +60,7 @@
               "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/login",
-            "description": "Production returns sessionToken alongside the HTTP-only cookie. When the browser blocks cross-site cookies, send Authorization: Bearer <sessionToken> on protected requests. Never log or share the token."
+            "description": "Production returns sessionToken alongside the HTTP-only cookie. Protected requests may use Authorization: Bearer <sessionToken>. The user response includes feature flags from invitedEmails; missing flags default to Family only. Never log or share the token."
           },
           "response": []
         },
@@ -93,7 +93,8 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{baseUrl}}/api/auth/me"
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Returns current invited-email feature flags for navigation. API endpoints enforce these flags on every request; a reload updates the visible tabs."
           },
           "response": []
         },

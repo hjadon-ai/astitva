@@ -35,7 +35,7 @@ test('F027 Stage invitation, PIN, isolation and deletion', {
   await mongoose.connect(process.env.MONGODB_URL, { serverSelectionTimeoutMS: 2500 });
   await Promise.all([ChatInvitation.createIndexes(), ChatConversation.createIndexes(), ChatDeletion.createIndexes()]);
   for (let i = 0; i < ids.length; i++) {
-    await InvitedEmail.create({ email: emails[i], features: { family: true, chat: true } });
+    await InvitedEmail.create({ email: emails[i], family: true, chat: true });
     await User.create({ _id: ids[i], name: `F027 ${i}`, email: emails[i],
       passwordHash: 'fixture', emailVerifiedAt: new Date() });
     await Session.create({ userId: ids[i], tokenHash: crypto.createHash('sha256').update(cookies[i]).digest('hex'),

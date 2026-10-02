@@ -23,7 +23,7 @@ test('Production bearer session opens Family when cross-site cookies are unavail
     emailVerifiedAt: new Date(), passwordHash: await bcrypt.hash('password123', 4) };
   const sessions = new Map();
   let enabledFeatures = { family: true, chat: false };
-  t.mock.method(InvitedEmail, 'findOne', async () => ({ features: enabledFeatures }));
+  t.mock.method(InvitedEmail, 'findOne', async () => enabledFeatures);
   t.mock.method(User, 'findOne', async ({ email }) => email === user.email ? user : null);
   t.mock.method(Session, 'create', async (entry) => { sessions.set(entry.tokenHash, entry); return entry; });
   t.mock.method(Session, 'findOne', ({ tokenHash }) => ({ populate: async () =>
@@ -61,6 +61,13 @@ test('Production bearer session opens Family when cross-site cookies are unavail
   } });
   assert.equal(deniedChat.status, 403);
   assert.equal((await deniedChat.json()).code, 'FEATURE_NOT_ENABLED');
+  for (const path of ['/api/diet/days/2026-10-02', '/api/priorities/days/2026-10-02']) {
+    const denied = await fetch(`${base}${path}`, { headers: {
+      Origin: origin, Authorization: `Bearer ${sessionToken}`
+    } });
+    assert.equal(denied.status, 403);
+    assert.equal((await denied.json()).code, 'FEATURE_NOT_ENABLED');
+  }
   enabledFeatures = { family: false, chat: false };
   assert.equal((await fetch(`${base}/api/family`, { headers: {
     Origin: origin, Authorization: `Bearer ${sessionToken}`

@@ -9,7 +9,9 @@ The application connects to only one database per process. It never copies or qu
 
 ## invitedEmails (F012)
 
-`invitedEmails` replaces the Production `INVITED_EMAILS` Render variable. It stores one normalized, unique email address and timestamps. A successful Family invitation upserts the address whether or not the account already exists. Production signup checks this collection before creating a User; an active matching Family invitation token remains a fallback for links sent before this change. Neither an invited-email record nor a matching account links a person to a family; verified login and explicit invitation acceptance remain required. For an initial owner signup, add that address to the collection manually in Atlas before removing the old Render variable.
+`invitedEmails` replaces the Production `INVITED_EMAILS` Render variable. It stores one normalized, unique email address, timestamps, and top-level Boolean feature flags: `priorities`, `diet`, `finance`, `family`, and `chat`. An absent record or absent flag defaults to Family only (`family: true`; all others `false`). The API checks the current flags for every authenticated feature request, and `/api/auth/login` and `/api/auth/me` return them for navigation. Setting a flag to `false` revokes that feature even for an existing account. A successful Family invitation upserts the address whether or not the account already exists. Production signup checks this collection before creating a User; an active matching Family invitation token remains a fallback for links sent before this change. Neither an invited-email record nor a matching account links a person to a family; verified login and explicit invitation acceptance remain required. For an initial owner signup, add that address to the collection manually in Atlas before removing the old Render variable.
+
+Local Stage includes `sample.invited@example.invalid` with `family: true` and all other flags `false` as an example. This placeholder cannot receive email and is not a usable sign-in account.
 
 ## families and familyInvitations (F018)
 

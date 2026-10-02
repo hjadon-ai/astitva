@@ -177,7 +177,7 @@ router.get('/sharing/summary', async (request, response) => {
     for (const share of family.shares) {
       const owner = acceptedPerson(family, share.ownerId);
       const recipient = acceptedPerson(family, share.recipientId);
-      if (!owner || !recipient || !features[share.feature]) continue;
+      if (!owner || !recipient || !features[share.feature] || !request.features[share.feature]) continue;
       if (same(share.ownerId, request.familyUser._id)) {
         features[share.feature].sharedWith.push({ familyId: String(family._id), person: sharePerson(recipient) });
       }
@@ -461,6 +461,7 @@ router.put('/:familyId/shares/:feature/:recipientId', async (request, response) 
   if (!context) return;
   const { family, viewer } = context;
   if (!['diet', 'finance'].includes(request.params.feature)) return reject(response, 'Unknown feature.', 404);
+  if (!request.features[request.params.feature]) return reject(response, 'This feature is not enabled for your account.', 403);
   const recipient = objectId(request.params.recipientId) && acceptedPerson(family, request.params.recipientId);
   if (!recipient || same(recipient.userId, viewer.userId)) return reject(response, 'Choose an accepted family member.', 400);
   if (!family.shares.some((share) => share.feature === request.params.feature &&
@@ -495,6 +496,9 @@ router.get('/:familyId/shared/:ownerId/:feature', async (request, response) => {
   const { family, viewer } = context;
   const owner = objectId(request.params.ownerId) && acceptedPerson(family, request.params.ownerId);
   const feature = request.params.feature;
+  if (['diet', 'finance'].includes(feature) && !request.features[feature]) {
+    return reject(response, 'This feature is not enabled for your account.', 403);
+  }
   if (!owner || !['diet', 'finance'].includes(feature) ||
       !family.shares.some((share) => share.feature === feature &&
         same(share.ownerId, owner.userId) && same(share.recipientId, viewer.userId))) {
