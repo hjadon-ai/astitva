@@ -9,11 +9,17 @@
     "/api/family/invitations": {
       "get": { "tags": ["Family"], "summary": "List active invitations addressed to the verified signed-in email", "responses": { "200": { "description": "Pending invitations awaiting explicit acceptance" }, "401": { "description": "Session required" }, "403": { "description": "Verified email required" } } }
     },
+    "/api/family/sharing/summary": {
+      "get": { "tags": ["Family"], "summary": "Summarize the caller's active Diet and Finance share grants by feature and direction", "responses": { "200": { "description": "Accepted recipients and owners only; no private feature data" }, "401": { "description": "Session required" }, "403": { "description": "Verified email required" } } }
+    },
     "/api/family/invitations/{invitationId}/accept": {
       "post": { "tags": ["Family"], "summary": "Accept an inbox invitation as the verified recipient", "parameters": [{ "name": "invitationId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Existing person linked and an empty duplicate personal family removed" }, "403": { "description": "Wrong email" }, "410": { "description": "Expired or used invitation" } } }
     },
     "/api/family/{familyId}": {
       "get": { "tags": ["Family"], "summary": "Get one family from the accepted member's perspective", "parameters": [{ "$ref": "#/components/parameters/familyId" }], "responses": { "200": { "description": "Self, direct relationships, accepted recipients and share grants" }, "404": { "description": "Not an accepted member or not found" } } }
+    },
+    "/api/family/{familyId}/activity": {
+      "get": { "tags": ["Family"], "summary": "Read the last seven days of family activity as an accepted member", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 50, "default": 20 } }, { "name": "before", "in": "query", "description": "Opaque pagination cursor returned by the previous page", "schema": { "type": "string" } }], "responses": { "200": { "description": "Display-safe events and optional nextCursor" }, "400": { "description": "Invalid limit or cursor" }, "404": { "description": "Not an accepted member or not found" } } }
     },
     "/api/family/{familyId}/self": {
       "patch": { "tags": ["Family"], "summary": "Choose labels used for the caller in relatives' views", "parameters": [{ "$ref": "#/components/parameters/familyId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["gender"], "properties": { "gender": { "$ref": "#/components/schemas/Gender" } } } } } }, "responses": { "200": { "description": "Updated view" } } }

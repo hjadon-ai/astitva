@@ -20,6 +20,13 @@ export default function Family({ apiRequest }) {
   const [shared, setShared] = useState(null);
   const [sharedDate, setSharedDate] = useState(new Date().toISOString().slice(0, 10));
   const [sharedMonth, setSharedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [search, setSearch] = useState('');
+  const [sharing, setSharing] = useState(null);
+  const [sharingError, setSharingError] = useState('');
+  const [activity, setActivity] = useState(null);
+  const [activityError, setActivityError] = useState('');
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityVersion, setActivityVersion] = useState(0);
   const family = families?.find((item) => item.id === selected) || families?.[0];
   const canEdit = family && ['ADMIN', 'EDITOR'].includes(family.self.role);
   const canAdmin = family?.self.role === 'ADMIN';
@@ -32,6 +39,25 @@ export default function Family({ apiRequest }) {
       setSelected(result.families[0]?.id || '');
     }).catch((error) => setMessage(error.message));
   }, [apiRequest]);
+
+  useEffect(() => {
+    if (!families?.length) { setSharing(null); return; }
+    let active = true;
+    apiRequest('/api/family/sharing/summary').then((result) => {
+      if (active) { setSharing(result.features); setSharingError(''); }
+    }).catch((error) => { if (active) setSharingError(error.message); });
+    return () => { active = false; };
+  }, [apiRequest, families]);
+
+  useEffect(() => {
+    if (!family) { setActivity(null); return; }
+    let active = true;
+    setActivity(null);
+    apiRequest(`/api/family/${family.id}/activity?limit=5`).then((result) => {
+      if (active) { setActivity(result); setActivityError(''); }
+    }).catch((error) => { if (active) setActivityError(error.message); });
+    return () => { active = false; };
+  }, [apiRequest, family?.id, activityVersion]);
 
   async function acceptInvitation(invitation) {
     setBusy(true);
@@ -61,6 +87,7 @@ export default function Family({ apiRequest }) {
         setFamilies((current) => [...(current || []).filter((item) => item.id !== result.family.id), result.family]);
         setSelected(result.family.id);
       }
+      setActivityVersion((value) => value + 1);
       if (success) setMessage(success);
       return true;
     } catch (error) {
@@ -98,12 +125,12 @@ export default function Family({ apiRequest }) {
     }), 'Relationship removed.');
   }
 
-  async function showShared(ownerId, feature) {
+  async function showShared(familyId, ownerId, feature) {
     const query = feature === 'diet' ? `date=${sharedDate}` : `month=${sharedMonth}`;
     setBusy(true);
     setMessage('');
     try {
-      setShared(await apiRequest(`/api/family/${family.id}/shared/${ownerId}/${feature}?${query}`));
+      setShared(await apiRequest(`/api/family/${familyId}/shared/${ownerId}/${feature}?${query}`));
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -115,6 +142,32 @@ export default function Family({ apiRequest }) {
     { id: 'bornIn', title: 'Born in family', description: 'Parents and siblings' },
     { id: 'spouse', title: 'Spouse family', description: 'Partner and children' }
   ];
+  const searchTerm = search.trim().toLocaleLowerCase();
+  const connections = family?.connections.filter((connection) =>
+    !searchTerm || connection.person.name.toLocaleLowerCase().includes(searchTerm) ||
+    connection.label.toLocaleLowerCase().includes(searchTerm)) || [];
+
+  async function moreActivity() {
+    if (!family || !activity?.nextCursor || activityLoading) return;
+    setActivityLoading(true); setActivityError('');
+    try {
+      const result = await apiRequest(`/api/family/${family.id}/activity?limit=20&before=${encodeURIComponent(activity.nextCursor)}`);
+      setActivity((current) => ({ events: [...current.events, ...result.events], nextCursor: result.nextCursor }));
+    } catch (error) { setActivityError(error.message); }
+    finally { setActivityLoading(false); }
+  }
+
+  async function stopSharing(entry, feature) {
+    setBusy(true); setMessage('');
+    try {
+      const result = await apiRequest(`/api/family/${entry.familyId}/shares/${feature}/${entry.person.userId}`, { method: 'DELETE' });
+      setFamilies((current) => current.map((item) => item.id === result.family.id ? result.family : item));
+      setActivityVersion((value) => value + 1);
+      setShared(null);
+      setMessage(`${feature === 'diet' ? 'Diet' : 'Finance'} sharing stopped.`);
+    } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
+  }
 
   return <section className="family-page">
     <PageHeader eyebrow="Workspace / Family" title="Family" description="Keep one family view that follows each accepted member's perspective." />
@@ -143,10 +196,15 @@ export default function Family({ apiRequest }) {
           </select></FormField>
         </div>
       </Surface>
+      <Surface className="family-search">
+        <FormField label="Find family member"><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name or relationship" /></FormField>
+        {searchTerm && <p role="status">{connections.length} matching family member{connections.length === 1 ? '' : 's'}.</p>}
+        {searchTerm && connections.length === 0 && <p>No matching family members.</p>}
+      </Surface>
       {groups.map((group) => <Surface key={group.id} className="family-group">
         <SectionHeader title={group.title} description={group.description} />
-        {family.connections.filter((connection) => connection.group === group.id).length === 0 ? <p>No members added yet.</p> :
-          <div className="family-list">{family.connections.filter((connection) => connection.group === group.id).map((connection) => <article key={connection.relationId} className="family-member">
+        {connections.filter((connection) => connection.group === group.id).length === 0 ? <p>{searchTerm ? 'No matches in this group.' : 'No members added yet.'}</p> :
+          <div className="family-list">{connections.filter((connection) => connection.group === group.id).map((connection) => <article key={connection.relationId} className="family-member">
             <div><strong>{connection.person.name}</strong><span>{connection.label} · {connection.person.status === 'ACCEPTED' ? connection.person.role : connection.person.status === 'PENDING' ? 'Invitation pending' : 'No account linked'}</span>
               {connection.person.email && <small>{connection.person.email}</small>}</div>
             <div className="family-actions">
@@ -167,6 +225,23 @@ export default function Family({ apiRequest }) {
           <Button variant="primary" icon={Plus} type="submit" disabled={busy}>Add member</Button>
         </form>
       </Surface>}
+      <Surface className="family-sharing-overview">
+        <SectionHeader title="Sharing" description="Your Diet and Finance permissions, separate from family roles." />
+        {sharingError && <p role="alert">{sharingError}</p>}
+        {!sharing && !sharingError && <LoadingState>Loading sharing…</LoadingState>}
+        {sharing && <div className="family-overview-grid">{['diet', 'finance'].map((feature) => <section key={feature}>
+          <h3>{feature === 'diet' ? 'Diet' : 'Finance'}</h3>
+          <h4>Shared with</h4>
+          {sharing[feature].sharedWith.length ? sharing[feature].sharedWith.map((entry) => <div className="family-overview-row" key={`${entry.familyId}-${entry.person.id}`}>
+            <span>{entry.person.name}</span><Button type="button" disabled={busy} onClick={() => stopSharing(entry, feature)}>Stop sharing</Button>
+          </div>) : <p>Not shared.</p>}
+          <h4>Shared by</h4>
+          {sharing[feature].sharedBy.length ? sharing[feature].sharedBy.map((entry) => <div className="family-overview-row" key={`${entry.familyId}-${entry.person.id}`}>
+            <span>{entry.person.name}</span><Button type="button" disabled={busy} onClick={() => showShared(entry.familyId, entry.person.userId, feature)}>View read only</Button>
+          </div>) : <p>Not shared with you.</p>}
+        </section>)}</div>}
+        {family.connections.some((connection) => connection.person.status !== 'ACCEPTED') && <p className="family-share-ineligible">Not eligible for sharing yet: {family.connections.filter((connection) => connection.person.status !== 'ACCEPTED').map((connection) => `${connection.person.name} (${connection.person.status === 'PENDING' ? 'invitation pending' : 'no account linked'})`).join(', ')}.</p>}
+      </Surface>
       <Surface className="family-sharing"><SectionHeader title="Share your information" description="Choose accepted members separately for Diet and Finance. They can only view what you share." />
         {family.acceptedMembers.filter((member) => member.id !== family.self.id).length === 0 ? <p>Accepted family members will appear here.</p> :
           <div className="family-list">{family.acceptedMembers.filter((member) => member.id !== family.self.id).map((member) => <div key={member.id} className="family-share-row"><strong>{member.name}</strong>
@@ -179,7 +254,7 @@ export default function Family({ apiRequest }) {
         {family.sharedWithMe.length === 0 ? <p>No Diet or Finance information has been shared with you.</p> : <>
           <div className="family-filters"><FormField label="Diet date"><input type="date" value={sharedDate} onChange={(event) => setSharedDate(event.target.value)} /></FormField>
             <FormField label="Finance month"><input type="month" value={sharedMonth} onChange={(event) => setSharedMonth(event.target.value)} /></FormField></div>
-          <div className="family-actions">{family.sharedWithMe.map((share) => <Button key={`${share.ownerId}-${share.feature}`} disabled={busy} onClick={() => showShared(share.ownerId, share.feature)}>{family.acceptedMembers.find((person) => person.userId === share.ownerId)?.name || 'Member'} · {share.feature}</Button>)}</div>
+          <div className="family-actions">{family.sharedWithMe.map((share) => <Button key={`${share.ownerId}-${share.feature}`} disabled={busy} onClick={() => showShared(family.id, share.ownerId, share.feature)}>{family.acceptedMembers.find((person) => person.userId === share.ownerId)?.name || 'Member'} · {share.feature}</Button>)}</div>
         </>}
         {shared && <div className="family-shared-data"><h3>{shared.owner.name}'s {shared.feature}</h3>
           {shared.feature === 'diet' ? <><p>{shared.date} · Targets: {shared.targets ? `${shared.targets.calories} calories` : 'not set'}</p>
@@ -189,6 +264,16 @@ export default function Family({ apiRequest }) {
             <h4>Holdings</h4>{shared.holdings.length ? <ul>{shared.holdings.map((holding) => <li key={holding._id}>{holding.name} · {holding.marketValue} {holding.currency}</li>)}</ul> : <p>No holdings.</p>}
           </>}
         </div>}
+      </Surface>
+      <Surface className="family-activity">
+        <SectionHeader title="Family activity" description="Changes from the past week, newest first." />
+        {activityError && <p role="alert">{activityError}</p>}
+        {!activity && !activityError && <LoadingState>Loading family activity…</LoadingState>}
+        {activity && (activity.events.length ? <ol className="family-activity-list">{activity.events.map((event) => <li key={event.id}>
+          <div><strong>{event.actorName}</strong><span>{event.summary}</span></div>
+          <time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time>
+        </li>)}</ol> : <p>No family changes yet.</p>)}
+        {activity?.nextCursor && <Button type="button" disabled={activityLoading} onClick={moreActivity}>{activityLoading ? 'Loading…' : 'View more'}</Button>}
       </Surface>
     </>}
   </section>;

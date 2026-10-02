@@ -2173,7 +2173,7 @@
       ]
     },
     {
-      "name": "Family (F018)",
+      "name": "Family (F014–F018)",
       "description": "Log in with a verified account. Set familyId, personId, relationId, ownerId, recipientId, invitationId and invitationToken from responses or the emailed link. All unsafe requests require the active webUrl Origin.",
       "item": [
         {
@@ -2181,6 +2181,20 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/family"
+          }
+        },
+        {
+          "name": "My sharing overview",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/family/sharing/summary"
+          }
+        },
+        {
+          "name": "Family activity",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/family/{{familyId}}/activity?limit=20"
           }
         },
         {

@@ -22,9 +22,9 @@ This file is the current list of Astitva features.
 | F010 | [Quick Notes](notes/F010-quick-notes.md) | Approved | Not created | Not created |
 | F011 | [Application visual system](ui/F011-application-visual-system.md) | Done | `feature/F011-application-visual-system` | Not created |
 | F012 | [Cloud production environment](infra/F012-cloud-production-environment.md) | Done | `feature/F012-cloud-production-environment` | Not created |
-| F014 | [Family directory search](family/F014-family-directory.md) | Proposed | Not created | Not created |
-| F015 | [Family sharing overview](family/F015-family-sharing-overview.md) | Proposed | Not created | Not created |
-| F016 | [Family activity history](family/F016-family-activity-history.md) | Proposed | Not created | Not created |
+| F014 | [Family directory search](family/F014-family-directory.md) | Review | `feature/family-approved-f014-f016` | Not created |
+| F015 | [Family sharing overview](family/F015-family-sharing-overview.md) | Review | `feature/family-approved-f014-f016` | Not created |
+| F016 | [Family activity history](family/F016-family-activity-history.md) | Review | `feature/family-approved-f014-f016` | Not created |
 | F017 | [Family relationship corrections](family/F017-family-relationship-corrections.md) | Proposed | Not created | Not created |
 | F018 | [Family members](family/F018-family-members.md) | Done | Not created | Not created |
 | F019 | [Manage family invitations](family/F019-family-invitation-management.md) | Proposed | Not created | Not created |

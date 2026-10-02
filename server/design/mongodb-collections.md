@@ -17,6 +17,8 @@ The application connects to only one database per process. It never copies or qu
 
 The verified recipient can see active invitations in the Family tab and accept there without retaining the emailed URL. The email link remains valid too. When an invited account created an empty personal family before accepting, acceptance removes that self-only document so the shared family becomes its single view. A personal family with actual relationships is preserved as a separate view.
 
+`familyActivity` (F016) stores display-safe family mutation events for one week. Each event has a family ID, actor User ID and name snapshot (or System), action, optional affected person ID/name and Diet/Finance feature, a short summary, and creation time. An index on `{ familyId: 1, createdAt: -1, _id: -1 }` supports cursor pagination; a TTL index on `createdAt` removes entries after seven days. Reads require current accepted membership. No invitation token, email, credential, or private Diet/Finance contents are stored.
+
 ## Finance collections (F006)
 
 `financeConnections` stores one Plaid Item per user, provider environment, and institution. It contains `providerEnvironment` (`sandbox` or `production`), provider and institution identifiers, status, incremental transaction cursor, sync timestamps, excluded provider account IDs, and the Plaid access token encrypted with AES-256-GCM. Plaid credentials and each profile's separate encryption key remain in server environment variables. The server rejects a connection whose stored provider environment does not match the running profile before attempting to decrypt its token.

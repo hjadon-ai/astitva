@@ -27,10 +27,14 @@ paths:
     $ref: './family.openapi.json#/paths/~1api~1family'
   /api/family/invitations:
     $ref: './family.openapi.json#/paths/~1api~1family~1invitations'
+  /api/family/sharing/summary:
+    $ref: './family.openapi.json#/paths/~1api~1family~1sharing~1summary'
   /api/family/invitations/{invitationId}/accept:
     $ref: './family.openapi.json#/paths/~1api~1family~1invitations~1{invitationId}~1accept'
   /api/family/{familyId}:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}'
+  /api/family/{familyId}/activity:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1activity'
   /api/family/{familyId}/self:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1self'
   /api/family/{familyId}/people:

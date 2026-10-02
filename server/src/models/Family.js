@@ -38,7 +38,26 @@ const invitationSchema = new mongoose.Schema({
 invitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 invitationSchema.index({ familyId: 1, personId: 1 });
 
+const activitySchema = new mongoose.Schema({
+  familyId: { type: id, ref: 'Family', required: true },
+  actorUserId: { type: id, ref: 'User', default: null },
+  actorName: { type: String, required: true, maxlength: 80 },
+  action: { type: String, required: true, enum: [
+    'FAMILY_CREATED', 'PERSON_ADDED', 'PERSON_UPDATED', 'INVITATION_SENT',
+    'INVITATION_ACCEPTED', 'ROLE_CHANGED', 'RELATIONSHIP_REMOVED',
+    'SHARE_GRANTED', 'SHARE_REVOKED', 'BRANCH_PRUNED', 'SELF_UPDATED'
+  ] },
+  subjectPersonId: { type: id, default: null },
+  subjectName: { type: String, default: null, maxlength: 80 },
+  feature: { type: String, enum: ['diet', 'finance'], default: null },
+  summary: { type: String, required: true, maxlength: 240 },
+  createdAt: { type: Date, default: Date.now, immutable: true }
+}, { collection: 'familyActivity', versionKey: false });
+activitySchema.index({ familyId: 1, createdAt: -1, _id: -1 });
+activitySchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60 });
+
 module.exports = {
   Family: mongoose.model('Family', familySchema),
-  FamilyInvitation: mongoose.model('FamilyInvitation', invitationSchema)
+  FamilyInvitation: mongoose.model('FamilyInvitation', invitationSchema),
+  FamilyActivity: mongoose.model('FamilyActivity', activitySchema)
 };
