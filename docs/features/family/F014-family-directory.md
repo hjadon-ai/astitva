@@ -1,7 +1,7 @@
 # F014: Family directory search
 
-- **Status:** Proposed
-- **Branch:** Not created
+- **Status:** Done
+- **Branch:** `feature/consolidate-pending-changes`
 - **Pull request:** Not created
 
 ## Goal

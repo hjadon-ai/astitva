@@ -388,11 +388,25 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
 .family-share-row input { accent-color: var(--color-primary); }
 .family-shared-data { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--color-border); }
 .family-shared-data h3 { margin-top: 0; }
+.family-search p { margin: 8px 0 0; color: var(--color-subtle); }
+.family-overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.family-overview-grid > section { border: 1px solid var(--color-border); border-radius: 12px; padding: 18px; }
+.family-overview-grid h3 { margin-top: 0; }
+.family-overview-grid h4 { margin: 18px 0 8px; }
+.family-overview-grid p { color: var(--color-subtle); }
+.family-overview-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; }
+.family-share-ineligible { color: var(--color-subtle); margin: 16px 0 0; }
+.family-activity-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.family-activity-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--color-border); }
+.family-activity-list li > div { display: grid; gap: 3px; }
+.family-activity-list time { color: var(--color-subtle); white-space: nowrap; font-size: .875rem; }
 @media (max-width: 767px) {
   .family-page { width: min(100% - 32px, 680px); padding: 34px 0 56px; }
   .family-page > .surface { padding: 18px; }
   .family-member, .family-share-row { align-items: flex-start; flex-direction: column; }
   .family-form { grid-template-columns: 1fr; }
+  .family-overview-grid { grid-template-columns: 1fr; }
+  .family-activity-list li { flex-direction: column; gap: 4px; }
 }
 @media (max-width: 640px) {
   .priorities-panel { padding: 16px; }

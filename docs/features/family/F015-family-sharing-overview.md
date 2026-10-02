@@ -1,7 +1,7 @@
 # F015: Family sharing overview
 
-- **Status:** Proposed
-- **Branch:** Not created
+- **Status:** Done
+- **Branch:** `feature/consolidate-pending-changes`
 - **Pull request:** Not created
 
 ## Goal

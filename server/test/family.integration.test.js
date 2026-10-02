@@ -13,7 +13,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const express = require('express');
   const User = require('../src/models/User');
   const Session = require('../src/models/Session');
-  const { Family, FamilyInvitation } = require('../src/models/Family');
+  const { Family, FamilyInvitation, FamilyActivity } = require('../src/models/Family');
   const { Meal } = require('../src/models/Diet');
   const ids = Array.from({ length: 3 }, () => new mongoose.Types.ObjectId());
   const cookies = ids.map(() => crypto.randomBytes(32).toString('hex'));
@@ -24,6 +24,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
       const families = await Family.find({ creatorId: { $in: ids } }).select('_id').lean();
       await Promise.all([
         FamilyInvitation.deleteMany({ familyId: { $in: families.map((family) => family._id) } }),
+        FamilyActivity.deleteMany({ familyId: { $in: families.map((family) => family._id) } }),
         Family.deleteMany({ creatorId: { $in: ids } }), Meal.deleteMany({ userId: { $in: ids } }),
         Session.deleteMany({ userId: { $in: ids } }), User.deleteMany({ _id: { $in: ids } })
       ]);
@@ -31,7 +32,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
     await mongoose.disconnect();
   });
   await mongoose.connect(process.env.MONGODB_URL, { serverSelectionTimeoutMS: 2500 });
-  await Promise.all([Family.createIndexes(), FamilyInvitation.createIndexes()]);
+  await Promise.all([Family.createIndexes(), FamilyInvitation.createIndexes(), FamilyActivity.createIndexes()]);
   for (let i = 0; i < ids.length; i++) {
     await User.create({ _id: ids[i], name: ['Alex', 'Blair', 'Casey'][i],
       email: `f018-${ids[i]}@example.invalid`, passwordHash: 'fixture', emailVerifiedAt: new Date() });
@@ -56,6 +57,10 @@ test('F018 invitation, perspective, roles, and private sharing', {
   assert.equal(created.status, 201);
   const familyId = created.body.family.id;
   assert.equal(created.body.family.self.role, 'ADMIN');
+  assert.equal((await request('GET', '/sharing/summary')).body.features.diet.sharedWith.length, 0);
+  assert.equal((await request('GET', `/${familyId}/activity`, undefined, null)).status, 401);
+  assert.equal((await request('GET', `/${familyId}/activity?limit=0`)).status, 400);
+  assert.equal((await request('GET', `/${familyId}/activity?before=bad`)).status, 400);
   const child = await request('POST', `/${familyId}/people`, { name: 'Casey',
     email: `f018-${ids[2]}@example.invalid`, relationship: 'son' });
   assert.equal(child.status, 201);
@@ -68,6 +73,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const wifeId = wifeConnection.person.id;
   assert.equal(wifeConnection.label, 'Wife');
   assert.equal((await request('GET', `/${familyId}`, undefined, 1)).status, 404, 'email matching alone grants no access');
+  assert.equal((await request('GET', `/${familyId}/activity`, undefined, 1)).status, 404);
   const token = crypto.randomBytes(32).toString('hex');
   await FamilyInvitation.create({ familyId, personId: wifeId, email: `f018-${ids[1]}@example.invalid`,
     tokenHash: crypto.createHash('sha256').update(token).digest('hex'), expiresAt: new Date(Date.now() + 3600000) });
@@ -79,6 +85,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const accepted = await request('POST', '/invitations/accept', { token }, 1);
   assert.equal(accepted.status, 200);
   assert.equal(accepted.body.family.self.role, 'READONLY');
+  assert.equal((await request('GET', `/${familyId}/activity`, undefined, 1)).status, 200);
   assert.equal(accepted.body.family.connections[0].label, 'Husband');
   assert.equal((await Family.exists({ _id: wifeOwnFamily.body.family.id })), null, 'empty duplicate family is removed after acceptance');
   assert.equal((await request('GET', '', undefined, 1)).body.families.length, 1);
@@ -115,14 +122,35 @@ test('F018 invitation, perspective, roles, and private sharing', {
   assert.equal((await request('POST', `/${familyId}/people`, { name: 'Dana', relationship: 'mother' }, 1)).status, 201);
   assert.equal((await request('DELETE', `/${familyId}/relations/${wifeView.body.family.connections[0].relationId}`, undefined, 1)).status, 403);
   assert.equal((await request('PUT', `/${familyId}/shares/diet/${ids[1]}`)).status, 200);
+  const ownerSummary = (await request('GET', '/sharing/summary')).body.features;
+  const recipientSummary = (await request('GET', '/sharing/summary', undefined, 1)).body.features;
+  assert.equal(ownerSummary.diet.sharedWith[0].person.name, 'Blair');
+  assert.equal(recipientSummary.diet.sharedBy[0].person.name, 'Alex');
+  assert.equal(ownerSummary.finance.sharedWith.length, 0);
+  assert.equal(JSON.stringify(ownerSummary).includes('f018-'), false, 'summary omits emails');
+  const firstActivityPage = await request('GET', `/${familyId}/activity?limit=2`, undefined, 1);
+  assert.equal(firstActivityPage.status, 200);
+  assert.equal(firstActivityPage.body.events.length, 2);
+  assert.ok(firstActivityPage.body.nextCursor);
+  const secondActivityPage = await request('GET', `/${familyId}/activity?limit=2&before=${encodeURIComponent(firstActivityPage.body.nextCursor)}`, undefined, 1);
+  assert.equal(secondActivityPage.status, 200);
+  assert.notEqual(firstActivityPage.body.events[1].id, secondActivityPage.body.events[0].id);
+  assert.equal(JSON.stringify(firstActivityPage.body).includes('f018-'), false, 'activity omits emails');
+  assert.equal(JSON.stringify(firstActivityPage.body).includes(token), false, 'activity omits invitation token');
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-09-30`, undefined, 1)).status, 200);
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-02-31`, undefined, 1)).status, 400);
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/finance?month=2026-09`, undefined, 1)).status, 403);
+  assert.equal((await request('PUT', `/${familyId}/shares/finance/${ids[1]}`)).status, 200);
+  assert.equal((await request('GET', '/sharing/summary', undefined, 1)).body.features.finance.sharedBy.length, 1);
+  assert.equal((await request('DELETE', `/${familyId}/shares/finance/${ids[1]}`)).status, 200);
+  assert.equal((await request('GET', '/sharing/summary', undefined, 1)).body.features.finance.sharedBy.length, 0);
   assert.equal((await request('DELETE', `/${familyId}/shares/diet/${ids[1]}`)).status, 200);
+  assert.equal((await request('GET', '/sharing/summary', undefined, 1)).body.features.diet.sharedBy.length, 0);
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-09-30`, undefined, 1)).status, 403);
   assert.equal((await request('PUT', `/${familyId}/shares/diet/${ids[1]}`)).status, 200);
   assert.equal((await request('DELETE', `/${familyId}/relations/${wifeView.body.family.connections[0].relationId}`)).status, 200);
   assert.equal((await request('GET', `/${familyId}`, undefined, 1)).status, 404, 'disconnect revokes membership');
+  assert.equal((await request('GET', `/${familyId}/activity`, undefined, 1)).status, 404, 'disconnect revokes activity access');
   assert.equal((await request('GET', `/${familyId}/shared/${ids[0]}/diet?date=2026-09-30`, undefined, 1)).status, 404, 'disconnect revokes sharing');
   assert.equal((await request('GET', `/${familyId}`, undefined, 2)).status, 404);
 });

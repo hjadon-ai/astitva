@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const Session = require('../models/Session');
 const User = require('../models/User');
-const { Family, FamilyInvitation } = require('../models/Family');
+const { Family, FamilyInvitation, FamilyActivity } = require('../models/Family');
 const { Meal, Targets, fields } = require('../models/Diet');
 const { FinanceAccount, FinanceTransaction, FinanceHolding } = require('../models/Finance');
 const { getRuntimeConfig } = require('../config/runtime');
@@ -49,6 +49,8 @@ const publicPerson = (person) => ({
   gender: person.gender, role: person.role, status: person.status,
   userId: person.userId ? String(person.userId) : null
 });
+const sharePerson = (person) => ({ id: String(person._id), name: person.name,
+  userId: String(person.userId), status: person.status });
 function familyView(family, viewer) {
   const connections = family.relations.flatMap((relation) => {
     const isFrom = same(relation.from, viewer._id);
@@ -88,6 +90,34 @@ async function memberFamily(request, response) {
 }
 function reject(response, message, status = 400) { return response.status(status).json({ error: message }); }
 
+async function recordActivity(family, actor, action, summary, { subject = null, feature = null } = {}) {
+  await FamilyActivity.create({
+    familyId: family._id,
+    actorUserId: actor?._id || null,
+    actorName: actor?.name || 'System',
+    action,
+    subjectPersonId: subject?._id || null,
+    subjectName: subject?.name || null,
+    feature,
+    summary
+  });
+}
+
+function activityCursor(entry) {
+  return Buffer.from(JSON.stringify([entry.createdAt.toISOString(), String(entry._id)])).toString('base64url');
+}
+
+function parseActivityCursor(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,200}$/.test(value)) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+    if (!Array.isArray(parsed) || parsed.length !== 2 ||
+        typeof parsed[0] !== 'string' || !Number.isFinite(Date.parse(parsed[0])) ||
+        !objectId(parsed[1])) return null;
+    return { createdAt: new Date(parsed[0]), id: parsed[1] };
+  } catch { return null; }
+}
+
 async function pruneDisconnected(family) {
   const creator = acceptedPerson(family, family.creatorId);
   const connected = new Set([String(creator._id)]);
@@ -102,13 +132,14 @@ async function pruneDisconnected(family) {
     }
   }
   const removed = family.people.filter((person) => !connected.has(String(person._id)));
-  if (!removed.length) return;
+  if (!removed.length) return [];
   const removedUsers = new Set(removed.filter((person) => person.userId).map((person) => String(person.userId)));
   await FamilyInvitation.deleteMany({ familyId: family._id, personId: { $in: removed.map((person) => person._id) } });
   family.people = family.people.filter((person) => connected.has(String(person._id)));
   family.relations = family.relations.filter((edge) => connected.has(String(edge.from)) && connected.has(String(edge.to)));
   family.shares = family.shares.filter((share) => !removedUsers.has(String(share.ownerId)) &&
     !removedUsers.has(String(share.recipientId)));
+  return removed.map((person) => ({ _id: person._id, name: person.name }));
 }
 
 router.get('/', async (request, response) => {
@@ -133,6 +164,49 @@ router.get('/invitations', async (request, response) => {
   }) });
 });
 
+router.get('/sharing/summary', async (request, response) => {
+  const families = await Family.find({ 'people.userId': request.familyUser._id });
+  const features = { diet: { sharedWith: [], sharedBy: [] }, finance: { sharedWith: [], sharedBy: [] } };
+  for (const family of families) {
+    if (!acceptedPerson(family, request.familyUser._id)) continue;
+    for (const share of family.shares) {
+      const owner = acceptedPerson(family, share.ownerId);
+      const recipient = acceptedPerson(family, share.recipientId);
+      if (!owner || !recipient || !features[share.feature]) continue;
+      if (same(share.ownerId, request.familyUser._id)) {
+        features[share.feature].sharedWith.push({ familyId: String(family._id), person: sharePerson(recipient) });
+      }
+      if (same(share.recipientId, request.familyUser._id)) {
+        features[share.feature].sharedBy.push({ familyId: String(family._id), person: sharePerson(owner) });
+      }
+    }
+  }
+  response.json({ features });
+});
+
+router.get('/:familyId/activity', async (request, response) => {
+  const context = await memberFamily(request, response);
+  if (!context) return;
+  const limit = request.query.limit === undefined ? 20 : Number(request.query.limit);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50 ||
+      Object.keys(request.query).some((key) => !['limit', 'before'].includes(key))) {
+    return reject(response, 'Use a limit from 1 to 50.', 400);
+  }
+  const before = request.query.before === undefined ? null : parseActivityCursor(request.query.before);
+  if (request.query.before !== undefined && !before) return reject(response, 'Invalid activity cursor.', 400);
+  const query = { familyId: context.family._id, createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } };
+  if (before) query.$or = [
+    { createdAt: { $lt: before.createdAt } },
+    { createdAt: before.createdAt, _id: { $lt: before.id } }
+  ];
+  const rows = await FamilyActivity.find(query).sort({ createdAt: -1, _id: -1 }).limit(limit + 1).lean();
+  const page = rows.slice(0, limit);
+  response.json({ events: page.map((entry) => ({ id: String(entry._id), actorName: entry.actorName,
+    action: entry.action, subjectName: entry.subjectName, feature: entry.feature,
+    summary: entry.summary, createdAt: entry.createdAt })),
+  nextCursor: rows.length > limit ? activityCursor(page.at(-1)) : null });
+});
+
 router.post('/', async (request, response) => {
   const existing = await Family.exists({ 'people.userId': request.familyUser._id });
   if (existing) return reject(response, 'Use your existing family to add relatives.', 409);
@@ -143,6 +217,7 @@ router.post('/', async (request, response) => {
     people: [{ name: request.familyUser.name, email: request.familyUser.email,
       userId: request.familyUser._id, status: 'ACCEPTED', role: 'ADMIN', gender }]
   });
+  await recordActivity(family, request.familyUser, 'FAMILY_CREATED', 'Created the family.');
   response.status(201).json({ family: familyView(family, family.people[0]) });
 });
 
@@ -155,8 +230,10 @@ router.patch('/:familyId/self', async (request, response) => {
   const context = await memberFamily(request, response);
   if (!context) return;
   if (!genders.includes(request.body?.gender)) return reject(response, 'Choose male, female, or neutral.');
+  if (context.viewer.gender === request.body.gender) return response.json({ family: familyView(context.family, context.viewer) });
   context.viewer.gender = request.body.gender;
   await context.family.save();
+  await recordActivity(context.family, request.familyUser, 'SELF_UPDATED', 'Updated their relationship labels.', { subject: context.viewer });
   response.json({ family: familyView(context.family, context.viewer) });
 });
 
@@ -200,6 +277,7 @@ router.post('/:familyId/people', async (request, response) => {
     }
   }
   await family.save();
+  await recordActivity(family, request.familyUser, 'PERSON_ADDED', `Added ${person.name} to the family.`, { subject: person });
   response.status(201).json({ family: familyView(family, viewer) });
 });
 
@@ -239,6 +317,7 @@ router.patch('/:familyId/people/:personId', async (request, response) => {
     person.email = value || null;
   }
   await family.save();
+  await recordActivity(family, request.familyUser, 'PERSON_UPDATED', `Updated ${person.name}'s family details.`, { subject: person });
   response.json({ family: familyView(family, viewer) });
 });
 
@@ -250,8 +329,10 @@ router.patch('/:familyId/people/:personId/role', async (request, response) => {
   const person = objectId(request.params.personId) && family.people.id(request.params.personId);
   if (!person || same(person._id, viewer._id)) return reject(response, 'Family person not found.', 404);
   if (!['ADMIN', 'EDITOR', 'READONLY'].includes(request.body?.role)) return reject(response, 'Choose an allowed role.');
+  if (person.role === request.body.role) return response.json({ family: familyView(family, viewer) });
   person.role = request.body.role;
   await family.save();
+  await recordActivity(family, request.familyUser, 'ROLE_CHANGED', `Changed ${person.name}'s family role to ${person.role}.`, { subject: person });
   response.json({ family: familyView(family, viewer) });
 });
 
@@ -265,6 +346,7 @@ router.delete('/:familyId/relations/:relationId', async (request, response) => {
     return reject(response, 'Relationship not found.', 404);
   }
   const otherId = same(relation.from, viewer._id) ? relation.to : relation.from;
+  const other = family.people.id(otherId);
   const isPartner = relation.type === 'partner';
   const parentId = relation.type === 'parent' ? relation.from : null;
   const childId = relation.type === 'parent' ? relation.to : null;
@@ -285,8 +367,10 @@ router.delete('/:familyId/relations/:relationId', async (request, response) => {
             same(candidate.from, viewer._id) && same(candidate.to, edge.to))) edge.deleteOne();
     }
   }
-  await pruneDisconnected(family);
+  const removed = await pruneDisconnected(family);
   await family.save();
+  await recordActivity(family, request.familyUser, 'RELATIONSHIP_REMOVED', `Removed a relationship with ${other.name}.`, { subject: other });
+  for (const person of removed) await recordActivity(family, null, 'BRANCH_PRUNED', `Removed disconnected person ${person.name} from the family.`, { subject: person });
   response.json({ family: familyView(family, viewer) });
 });
 
@@ -316,6 +400,7 @@ router.post('/:familyId/people/:personId/invite', createRateLimit({ max: 10, win
   }
   person.status = 'PENDING';
   await family.save();
+  await recordActivity(family, request.familyUser, 'INVITATION_SENT', `Invited ${person.name} to the family.`, { subject: person });
   response.status(202).json({ family: familyView(family, viewer), message: 'Invitation sent.' });
 });
 
@@ -342,6 +427,7 @@ async function acceptInvitation(request, response, invitation) {
     await Family.deleteOne({ _id: emptyOwnFamily._id, creatorId: request.familyUser._id,
       'people.1': { $exists: false }, 'relations.0': { $exists: false }, 'shares.0': { $exists: false } });
   }
+  await recordActivity(family, request.familyUser, 'INVITATION_ACCEPTED', `${person.name} accepted the family invitation.`, { subject: person });
   response.json({ family: familyView(family, person) });
 }
 
@@ -371,6 +457,7 @@ router.put('/:familyId/shares/:feature/:recipientId', async (request, response) 
       same(share.ownerId, viewer.userId) && same(share.recipientId, recipient.userId))) {
     family.shares.push({ ownerId: viewer.userId, recipientId: recipient.userId, feature: request.params.feature });
     await family.save();
+    await recordActivity(family, request.familyUser, 'SHARE_GRANTED', `Shared ${request.params.feature} with ${recipient.name}.`, { subject: recipient, feature: request.params.feature });
   }
   response.json({ family: familyView(family, viewer) });
 });
@@ -379,9 +466,16 @@ router.delete('/:familyId/shares/:feature/:recipientId', async (request, respons
   const context = await memberFamily(request, response);
   if (!context) return;
   const { family, viewer } = context;
+  if (!['diet', 'finance'].includes(request.params.feature)) return reject(response, 'Unknown feature.', 404);
+  const recipient = objectId(request.params.recipientId) && acceptedPerson(family, request.params.recipientId);
+  const hadShare = family.shares.some((share) => share.feature === request.params.feature &&
+    same(share.ownerId, viewer.userId) && same(share.recipientId, request.params.recipientId));
   family.shares = family.shares.filter((share) => !(share.feature === request.params.feature &&
     same(share.ownerId, viewer.userId) && same(share.recipientId, request.params.recipientId)));
-  await family.save();
+  if (hadShare) {
+    await family.save();
+    await recordActivity(family, request.familyUser, 'SHARE_REVOKED', `Stopped sharing ${request.params.feature} with ${recipient?.name || 'a former member'}.`, { subject: recipient || null, feature: request.params.feature });
+  }
   response.json({ family: familyView(family, viewer) });
 });
 

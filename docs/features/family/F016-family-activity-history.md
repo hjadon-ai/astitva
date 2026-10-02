@@ -1,7 +1,7 @@
 # F016: Family activity history
 
-- **Status:** Proposed
-- **Branch:** Not created
+- **Status:** Done
+- **Branch:** `feature/consolidate-pending-changes`
 - **Pull request:** Not created
 
 ## Goal
@@ -56,7 +56,12 @@ Proposed `familyActivity` collection with `familyId`, `actorUserId` or system ac
 
 After approval and implementation, run authenticated API tests for access and pagination, then manually change a role and a share grant in Stage and confirm the timeline names the actor and action.
 
-## Open questions
+## Owner decisions
 
-1. Should all accepted members see the full family activity timeline, or should invitation, role, and share events be restricted to ADMINs and the people involved?
-2. How long should activity be retained, and should a member who leaves retain access to their own past entries?
+### 1. Should all accepted members see the full family activity timeline, or should invitation, role, and share events be restricted to ADMINs and the people involved?
+
+> All
+
+### 2. How long should activity be retained, and should a member who leaves retain access to their own past entries?
+
+> for a week
