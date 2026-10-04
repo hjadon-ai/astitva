@@ -1,4 +1,9 @@
 {
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": "web/dist",
     "ignore": [
@@ -41,5 +46,14 @@
         ]
       }
     ]
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
   }
 }

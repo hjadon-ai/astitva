@@ -12,6 +12,7 @@
     "build:production": "node scripts/validate-production-env.js && vite build"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "lucide-react": "^1.47.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

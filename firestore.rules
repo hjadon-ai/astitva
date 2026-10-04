@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Assumed data model:
+    // chats/{chatId}: active bool, participants list (two UIDs), aliases map, updatedAt timestamp.
+    // chats/{chatId}/grants/{grantId}: uid string, sessionHash string, expiresAt timestamp.
+    // chats/{chatId}/messages/{messageId}: senderUid string, senderAlias string,
+    //   text string (1-2000 characters), createdAt timestamp.
+    // Chat and grant documents are written only by the Admin SDK.
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function chat(chatId) {
+      return get(/databases/$(database)/documents/chats/$(chatId));
+    }
+
+    function isParticipant(chatId) {
+      return isAuthenticated() &&
+        chat(chatId).data.active == true &&
+        request.auth.uid in chat(chatId).data.participants;
+    }
+
+    function hasActiveGrant(chatId) {
+      return isParticipant(chatId) &&
+        request.auth.token.chatId == chatId &&
+        request.auth.token.grantId is string &&
+        exists(/databases/$(database)/documents/chats/$(chatId)/grants/$(request.auth.token.grantId)) &&
+        get(/databases/$(database)/documents/chats/$(chatId)/grants/$(request.auth.token.grantId)).data.uid == request.auth.uid &&
+        get(/databases/$(database)/documents/chats/$(chatId)/grants/$(request.auth.token.grantId)).data.expiresAt > request.time;
+    }
+
+    function isValidMessage(data, chatId) {
+      return data.keys().hasAll(['senderUid', 'senderAlias', 'text', 'createdAt']) &&
+        data.keys().hasOnly(['senderUid', 'senderAlias', 'text', 'createdAt']) &&
+        data.senderUid is string && data.senderUid == request.auth.uid &&
+        data.senderAlias is string && data.senderAlias.size() >= 1 && data.senderAlias.size() <= 40 &&
+        data.senderAlias == chat(chatId).data.aliases[request.auth.uid] &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 2000 &&
+        data.createdAt is timestamp && data.createdAt == request.time;
+    }
+
+    match /chats/{chatId} {
+      allow read, write: if false;
+
+      match /grants/{grantId} {
+        allow read, write: if false;
+      }
+
+      match /messages/{messageId} {
+        allow get: if hasActiveGrant(chatId);
+        allow list: if hasActiveGrant(chatId) && request.query.limit != null && request.query.limit <= 50;
+        allow create: if hasActiveGrant(chatId) && isValidMessage(request.resource.data, chatId);
+        allow update, delete: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
