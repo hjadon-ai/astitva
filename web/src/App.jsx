@@ -5,6 +5,7 @@ import Priorities from './Priorities';
 import Finance from './Finance';
 import Family from './Family';
 import Chat from './Chat';
+import Admin from './Admin';
 import { AppShell, Badge, Button, EnvironmentBanner, FormField, LoadingState, PageHeader, StatCard, Surface } from './ui';
 import { version as webVersion } from '../package.json';
 
@@ -40,6 +41,8 @@ async function apiRequest(path, options = {}) {
     const details = body.error;
     const error = new Error(typeof details === 'string' ? details : details?.message || 'Something went wrong.');
     error.status = response.status;
+    error.code = body.code;
+    error.details = body;
     if (body.retryAt) error.retryAt = body.retryAt;
     if (details && typeof details === 'object') Object.assign(error, { code: details.code, details });
     throw error;
@@ -403,9 +406,10 @@ function Profile({ user, onLogout, runtime }) {
   const [page, setPage] = useState(pageFromHash);
   useEffect(() => {
     const change = () => setPage(pageFromHash());
+    change();
     window.addEventListener('hashchange', change);
     return () => window.removeEventListener('hashchange', change);
-  }, []);
+  }, [user.features]);
   return (
     <AppShell page={page} user={user} runtime={runtime} onLogout={onLogout}>
       {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
@@ -455,6 +459,30 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
+  function expireSession() {
+    setSessionToken(null);
+    setUser(null);
+  }
+
+  async function refreshUser() {
+    try { setUser((await apiRequest('/api/auth/me')).user); }
+    catch (error) { if (error.status === 401) expireSession(); }
+  }
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const result = await apiRequest('/api/auth/me');
+        if (active) setUser(result.user);
+      } catch (error) { if (active && error.status === 401) expireSession(); }
+    };
+    window.addEventListener('focus', refresh);
+    const timer = window.setInterval(refresh, 60000);
+    return () => { active = false; window.removeEventListener('focus', refresh); window.clearInterval(timer); };
+  }, [user?.id]);
+
   async function logout() {
     try { await apiRequest('/api/auth/logout', { method: 'POST' }); }
     finally { setSessionToken(null); setUser(null); }
@@ -474,5 +502,7 @@ export default function App() {
   }
   if (!user) return <PublicHome onAuthenticated={setUser} runtime={runtime} />;
   if (!user.emailVerified) return <VerificationRequired user={user} onLogout={logout} runtime={runtime} />;
+  if (location.pathname === '/admin') return <Admin user={user} runtime={runtime} onLogout={logout}
+    apiRequest={apiRequest} onExpired={expireSession} onUserRefresh={refreshUser} />;
   return <Profile user={user} onLogout={logout} runtime={runtime} />;
 }

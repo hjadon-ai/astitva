@@ -40,9 +40,11 @@ async function revokeFirebaseGrants({ userId, sessionHash }) {
   if (sessionHash) query = query.where('sessionHash', '==', sessionHash);
   const grants = await query.get();
   if (grants.empty) return;
-  const batch = firestore.batch();
-  grants.forEach((entry) => batch.delete(entry.ref));
-  await batch.commit();
+  for (let offset = 0; offset < grants.docs.length; offset += 400) {
+    const batch = firestore.batch();
+    grants.docs.slice(offset, offset + 400).forEach((entry) => batch.delete(entry.ref));
+    await batch.commit();
+  }
 }
 
 module.exports = { firebaseAuth, firebaseFirestore, revokeFirebaseGrants };

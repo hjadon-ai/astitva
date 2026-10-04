@@ -60,9 +60,52 @@
               "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/login",
-            "description": "Production returns sessionToken alongside the HTTP-only cookie. Protected requests may use Authorization: Bearer <sessionToken>. The user response includes feature flags from invitedEmails; missing flags default to Family only. Never log or share the token."
+            "description": "Production browser login returns sessionToken alongside the HTTP-only cookie. Protected requests may use Authorization: Bearer <sessionToken>. The user response includes feature flags from invitedEmails; missing flags default to Family only. Never log or share the token. For native iOS login: remove Origin, disable the cookie jar, add X-Astitva-Client: ios, and keep Content-Type: application/json. The response returns sessionToken without setting a session cookie. Native authenticated writes use X-Astitva-Client: ios and Authorization: Bearer <sessionToken>, with no Origin or Cookie."
           },
           "response": []
+        },
+        {
+          "name": "Postman bearer login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Astitva-Client",
+                "value": "postman"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Disable cookie jar in request Settings. Do not send Origin, Cookie, or Authorization. Login returns sessionToken. Store it in a local sessionToken variable for subsequent bearer requests.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset(\"sessionToken\");",
+                  "pm.test(\"Login succeeded\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const token = pm.response.json().sessionToken;",
+                  "  pm.test(\"Session token returned\", function () { pm.expect(token).to.match(/^[a-f0-9]{64}$/i); });",
+                  "  if (typeof token === \"string\" && /^[a-f0-9]{64}$/i.test(token)) pm.environment.set(\"sessionToken\", token);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Verify email",
@@ -174,6 +217,68 @@
             "url": "{{baseUrl}}/api/auth/logout"
           },
           "response": []
+        },
+        {
+          "name": "Postman bearer current user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Astitva-Client",
+                "value": "postman"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{sessionToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Disable cookie jar in request Settings. Omit Origin and Cookie. Uses the token from Postman bearer login."
+          },
+          "response": []
+        },
+        {
+          "name": "Postman bearer logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Astitva-Client",
+                "value": "postman"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{sessionToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/auth/logout",
+            "description": "Disable cookie jar in request Settings. Omit Origin and Cookie. Uses the token from Postman bearer login."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Logged out\", function () { pm.response.to.have.status(204); });",
+                  "if (pm.response.code === 204) pm.environment.unset(\"sessionToken\");"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1266,7 +1371,7 @@
               "body": "{\n  \"error\": \"Email verification required.\"\n}"
             },
             {
-              "name": "Malformed item ID or item absent from this owner/date, including another account’s ID.",
+              "name": "Malformed item ID or item absent from this owner/date, including another account\u2019s ID.",
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
@@ -1516,7 +1621,7 @@
               "body": "{\n  \"error\": \"Email verification required.\"\n}"
             },
             {
-              "name": "Malformed item ID or item absent from this owner/date, including another account’s ID.",
+              "name": "Malformed item ID or item absent from this owner/date, including another account\u2019s ID.",
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
@@ -1766,7 +1871,7 @@
               "body": "{\n  \"error\": \"Email verification required.\"\n}"
             },
             {
-              "name": "Malformed item ID or item absent from this owner/date, including another account’s ID.",
+              "name": "Malformed item ID or item absent from this owner/date, including another account\u2019s ID.",
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
@@ -1946,7 +2051,7 @@
               "body": "{\n  \"error\": \"Email verification required.\"\n}"
             },
             {
-              "name": "Malformed item ID or item absent from this owner/date, including another account’s ID.",
+              "name": "Malformed item ID or item absent from this owner/date, including another account\u2019s ID.",
               "originalRequest": {
                 "method": "DELETE",
                 "header": [
@@ -2122,7 +2227,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/priorities/days/{{priorityDate}}/priorities/{{otherPriorityId}}",
-            "description": "Set otherPriorityId from account A, then log in as verified account B. Expect 404. Read this date as B and confirm none of A’s rows appear.",
+            "description": "Set otherPriorityId from account A, then log in as verified account B. Expect 404. Read this date as B and confirm none of A\u2019s rows appear.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"completed\": true\n}",
@@ -2135,7 +2240,7 @@
           },
           "response": [
             {
-              "name": "Malformed item ID or item absent from this owner/date, including another account’s ID.",
+              "name": "Malformed item ID or item absent from this owner/date, including another account\u2019s ID.",
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
@@ -2149,7 +2254,7 @@
                   }
                 ],
                 "url": "{{baseUrl}}/api/priorities/days/{{priorityDate}}/priorities/{{otherPriorityId}}",
-                "description": "Set otherPriorityId from account A, then log in as verified account B. Expect 404. Read this date as B and confirm none of A’s rows appear.",
+                "description": "Set otherPriorityId from account A, then log in as verified account B. Expect 404. Read this date as B and confirm none of A\u2019s rows appear.",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"completed\": true\n}",
@@ -2175,7 +2280,7 @@
       ]
     },
     {
-      "name": "Family (F014–F018)",
+      "name": "Family (F014\u2013F018)",
       "description": "Log in with a verified account. Set familyId, personId, relationId, ownerId, recipientId, invitationId and invitationToken from responses or the emailed link. All unsafe requests require the active webUrl Origin.",
       "item": [
         {
@@ -2665,6 +2770,277 @@
           }
         }
       ]
+    },
+    {
+      "name": "Admin Panel (F031)",
+      "description": "Log in as the verified ADMIN_EMAILS account using Postman bearer login first. Set adminSearch and adminInviteEmail. Copy a search result ID into adminUserId and fetch the user before editing. Responses capture versions; a stale edit returns 409. Existing users allow feature edits only. Creating an invitee sends email; delivery failures preserve access and permit retry. Origin uses the configured webUrl.",
+      "item": [
+        {
+          "name": "Search users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/users?q={{adminSearch}}&page=1&limit=25"
+          },
+          "response": []
+        },
+        {
+          "name": "Get user and version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/users/{{adminUserId}}"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const user = pm.response.json().user;",
+                  "  pm.environment.set(\"adminUserId\", user.id);",
+                  "  pm.environment.set(\"adminUserVersion\", JSON.stringify(user.expectedVersion));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit user features",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/users/{{adminUserId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": { \"priorities\": true, \"diet\": true, \"finance\": false, \"family\": true, \"chat\": false },\n  \"expectedVersion\": {{adminUserVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const user = pm.response.json().user;",
+                  "  pm.environment.set(\"adminUserId\", user.id);",
+                  "  pm.environment.set(\"adminUserVersion\", JSON.stringify(user.expectedVersion));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Find invitee and version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/invitees?email={{adminInviteEmail}}"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) {",
+                  "  const invitee = pm.response.json().invitee;",
+                  "  pm.environment.set(\"adminInviteeId\", invitee.id);",
+                  "  pm.environment.set(\"adminInviteeVersion\", invitee.expectedVersion);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add invitee access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/invitees",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminInviteEmail}}\",\n  \"features\": { \"priorities\": false, \"diet\": false, \"finance\": false, \"family\": true, \"chat\": false }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) {",
+                  "  const invitee = pm.response.json().invitee;",
+                  "  pm.environment.set(\"adminInviteeId\", invitee.id);",
+                  "  pm.environment.set(\"adminInviteeVersion\", invitee.expectedVersion);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit invitee features",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/invitees/{{adminInviteeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": { \"diet\": true, \"chat\": false },\n  \"expectedVersion\": \"{{adminInviteeVersion}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) {",
+                  "  const invitee = pm.response.json().invitee;",
+                  "  pm.environment.set(\"adminInviteeId\", invitee.id);",
+                  "  pm.environment.set(\"adminInviteeVersion\", invitee.expectedVersion);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send invitation email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/admin/invitees/{{adminInviteeId}}/send-invitation"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "adminSearch",
+      "value": ""
+    },
+    {
+      "key": "adminInviteEmail",
+      "value": ""
+    },
+    {
+      "key": "adminUserId",
+      "value": ""
+    },
+    {
+      "key": "adminInviteeId",
+      "value": ""
+    },
+    {
+      "key": "adminUserVersion",
+      "value": ""
+    },
+    {
+      "key": "adminInviteeVersion",
+      "value": ""
     }
   ]
 }

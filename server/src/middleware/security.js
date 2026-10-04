@@ -1,5 +1,10 @@
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+function isNativeRequest(request) {
+  return request.get('Origin') === undefined && request.get('Cookie') === undefined &&
+    ['ios', 'postman'].includes(request.get('X-Astitva-Client'));
+}
+
 function securityHeaders(runtime) {
   return (request, response, next) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
@@ -18,6 +23,15 @@ function unsafeOriginGuard(runtime) {
   return (request, response, next) => {
     if (!runtime.isProduction || !unsafeMethods.has(request.method)) return next();
     const origin = request.get('Origin');
+    // This marker selects native transport; route handlers still authenticate
+    // credentials/tokens. Never permit cookie-based or unapproved-origin writes.
+    const nativeRequest = isNativeRequest(request);
+    const bearerRequest = /^Bearer [a-f0-9]{64}$/i.test(request.get('Authorization') || '') &&
+      (!request.path?.startsWith('/api/auth/') || request.path === '/api/auth/logout');
+    const nativeLogin = request.method === 'POST' && request.path === '/api/auth/login' &&
+      request.get('Authorization') === undefined &&
+      /^application\/json(?:\s*;|$)/i.test(request.get('Content-Type') || '');
+    if (nativeRequest && (bearerRequest || nativeLogin)) return next();
     if (!origin || !allowedOrigins.has(origin)) {
       return response.status(403).json({
         error: 'This request origin is not allowed.',
@@ -55,4 +69,4 @@ function createRateLimit({ max, windowMs }) {
   };
 }
 
-module.exports = { createRateLimit, securityHeaders, unsafeOriginGuard };
+module.exports = { createRateLimit, isNativeRequest, securityHeaders, unsafeOriginGuard };

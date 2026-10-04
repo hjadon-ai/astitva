@@ -39,6 +39,7 @@ For copyable prompts and the review-to-merge cycle, see [Efficient feature workf
 | F028 | [Relevant home pages](ui/F028-relevant-home-pages.md) | Approved | Not created | Not created |
 | F029 | [Firestore storage and live delivery for anonymous chat messages](chat/F029-firestore-chat-messages.md) | Done | `feature/changes_03-Oct-2026` | Not created |
 | F030 | [Compact Anonymous Chat layout](ui/F030-compact-anonymous-chat-layout.md) | Done | `feature/changes_03-Oct-2026` | Not created |
+| F031 | [Admin Panel](admin/F031-admin-panel.md) | Done | `feature/changes_04-Oct-2026` | Not created |
 
 ## Rules
 

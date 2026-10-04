@@ -232,6 +232,14 @@ paths:
       tags: [Authentication]
       summary: Log in and create a session
       operationId: login
+      parameters:
+        - in: header
+          name: X-Astitva-Client
+          required: false
+          description: Use ios or postman for cookie-free login. Omit Origin and Cookie headers. Send application/json. Native authenticated writes require this marker and a bearer session token, with no Origin or Cookie.
+          schema:
+            type: string
+            enum: [ios, postman]
       requestBody:
         required: true
         content:
@@ -240,7 +248,7 @@ paths:
               $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
-          description: Login succeeded. The response sets an HTTP-only session cookie and, in Production, returns a session token for browsers that block cross-site cookies. Do not cache or log the token.
+          description: Login succeeded. Browser login sets an HTTP-only cookie and returns sessionToken in Production. Cookie-free native login returns sessionToken in every environment and does not set a session cookie. Do not cache or log the token.
           headers:
             Set-Cookie:
               schema:
@@ -456,7 +464,7 @@ components:
 
     User:
       type: object
-      required: [id, name, email, emailVerified, features]
+      required: [id, name, email, emailVerified, features, isAdmin]
       properties:
         id:
           type: string
@@ -467,6 +475,9 @@ components:
           format: email
         emailVerified:
           type: boolean
+        isAdmin:
+          type: boolean
+          description: Server-computed navigation hint; admin endpoints recheck the verified session and ADMIN_EMAILS. See admin.openapi.json for F031.
         features:
           type: object
           required: [priorities, diet, finance, family, chat]
