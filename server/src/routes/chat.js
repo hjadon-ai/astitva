@@ -8,6 +8,7 @@ const { getRuntimeConfig } = require('../config/runtime');
 const { createRateLimit } = require('../middleware/security');
 const { sessionToken } = require('../middleware/sessionToken');
 const { requireFeature } = require('../middleware/featureAccess');
+const { firebaseAuth, firebaseFirestore } = require('../services/firebaseAdmin');
 
 const router = express.Router();
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
@@ -28,9 +29,52 @@ router.use(async (request, response, next) => {
   if (!session.userId.emailVerifiedAt) return failure(response, 403, 'Email verification required.');
   request.featureUser = session.userId;
   request.chatUser = session.userId;
+  request.chatSession = session;
   next();
 });
 router.use(requireFeature('chat'));
+
+router.post('/firebase-session', async (request, response) => {
+  const auth = firebaseAuth();
+  const firestore = firebaseFirestore();
+  if (!auth || !firestore) return failure(response, 503, 'Firestore chat is not configured for this environment.');
+  const found = await member({ ...request, params: { id: request.body?.conversationId } }, response);
+  if (!found) return;
+  if (!unlocked(request, found.participant)) return failure(response, 403, 'Unlock this conversation first.');
+  try {
+    const chatId = String(found.conversation._id);
+    const grantId = crypto.randomBytes(16).toString('hex');
+    const expiresAt = found.participant.unlockExpiresAt;
+    const chatRef = firestore.doc(`chats/${chatId}`);
+    const aliases = Object.fromEntries(found.conversation.participants.map((participant) => [
+      String(participant.userId), participant.alias
+    ]));
+    await chatRef.set({ active: true,
+      participants: found.conversation.participants.map((participant) => String(participant.userId)), aliases,
+      updatedAt: new Date() }, { merge: true });
+    const existing = await chatRef.collection('messages').limit(1).get();
+    if (existing.empty && found.conversation.messages.length) {
+      const batch = firestore.batch();
+      for (const message of found.conversation.messages) {
+        const senderUid = String(message.senderId);
+        batch.set(chatRef.collection('messages').doc(String(message._id)), {
+          senderUid, senderAlias: aliases[senderUid] || 'Anonymous', text: message.text,
+          createdAt: message.createdAt
+        });
+      }
+      await batch.commit();
+    }
+    await chatRef.collection('grants').doc(grantId).set({ uid: String(request.chatUser._id),
+      sessionHash: request.chatSession.tokenHash, expiresAt });
+    const token = await auth.createCustomToken(String(request.chatUser._id), {
+      chatId, grantId, astitvaSession: request.chatSession.tokenHash
+    });
+    return response.json({ customToken: token, grantId, expiresAt });
+  } catch (error) {
+    console.error('Firebase custom-token creation failed:', error.message);
+    return failure(response, 503, 'Firestore chat authentication is unavailable.');
+  }
+});
 
 const rate = createRateLimit({ max: 40, windowMs: 15 * 60 * 1000 });
 const publicConversation = (conversation, userId) => ({
@@ -152,6 +196,15 @@ router.post('/conversations/:id/lock', async (request, response) => {
   await ChatConversation.updateOne({ _id: found.conversation._id,
     'participants.userId': request.chatUser._id },
   { $set: { 'participants.$.unlockTokenHash': null, 'participants.$.unlockExpiresAt': null } });
+  const firestore = firebaseFirestore();
+  if (firestore) {
+    const grants = await firestore.collection(`chats/${found.conversation._id}/grants`)
+      .where('uid', '==', String(request.chatUser._id))
+      .where('sessionHash', '==', request.chatSession.tokenHash).get();
+    const batch = firestore.batch();
+    grants.forEach((entry) => batch.delete(entry.ref));
+    if (!grants.empty) await batch.commit();
+  }
   response.status(204).end();
 });
 router.patch('/conversations/:id/alias', rate, async (request, response) => {
@@ -164,33 +217,17 @@ router.patch('/conversations/:id/alias', rate, async (request, response) => {
       unlockTokenHash: hash(request.get('X-Chat-Unlock')), unlockExpiresAt: { $gt: new Date() } } } },
   { $set: { 'participants.$.alias': request.body.alias.trim() } });
   if (!result.modifiedCount) return missing(response);
+  const firestore = firebaseFirestore();
+  if (firestore) await firestore.doc(`chats/${found.conversation._id}`).set({
+    aliases: { [String(request.chatUser._id)]: request.body.alias.trim() }, updatedAt: new Date()
+  }, { merge: true });
   response.status(204).end();
 });
 router.get('/conversations/:id/messages', async (request, response) => {
-  const found = await member(request, response);
-  if (!found) return;
-  if (!unlocked(request, found.participant)) return failure(response, 403, 'Unlock this conversation first.');
-  response.json({ messages: found.conversation.messages.map((message) => ({ id: String(message._id),
-    alias: found.conversation.participants.find((p) => same(p.userId, message.senderId))?.alias || 'Anonymous',
-    self: same(message.senderId, request.chatUser._id), text: message.text, createdAt: message.createdAt })) });
+  return failure(response, 410, 'Chat messages are available directly from Firestore.');
 });
 router.post('/conversations/:id/messages', rate, async (request, response) => {
-  const found = await member(request, response);
-  if (!found) return;
-  if (!unlocked(request, found.participant)) return failure(response, 403, 'Unlock this conversation first.');
-  const text = request.body?.text;
-  if (typeof text !== 'string' || !text.trim() || text.trim().length > 2000) {
-    return failure(response, 400, 'Enter a message of 1–2,000 characters.');
-  }
-  const message = { _id: crypto.randomBytes(12).toString('hex'), senderId: request.chatUser._id,
-    text: text.trim(), createdAt: new Date() };
-  const result = await ChatConversation.updateOne({ _id: found.conversation._id,
-    'participants.userId': request.chatUser._id,
-    'participants.unlockTokenHash': hash(request.get('X-Chat-Unlock')) },
-  { $push: { messages: message }, $set: { updatedAt: new Date() } });
-  if (!result.modifiedCount) return missing(response);
-  response.status(201).json({ message: { id: message._id, text: message.text, self: true,
-    alias: found.participant.alias, createdAt: message.createdAt } });
+  return failure(response, 410, 'Send chat messages directly to Firestore.');
 });
 async function removeConversations(request, response, all) {
   const query = { 'participants.userId': request.chatUser._id };
@@ -206,9 +243,20 @@ async function removeConversations(request, response, all) {
     const removed = await ChatConversation.findOneAndDelete({ _id: conversation._id,
       'participants.userId': request.chatUser._id });
     if (!removed) continue;
+    const firestore = firebaseFirestore();
+    let firestoreMessageCount = 0;
+    let firestoreBytes = 0;
+    if (firestore) {
+      const chatRef = firestore.doc(`chats/${removed._id}`);
+      const storedMessages = await chatRef.collection('messages').get();
+      firestoreMessageCount = storedMessages.size;
+      storedMessages.forEach((entry) => { firestoreBytes += Buffer.byteLength(JSON.stringify(entry.data())); });
+      await firestore.recursiveDelete(chatRef);
+    }
     const users = await User.find({ _id: { $in: removed.participants.map((p) => p.userId) } }).select('email').lean();
     await ChatDeletion.create({ emailIds: users.map((user) => user.email).sort(),
-      messageCount: removed.messages.length, bytesDeleted: Buffer.byteLength(JSON.stringify(removed.toObject())) });
+      messageCount: Math.max(removed.messages.length, firestoreMessageCount),
+      bytesDeleted: Buffer.byteLength(JSON.stringify(removed.toObject())) + firestoreBytes });
     deleted++;
   }
   response.json({ deleted });

@@ -11,6 +11,7 @@ const { sendPasswordResetEmail, sendVerificationEmail } = require('../services/e
 const { getRuntimeConfig } = require('../config/runtime');
 const { createRateLimit } = require('../middleware/security');
 const { sessionToken } = require('../middleware/sessionToken');
+const { revokeFirebaseGrants } = require('../services/firebaseAdmin');
 const { featuresForEmail } = require('../middleware/featureAccess');
 
 const router = express.Router();
@@ -317,7 +318,8 @@ router.post('/reset-password', async (request, response) => {
   await reset.userId.save();
   await Promise.all([
     PasswordResetToken.deleteMany({ userId: reset.userId._id }),
-    Session.deleteMany({ userId: reset.userId._id })
+    Session.deleteMany({ userId: reset.userId._id }),
+    revokeFirebaseGrants({ userId: reset.userId._id })
   ]);
 
   return response.status(200).json({ message: 'Password changed successfully. Please log in.' });
@@ -326,7 +328,13 @@ router.post('/reset-password', async (request, response) => {
 router.post('/logout', async (request, response) => {
   const token = sessionToken(request);
   if (token) {
-    await Session.deleteOne({ tokenHash: hashToken(token) });
+    const tokenHash = hashToken(token);
+    const query = Session.findOne({ tokenHash });
+    const session = typeof query?.populate === 'function'
+      ? await query.populate('userId')
+      : await query;
+    await Session.deleteOne({ tokenHash });
+    if (session?.userId) await revokeFirebaseGrants({ userId: session.userId._id || session.userId, sessionHash: tokenHash });
   }
   clearSessionCookie(response);
   return response.status(204).send();
