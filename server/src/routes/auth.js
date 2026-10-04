@@ -9,10 +9,11 @@ const { FamilyInvitation } = require('../models/Family');
 const InvitedEmail = require('../models/InvitedEmail');
 const { sendPasswordResetEmail, sendVerificationEmail } = require('../services/email');
 const { getRuntimeConfig } = require('../config/runtime');
-const { createRateLimit } = require('../middleware/security');
+const { createRateLimit, isNativeRequest } = require('../middleware/security');
 const { sessionToken } = require('../middleware/sessionToken');
 const { revokeFirebaseGrants } = require('../services/firebaseAdmin');
 const { featuresForEmail } = require('../middleware/featureAccess');
+const { isAdmin } = require('../middleware/adminAccess');
 
 const router = express.Router();
 const cookieName = () => getRuntimeConfig().sessionCookieName;
@@ -32,6 +33,7 @@ async function publicUser(user) {
     name: user.name,
     email: user.email,
     emailVerified: Boolean(user.emailVerifiedAt),
+    isAdmin: isAdmin(user),
     features: await featuresForEmail(user.email)
   };
 }
@@ -185,16 +187,18 @@ router.post('/login', loginRateLimit, async (request, response) => {
     expiresAt: new Date(Date.now() + sessionDuration)
   });
 
-  response.cookie(cookieName(), token, {
+  const nativeLogin = isNativeRequest(request);
+  if (!nativeLogin) response.cookie(cookieName(), token, {
     ...getRuntimeConfig().sessionCookieOptions,
     maxAge: sessionDuration
   });
   response.setHeader('Cache-Control', 'no-store');
   return response.status(200).json({ user: await publicUser(user),
-    ...(getRuntimeConfig().isProduction ? { sessionToken: token } : {}) });
+    ...((getRuntimeConfig().isProduction || nativeLogin) ? { sessionToken: token } : {}) });
 });
 
 router.get('/me', async (request, response) => {
+  response.setHeader('Cache-Control', 'no-store');
   const user = await authenticatedUser(request, response);
   if (!user) {
     return response.status(401).json({ error: 'Session is invalid or expired.' });

@@ -437,3 +437,26 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
 .chat-messages p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; }
 @media (min-width: 860px) { .chat-page { grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); align-items: start; } .chat-page > .page-header, .chat-page > .form-message, .chat-page > .surface:not(.chat-conversations):not(.chat-thread) { grid-column: 1 / -1; } .chat-conversations { grid-column: 1; } .chat-thread { grid-column: 2; } }
 @media (max-width: 640px) { .chat-page { width: min(100% - 32px, 680px); padding-top: 20px; } .chat-page > .surface { padding: 14px; } }
+
+.admin-page { width: min(100% - 48px, 1080px); margin: 0 auto; padding: 28px 0 56px; display: grid; gap: 20px; }
+.admin-page .page-header { margin-bottom: 0; }
+.admin-tabs, .admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.admin-tabs [aria-pressed="true"] { color: var(--color-primary); border-color: var(--color-primary); }
+.admin-search, .admin-results, .admin-editor { padding: 24px; }
+.admin-search form, .admin-editor form { display: grid; gap: 16px; }
+.admin-search form { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.admin-editor { display: grid; gap: 16px; }
+.admin-editor h2, .admin-editor p { margin: 0; overflow-wrap: anywhere; }
+.admin-results ul { list-style: none; padding: 0; }
+.admin-results li { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--color-border); }
+.admin-results li > div { display: grid; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.admin-results small, .admin-help { color: var(--color-muted); }
+.admin-features { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; border: 1px solid var(--color-border); border-radius: var(--radius-button); }
+.admin-features label { display: flex; gap: 8px; align-items: center; }
+.admin-features input { width: 18px; min-height: 18px; }
+@media (max-width: 600px) {
+  .admin-page { width: calc(100% - 32px); }
+  .admin-search form { grid-template-columns: 1fr; }
+  .admin-results li { align-items: start; flex-direction: column; }
+  .admin-search, .admin-results, .admin-editor { padding: 16px; }
+}

@@ -1,0 +1,577 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Astitva Admin Panel API (F031)",
+    "version": "1.0.0",
+    "description": "Uses the existing verified cookie or bearer Astitva session and server ADMIN_EMAILS. All responses are no-store. Production writes require the configured Origin, or the existing cookie-free native/Postman bearer transport. Existing users allow feature edits only. Invitation creation sends email; delivery failure preserves access and allows retry. Features use invitedEmails defaults; no stored admin role."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001"
+    }
+  ],
+  "security": [
+    {
+      "sessionCookie": []
+    },
+    {
+      "bearerSession": []
+    }
+  ],
+  "paths": {
+    "/api/admin/users": {
+      "get": {
+        "summary": "Search users by literal email/name substring",
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded results, sorted by name and ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminUser"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or forbidden fields"
+          },
+          "401": {
+            "description": "Missing or expired existing Astitva session"
+          },
+          "403": {
+            "description": "Unverified account or ADMIN_ACCESS_REQUIRED"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 25
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "summary": "Read safe user profile and feature access",
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or forbidden fields"
+          },
+          "401": {
+            "description": "Missing or expired existing Astitva session"
+          },
+          "403": {
+            "description": "Unverified account or ADMIN_ACCESS_REQUIRED"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "404": {
+            "description": "Record not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Save feature flags using a conditional invitation-record write",
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or forbidden fields"
+          },
+          "401": {
+            "description": "Missing or expired existing Astitva session"
+          },
+          "403": {
+            "description": "Unverified account or ADMIN_ACCESS_REQUIRED"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "404": {
+            "description": "Record not found"
+          },
+          "409": {
+            "description": "Stale edit version or existing invitee"
+          },
+          "503": {
+            "description": "CHAT_REVOCATION_PENDING: flags saved; existing Firestore grants need cleanup retry. Reload and save disabled Chat again."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserEdit"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/invitees": {
+      "get": {
+        "summary": "Find invitee by normalized exact email",
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or forbidden fields"
+          },
+          "401": {
+            "description": "Missing or expired existing Astitva session"
+          },
+          "403": {
+            "description": "Unverified account or ADMIN_ACCESS_REQUIRED"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "404": {
+            "description": "No invitee record; response also includes registered boolean"
+          }
+        },
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 254
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Grant signup eligibility and features, then send an invitation email",
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or forbidden fields"
+          },
+          "401": {
+            "description": "Missing or expired existing Astitva session"
+          },
+          "403": {
+            "description": "Unverified account or ADMIN_ACCESS_REQUIRED"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "409": {
+            "description": "Stale edit version or existing invitee"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitee"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/invitees/{id}": {
+      "patch": {
+        "summary": "Edit existing invitee feature flags",
+        "tags": [
+          "Admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or forbidden fields"
+          },
+          "401": {
+            "description": "Missing or expired existing Astitva session"
+          },
+          "403": {
+            "description": "Unverified account or ADMIN_ACCESS_REQUIRED"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "404": {
+            "description": "Record not found"
+          },
+          "409": {
+            "description": "Stale edit version or existing invitee"
+          },
+          "503": {
+            "description": "CHAT_REVOCATION_PENDING: flags saved; existing Firestore grants need cleanup retry. Reload and save disabled Chat again."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditInvitee"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/invitees/{id}/send-invitation": {
+      "post": {
+        "summary": "Explicitly send or resend invitation email (10/minute shared with creation)",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invitation sent"
+          },
+          "401": {
+            "description": "Missing or expired session"
+          },
+          "403": {
+            "description": "Admin access required"
+          },
+          "404": {
+            "description": "Invitee not found"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Invitation delivery failed; access preserved"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "astitva_stage_session",
+        "description": "Cookie name depends on runtime profile."
+      },
+      "bearerSession": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Existing 64-hex Astitva session token; not a JWT."
+      }
+    },
+    "schemas": {
+      "Features": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "priorities": {
+            "type": "boolean"
+          },
+          "diet": {
+            "type": "boolean"
+          },
+          "finance": {
+            "type": "boolean"
+          },
+          "family": {
+            "type": "boolean"
+          },
+          "chat": {
+            "type": "boolean"
+          }
+        },
+        "minProperties": 1
+      },
+      "UserVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "user": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "invitee": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "nullable": true
+          }
+        }
+      },
+      "AdminUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "features": {
+            "$ref": "#/components/schemas/Features"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/UserVersion"
+          }
+        }
+      },
+      "Invitee": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "registered": {
+            "type": "boolean"
+          },
+          "features": {
+            "$ref": "#/components/schemas/Features"
+          },
+          "expectedVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AdminUser"
+          }
+        }
+      },
+      "InviteeResponse": {
+        "type": "object",
+        "properties": {
+          "invitee": {
+            "$ref": "#/components/schemas/Invitee"
+          },
+          "invitationSent": {
+            "type": "boolean"
+          },
+          "warning": {
+            "type": "string"
+          }
+        }
+      },
+      "UserEdit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "features",
+          "expectedVersion"
+        ],
+        "properties": {
+          "features": {
+            "$ref": "#/components/schemas/Features"
+          },
+          "expectedVersion": {
+            "$ref": "#/components/schemas/UserVersion"
+          }
+        }
+      },
+      "CreateInvitee": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "email",
+          "features"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "features": {
+            "$ref": "#/components/schemas/Features"
+          }
+        }
+      },
+      "EditInvitee": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "features",
+          "expectedVersion"
+        ],
+        "properties": {
+          "features": {
+            "$ref": "#/components/schemas/Features"
+          },
+          "expectedVersion": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

@@ -7,7 +7,7 @@ const { ChatInvitation, ChatConversation, ChatDeletion } = require('../models/Ch
 const { getRuntimeConfig } = require('../config/runtime');
 const { createRateLimit } = require('../middleware/security');
 const { sessionToken } = require('../middleware/sessionToken');
-const { requireFeature } = require('../middleware/featureAccess');
+const { requireFeature, featuresForEmail } = require('../middleware/featureAccess');
 const { firebaseAuth, firebaseFirestore } = require('../services/firebaseAdmin');
 
 const router = express.Router();
@@ -69,6 +69,11 @@ router.post('/firebase-session', async (request, response) => {
     const token = await auth.createCustomToken(String(request.chatUser._id), {
       chatId, grantId, astitvaSession: request.chatSession.tokenHash
     });
+    // An admin may disable Chat while this request is issuing a grant.
+    if (!(await featuresForEmail(request.chatUser.email)).chat) {
+      await chatRef.collection('grants').doc(grantId).delete();
+      return failure(response, 403, 'Chat is no longer enabled for your account.');
+    }
     return response.json({ customToken: token, grantId, expiresAt });
   } catch (error) {
     console.error('Firebase custom-token creation failed:', error.message);

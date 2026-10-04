@@ -12,6 +12,8 @@ services:
         value: 22.20.0
       - key: ASTITVA_ENV
         value: production
+      - key: ADMIN_EMAILS
+        sync: false
       - key: MONGODB_URL
         sync: false
       - key: WEB_URL
