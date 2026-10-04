@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { ListChecks, Home, LogOut, Menu, MessageCircle, UsersRound, Utensils, WalletCards, X } from 'lucide-react';
+import { ListChecks, Home, LogOut, Menu, MessageCircle, Shield, UsersRound, Utensils, WalletCards, X } from 'lucide-react';
 
 const classes = (...values) => values.filter(Boolean).join(' ');
 
@@ -157,11 +157,13 @@ const navigation = [
   { id: 'diet', label: 'Diet', icon: Utensils, feature: 'diet' },
   { id: 'finance', label: 'Finance', icon: WalletCards, feature: 'finance' },
   { id: 'family', label: 'Family', icon: UsersRound, feature: 'family' },
-  { id: 'chat', label: 'Anonymous Chat', icon: MessageCircle, feature: 'chat' }
+  { id: 'chat', label: 'Anonymous Chat', icon: MessageCircle, feature: 'chat' },
+  { id: 'admin', label: 'Admin Panel', icon: Shield, admin: true }
 ];
 
 export function AppShell({ page, user, runtime, onLogout, children }) {
-  const visibleNavigation = navigation.filter((item) => !item.feature || (user.features || { family: true })[item.feature]);
+  const visibleNavigation = navigation.filter((item) => item.admin ? user.isAdmin :
+    !item.feature || (user.features || { family: true })[item.feature]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef(null);
   const closeRef = useRef(null);
@@ -183,7 +185,7 @@ export function AppShell({ page, user, runtime, onLogout, children }) {
       <div className="sidebar-heading">Workspace</div>
       <nav aria-label="Workspace navigation">
         {visibleNavigation.map(({ id, label, icon: Icon }) => (
-          <a key={id} className={page === id ? 'active' : ''} href={`#${id}`} aria-current={page === id ? 'page' : undefined} onClick={() => { if (drawerOpen) closeDrawer(); }}>
+          <a key={id} className={page === id ? 'active' : ''} href={id === 'admin' ? '/admin' : `/#${id}`} aria-current={page === id ? 'page' : undefined} onClick={() => { if (drawerOpen) closeDrawer(); }}>
             <Icon size={19} aria-hidden="true" /><span>{label}</span>
           </a>
         ))}
@@ -195,7 +197,7 @@ export function AppShell({ page, user, runtime, onLogout, children }) {
     <div className="app-frame">
       <EnvironmentBanner runtime={runtime} />
       <header className="mobile-header">
-        <a className="brand" href="#profile">Astitva<span>.</span></a>
+        <a className="brand" href="/#profile">Astitva<span>.</span></a>
         <span>{visibleNavigation.find((item) => item.id === page)?.label}</span>
         <IconButton ref={menuRef} label="Open navigation" icon={Menu} onClick={() => setDrawerOpen(true)} aria-expanded={drawerOpen} />
       </header>

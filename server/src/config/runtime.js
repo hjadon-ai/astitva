@@ -232,6 +232,11 @@ function productionConfig(profile, environment) {
 }
 
 function validateRuntimeEnvironment(environment = process.env) {
+  const adminEmails = [...new Set((environment.ADMIN_EMAILS || '').split(',')
+    .map((email) => email.trim().toLowerCase()).filter(Boolean))];
+  if (adminEmails.some((email) => email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+    throw new Error('ADMIN_EMAILS must contain comma-separated valid email addresses or be empty to disable admin access.');
+  }
   const name = environment.ASTITVA_ENV?.trim();
   const profile = profiles[name];
   if (!profile) throw new Error('ASTITVA_ENV must be dev, stage, or production.');
@@ -242,6 +247,7 @@ function validateRuntimeEnvironment(environment = process.env) {
 
   return Object.freeze({
     ...config,
+    adminEmails: Object.freeze(adminEmails),
     instanceId: crypto.createHash('sha256').update(`${name}:${config.mongoUrl}`).digest('hex').slice(0, 12)
   });
 }

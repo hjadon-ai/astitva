@@ -84,4 +84,15 @@ async function sendFamilyInvitationEmail(inviter, person, token, accountExists =
   });
 }
 
-module.exports = { sendPasswordResetEmail, sendVerificationEmail, sendFamilyInvitationEmail };
+async function sendAdminInvitationEmail(email, registered = false) {
+  const runtime = getRuntimeConfig();
+  await sendEmail({
+    from: runtime.smtp.from, to: email, subject: 'You are invited to Astitva',
+    text: ['You have been invited to use Astitva.', '',
+      registered ? 'Sign in with this email address to use your updated feature access:'
+        : 'Create an account with this email address, then verify your email to get started:',
+      runtime.webUrl, '', 'Your email address is not verified by this invitation.'].join('\n')
+  });
+}
+
+module.exports = { sendAdminInvitationEmail, sendPasswordResetEmail, sendVerificationEmail, sendFamilyInvitationEmail };

@@ -124,7 +124,7 @@ Both workflows use the GitHub `production` environment. Add required reviewers t
 3. An invited email can sign up, verify, log in, reload the page, reset its password, and log out.
 4. Profile and Diet read and write only Atlas Production data.
 5. Finance explains that it is disabled, and every Finance API returns `503 FINANCE_DISABLED`.
-6. A request from an unapproved or missing `Origin` cannot perform `POST`, `PUT`, `PATCH`, or `DELETE` operations.
+6. Cookie-based writes and requests with an unapproved `Origin` remain blocked. Cookie-free iOS requests without Origin require `X-Astitva-Client: ios`; JSON login accepts credentials and other supported writes require a bearer session token.
 7. Dev and Stage still start locally and use their original databases and cookies.
 
 Provider domains make the session cookie third-party state. Test login persistence in the intended browser. If the browser blocks it, use sibling custom web and API domains in a separately reviewed infrastructure change.
@@ -135,3 +135,19 @@ Provider domains make the session cookie third-party state. Test login persisten
 2. Roll Firebase Hosting back to the preceding release from the Firebase Hosting release history.
 3. Do not delete or overwrite Atlas data during an application rollback.
 4. If credentials may have been exposed, rotate them in the owning provider and update Render before redeploying.
+
+## Native iOS authentication
+
+Do not add device IP addresses to CORS_ORIGINS. Native login sends `X-Astitva-Client: ios` and `Content-Type: application/json`, with no Origin, Cookie, or Authorization header. It returns `sessionToken` in every profile without setting a session cookie. Subsequent authenticated requests use `Authorization: Bearer <sessionToken>`. Native writes also require `X-Astitva-Client: ios` and must omit Origin and Cookie. Disable automatic cookie handling in the iOS API client. The marker selects transport and does not authenticate the caller; existing credential, session, and feature checks remain authoritative. Native public auth writes other than login are not enabled by this change.
+
+## Postman bearer login
+
+Import `server/design/Astitva.postman_collection.json` and select an environment with `baseUrl`, `userEmail`, and `userPassword`. The Authentication folder includes Postman bearer login, current user, and logout requests. Enable Disable cookie jar in each request's Settings and keep Origin and Cookie absent. Login uses `X-Astitva-Client: postman` and JSON credentials, then saves `sessionToken` in the selected local environment; do not share the populated token. The follow-up requests use that token as bearer authorization, and successful logout clears it. Existing browser-style Postman requests can continue to send the approved `webUrl` Origin and use cookies.
+
+## Admin Panel (F031)
+
+Set `ADMIN_EMAILS` on the Render API service to a comma-separated allowlist of administrator emails, then redeploy/restart the API. `render.yaml` declares it with `sync: false`; do not configure it as a `VITE_` variable or expose it through `/api/health`. Empty disables admin access; malformed nonempty values prevent startup. Email matching trims whitespace and ignores case.
+
+Provision each address in `invitedEmails` before Production signup, then create and verify the normal account. The configuration does not bypass signup eligibility or verification. Open the web `/admin` page and log in normally; the existing cookie or bearer session works for the panel. Changing `ADMIN_EMAILS` and restarting removes the previous account's admin authority on subsequent requests without invalidating its ordinary login.
+
+For local Dev/Stage, set `ADMIN_EMAILS` independently in the corresponding ignored `server/.env.dev` or `.env.stage` file and restart with `./scripts/start-local.sh dev|stage`. Test with a verified admin and a non-admin; non-admins must see the permission message and Return to Home, and direct admin APIs must return `403`. The first release edits feature access only. Invitee creation saves access and sends an invitation email; delivery failures preserve access and can be retried with Send invitation email.

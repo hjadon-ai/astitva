@@ -44,6 +44,7 @@ function createApp() {
   });
 
   app.use('/api/auth', require('./routes/auth'));
+  app.use('/api/admin', require('./routes/admin'));
   app.use('/api/diet', require('./routes/diet'));
   app.use('/api/finance', require('./routes/finance'));
   app.use('/api/family', require('./routes/family'));

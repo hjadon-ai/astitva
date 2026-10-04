@@ -95,4 +95,23 @@ test('Production bearer session opens Family when cross-site cookies are unavail
   assert.equal((await fetch(`${base}/api/family`, { headers: {
     Authorization: `Bearer ${sessionToken}`
   } })).status, 401);
+  for (const client of ['ios', 'postman']) {
+    const nativeLogin = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: {
+      'X-Astitva-Client': client, 'Content-Type': 'application/json'
+    }, body: JSON.stringify({ email: user.email, password: 'password123' }) });
+    assert.equal(nativeLogin.status, 200);
+    assert.equal(nativeLogin.headers.get('set-cookie'), null);
+    const nativeToken = (await nativeLogin.json()).sessionToken;
+    assert.match(nativeToken, /^[a-f0-9]{64}$/);
+    const nativeHeaders = { 'X-Astitva-Client': client, Authorization: `Bearer ${nativeToken}` };
+    assert.equal((await fetch(`${base}/api/auth/me`, { headers: nativeHeaders })).status, 200);
+    assert.equal((await fetch(`${base}/api/auth/logout`, {
+      method: 'POST', headers: { 'X-Astitva-Client': client, Authorization: `Bearer ${'b'.repeat(64)}` }
+    })).status, 204);
+    assert.equal((await fetch(`${base}/api/auth/me`, { headers: nativeHeaders })).status, 200,
+      'a different token must not invalidate the native session');
+    assert.equal((await fetch(`${base}/api/auth/logout`, { method: 'POST', headers: nativeHeaders })).status, 204);
+    assert.equal((await fetch(`${base}/api/auth/me`, { headers: nativeHeaders })).status, 401);
+  }
+
 });

@@ -174,3 +174,13 @@ test('Production requires Plaid credentials, encryption, and redirect configurat
   assert.equal(config.financeProviderConfigured, true);
   assert.equal(config.plaidRedirectUri, 'https://astitva-example.web.app');
 });
+
+test('Admin email is normalized, private, optional, and validated', () => {
+  const config = { ...base, ASTITVA_ENV: 'stage', PLAID_ENV: 'production',
+    MONGODB_URL: 'mongodb://127.0.0.1:27017/astitva_stage' };
+  assert.deepEqual(validateRuntimeEnvironment(config).adminEmails, []);
+  assert.deepEqual(validateRuntimeEnvironment({ ...config, ADMIN_EMAILS: ' Admin@Example.com , other@example.com,admin@example.com ' }).adminEmails, ['admin@example.com', 'other@example.com']);
+  for (const email of ['broken', 'a b@example.com', 'a@b', 'a'.repeat(255) + '@example.com']) {
+    assert.throws(() => validateRuntimeEnvironment({ ...config, ADMIN_EMAILS: email }), /ADMIN_EMAILS/);
+  }
+});
