@@ -1,6 +1,9 @@
 # F010: Quick Notes
 
 - **Status:** Approved
+- **Priority:** Medium
+- **Approved at:** 2026-10-06T07:05:22Z
+- **Depends on:** F002, F003
 - **Branch:** Not created
 - **Pull request:** Not created
 
@@ -204,3 +207,7 @@ Documentation only; no implementation tests run. After implementation approval, 
 ## Open questions
 
 None. The project owner approved the proposed responsive layout, plain-text scope and limits, explicit-save and unsaved-navigation behavior, deletion confirmation, and integer-version conflict handling.
+
+## Approval reconfirmation
+
+Owner reconfirmed existing approved scope on 2026-10-06T07:05:22Z. Priorities are current planning metadata and may change without changing scope.

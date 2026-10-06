@@ -2,7 +2,7 @@
 
 This file is the current list of Astitva features.
 
-For copyable prompts and the review-to-merge cycle, see [Efficient feature workflow](WORKFLOW.md).
+For copyable prompts and the review-to-merge workflow, see [Efficient feature workflow](WORKFLOW.md).
 
 ## Status flow
 
@@ -40,14 +40,15 @@ For copyable prompts and the review-to-merge cycle, see [Efficient feature workf
 | F029 | [Firestore storage and live delivery for anonymous chat messages](chat/F029-firestore-chat-messages.md) | Done | `feature/changes_03-Oct-2026` | Not created |
 | F030 | [Compact Anonymous Chat layout](ui/F030-compact-anonymous-chat-layout.md) | Done | `feature/changes_03-Oct-2026` | Not created |
 | F031 | [Admin Panel](admin/F031-admin-panel.md) | Done | `feature/changes_04-Oct-2026` | Not created |
+| F033 | [AI-assisted development foundation and Development Control Center](infra/F033-ai-assisted-development-foundation.md) | Done | `feature/F033-ai-assisted-development-foundation` | Not created |
 
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.
 - Store infrastructure and deployment feature documents in `infra/`.
 - The project owner approves scope and architecture decisions.
-- When the owner asks to implement a feature, complete the implementation and mark its document and index row **Done** in the same work. Keep approved but unimplemented features **Approved**.
-- Record the same active work branch for features implemented together. Create the next branch only after the current branch is merged into `main`.
-- Keep feature branch name as feature/{date}-A, keep commit message with Fxx implemented 
+- Implement only explicitly Approved scope. Mark work In Progress while implementing and Review when ready for owner review. Only the owner may move Review to Done by confirmation after manual review/merge. Preserve historical Done records.
+- Implement one feature at a time on `feature/F###-short-name`; resume interrupted work on its existing feature branch. Preserve historical branch names.
+- No shared daily or cycle implementation branches.
 - Update this table when a status, branch, or pull request changes.
 - Do not push or create a pull request without explicit approval.

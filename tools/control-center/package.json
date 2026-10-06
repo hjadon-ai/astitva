@@ -1,0 +1,13 @@
+{
+  "name": "astitva-control-center",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.20.0 <25"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test development.test.mjs && node test.mjs",
+    "check": "node --check server.mjs && node --check development-planner.mjs && node --check development-state.mjs && node --check public/app.js"
+  }
+}
