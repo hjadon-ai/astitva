@@ -92,3 +92,7 @@ The automated MongoDB ownership and concurrency suite and the web build pass. Se
 F012 adds a locally reviewable Production profile and deployment configuration for Firebase Hosting, Render, MongoDB Atlas, invite-only signup, and provider-neutral SMTP. It does not deploy anything. See `docs/infra/production.md`.
 
 F008 Diet targets and Meal Library is implemented on `feature/F008-diet-targets-meal-library` and merged into main. It adds six daily targets, water tracking, a personal Meal Library, and CSV preview/import.
+
+## Local Development Control Center
+
+Tracked source: [tools/control-center](tools/control-center/README.md). Start with `node tools/control-center/server.mjs`; validate with `npm --prefix tools/control-center test` and `npm --prefix tools/control-center run check`. Node `>=22.20.0 <25`, no dependencies. Runtime data remains ignored under `.local/control-center/`. Development evaluations are manual dry runs only.

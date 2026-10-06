@@ -1,41 +1,27 @@
-# Efficient feature workflow
+# Feature workflow
 
-Use one active work branch for a cycle of features. Propose and approve features first, implement approved features on that branch, review and test them locally, then push the branch once. You create and merge the pull request. Only after the merge do we start a new branch from updated `main`.
+Implement one explicitly Approved feature at a time on `feature/F###-short-name`. Resume interrupted work on its existing branch before selecting another feature. No shared daily or cycle implementation branches. Preserve unrelated work and historical Done/branch records.
 
-Feature documents live in `docs/features/<category>/`; [README.md](README.md) tracks IDs and status. The [local Control Center](../../.local/control-center/README.md) at `http://127.0.0.1:4318` lets you review and approve proposals. Approval changes the documents to **Approved**; it does not start implementation.
+Feature documents live in `docs/features/<category>/`; [README.md](README.md) tracks IDs and status. The [local Control Center](../../tools/control-center/README.md) supports proposal review and manual dry-run planning at `http://127.0.0.1:4318`. Approval authorizes scope; it does not start implementation.
 
-## 1. Ask for FXX proposals
+## 1. Propose and approve
 
-Specify a category and the outcome you want. This prompt creates review material only:
+> Propose an F### feature for <goal>. Read existing features, use the next available ID and the template, and update the index. Do not implement, commit or push.
 
-> Propose two new FXX features in `docs/features/<category>/` for **<goal>**. Read existing features first, use the next unused IDs, update the feature index, and include user flow, scope, acceptance criteria, and open questions. Mark them Proposed. Do not implement code, commit, or push.
+The owner explicitly approves scope and supplies High, Medium or Low priority, a timezone-qualified approval timestamp and explicit dependencies. Planning metadata may change without changing scope. Never infer approval dates. Proposed work is ineligible.
 
-Example: “Propose two new FXX features in `docs/features/ui/` to make the public and signed-in home pages more useful. Do not implement.”
+## 2. Implement approved scope
 
-Review each proposal in Control Center, answer its open questions, and click **Approve** for the features you want built. Leave unwanted or undecided proposals as Proposed.
+> Implement the approved F019 document. Reuse or create `feature/F019-family-invitation-management`. Mark the document and index In Progress while working. Run appropriate checks and mark Review when ready for me. Preserve unrelated changes. Do not commit or push.
 
-## 2. Implement approved features
+This example does not authorize starting F019. Interrupted In Progress work reserves the implementation slot. Unsafe or ambiguous conditions require a visible blocker and owner action.
 
-After approval, name the exact IDs. This avoids implementing other proposals in the same category:
+## 3. Owner review and publication
 
-> Implement the approved features **F019 and F028** on the current active work branch. Follow their approved documents and owner decisions. Run relevant automated checks and local Stage checks. Mark each implemented feature Done in its document and the feature index. Do not push yet; give me local review steps.
+Review means implementation and validation are ready for the owner, not Done or deployed. Commit and push only when explicitly requested, limited to the feature. Never push main, create a PR without authorization, or merge on the owner's behalf. The owner creates/reviews the PR and merges manually.
 
-Use the IDs you actually approved. If testing reveals a defect, ask: “Fix the issue found while reviewing FXX, retest it, and keep the work on the active branch.” A feature marked Done means its implementation exists and relevant checks passed; it does not mean the PR was merged or deployed.
+Only the owner may move Review to Done by confirmation after manual review/merge; update both document and index on that confirmation. Historical Done records remain valid dependencies.
 
-## 3. Review, extend, and push the cycle
+## 4. Next feature
 
-You can request more proposals while reviewing implemented work:
-
-> Propose the next FXX features in `docs/features/<category>/` based on the current feature set. Create proposal documents only; do not implement or push.
-
-When the current batch is ready, request one final check and one push:
-
-> Review all implemented FXX features on the active branch, run the relevant tests and local Stage checks, confirm their documents and index rows say Done, then commit and push **all pending changes** to that same branch. Do not push to `main` or merge. Give me the branch name and PR link for my review.
-
-Open the PR, review it, and merge it into `main` yourself. Keep the current work branch until that merge is confirmed.
-
-## 4. Start the next cycle after merge
-
-> The PR for the active branch is merged into `main`. Verify the merge, update local `main`, clean up obsolete merged branches, and create one new active work branch from the updated `main`. Do not push the empty branch unless I ask.
-
-Repeat steps 1–3 on the new branch. This keeps one review branch per cycle, avoids duplicate worktrees and repeated pushes, and keeps proposal approval separate from implementation.
+After owner confirmation, the next approved feature uses its own `feature/F###-short-name` branch. Preserve unrelated work and verify the intended base. F033 remains manual dry-run only: no scheduled implementation, Codex execution, commits, pushes, PRs, merges or automatic fixes are authorized by evaluation.

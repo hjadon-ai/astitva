@@ -30,3 +30,7 @@ npm-debug.log*
 
 # Local feature control center
 .local/control-center/
+
+# Local agent configuration and skills
+/.agents/
+/.claude/

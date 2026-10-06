@@ -1,6 +1,9 @@
 # F019: Manage family invitations
 
 - **Status:** Approved
+- **Priority:** High
+- **Approved at:** 2026-10-06T07:05:22Z
+- **Depends on:** F018
 - **Branch:** Not created
 - **Pull request:** Not created
 
@@ -71,3 +74,7 @@ After approval and implementation, test pending, expired, cancelled, declined, a
 ### 2. Should a declined invitation be resendable to the same email, or require the ADMIN to start a new invitation?
 
 > yes, invitation can be resendable to the same email
+
+## Approval reconfirmation
+
+Owner reconfirmed existing approved scope on 2026-10-06T07:05:22Z. Priorities are current planning metadata and may change without changing scope.

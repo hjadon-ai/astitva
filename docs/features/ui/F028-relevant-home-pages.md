@@ -1,6 +1,9 @@
 # F028: Relevant home pages
 
 - **Status:** Approved
+- **Priority:** Medium
+- **Approved at:** 2026-10-06T07:05:22Z
+- **Depends on:** F005, F006, F009, F011, F018
 - **Branch:** Not created
 - **Pull request:** Not created
 
@@ -72,3 +75,7 @@ Build the web app, then inspect public and signed-in Home in local Dev and Stage
 ## Approval comment
 
 > Treat Astitva as Social site for family members and will expand gradually.
+
+## Approval reconfirmation
+
+Owner reconfirmed existing approved scope on 2026-10-06T07:05:22Z. Priorities are current planning metadata and may change without changing scope.

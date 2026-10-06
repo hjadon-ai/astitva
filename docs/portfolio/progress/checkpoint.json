@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "last_reviewed_source_commit": "7b68364becd8a8de7415f2450c67bb26051d8932",
+  "last_reviewed_snapshot_id": "astitva-v1-7b68364becd8a8de7415f2450c67bb26051d8932-initial",
+  "reviewed_at": "2026-10-04T22:19:50-07:00",
+  "reviews": [
+    {
+      "snapshot_id": "astitva-v1-7b68364becd8a8de7415f2450c67bb26051d8932-initial",
+      "source_commit": "7b68364becd8a8de7415f2450c67bb26051d8932",
+      "decisions": [
+        {
+          "id": "C01",
+          "status": "Approved",
+          "approved_wording": "Designed and developed Astitva, an independent personal and family workspace spanning React, Express, MongoDB, and Firebase.",
+          "notes": "Owner approved all Cxx claims with their proposed wording in this conversation."
+        },
+        {
+          "id": "C02",
+          "status": "Approved",
+          "approved_wording": "Integrated Plaid account synchronization with normalized financial data, encrypted provider tokens, and isolated runtime environments.",
+          "notes": "Owner approved all Cxx claims with their proposed wording in this conversation."
+        },
+        {
+          "id": "C03",
+          "status": "Approved",
+          "approved_wording": "Implemented owner-scoped daily priorities with atomic capacity enforcement and calendar-aware validation.",
+          "notes": "Owner approved all Cxx claims with their proposed wording in this conversation."
+        },
+        {
+          "id": "C04",
+          "status": "Approved",
+          "approved_wording": "Implemented alias-based, PIN-protected chat using server-controlled authorization, Firebase custom tokens, and live Firestore delivery.",
+          "notes": "Owner approved all Cxx claims with their proposed wording in this conversation."
+        },
+        {
+          "id": "C05",
+          "status": "Approved",
+          "approved_wording": "Established a specification-driven Codex workflow using scoped repository context, approved feature designs, acceptance criteria, API contracts, and human review controls.",
+          "notes": "Owner approved all Cxx claims with their proposed wording in this conversation."
+        },
+        {
+          "id": "C06",
+          "status": "Approved",
+          "approved_wording": "Designed family relationship and role models with explicit, owner-controlled sharing of Diet and Finance data.",
+          "notes": "Owner approved all Cxx claims with their proposed wording in this conversation."
+        }
+      ]
+    }
+  ],
+  "portfolio_destination": {
+    "local": "/Users/harendrakumar/Developer/Portfolio",
+    "repository": "https://github.com/hjadon-ai/portfolio",
+    "website": "https://harendra-play.web.app/"
+  }
+}

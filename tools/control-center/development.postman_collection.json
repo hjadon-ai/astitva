@@ -1,0 +1,77 @@
+{
+  "info": {
+    "name": "Astitva F033 local dry runs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local tool only. Get the per-process control token from local /api/state; do not export a populated token."
+  },
+  "variable": [
+    {
+      "key": "controlBase",
+      "value": "http://127.0.0.1:4318"
+    },
+    {
+      "key": "controlToken",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Planning state",
+      "request": {
+        "method": "GET",
+        "url": "{{controlBase}}/api/development/state",
+        "header": []
+      }
+    },
+    {
+      "name": "Evaluate dry run",
+      "request": {
+        "method": "POST",
+        "url": "{{controlBase}}/api/development/evaluations",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Origin",
+            "value": "{{controlBase}}"
+          },
+          {
+            "key": "X-Control-Token",
+            "value": "{{controlToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Recent evaluations",
+      "request": {
+        "method": "GET",
+        "url": "{{controlBase}}/api/development/evaluations?limit=20",
+        "header": []
+      }
+    },
+    {
+      "name": "Evaluation detail",
+      "request": {
+        "method": "GET",
+        "url": "{{controlBase}}/api/development/evaluations/{{runId}}",
+        "header": []
+      }
+    }
+  ]
+}

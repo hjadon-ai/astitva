@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Astitva Control Center</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">LOCAL ONLY</p>
+      <h1>Development Control Center</h1>
+      <p class="subtitle">Review development plans and feature proposals locally.</p>
+    </div>
+    <div class="top-actions">
+      <span id="running" class="running">Schedulers paused</span>
+      <button id="refresh" class="secondary">Refresh</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <button id="development-nav" class="category" type="button">Development <span class="badge">Dry run</span></button>
+      <div class="aside-title"><h2>Categories</h2><span id="category-count"></span></div>
+      <nav id="categories" aria-label="Feature categories"></nav>
+      <form id="new-category" class="new-category">
+        <label for="category-name">Add category</label>
+        <div class="inline"><input id="category-name" name="name" maxlength="60" placeholder="e.g. Projects" required /><button type="submit">Add</button></div>
+      </form>
+    </aside>
+
+    <section class="content">
+      <div id="notice" class="notice" role="status" hidden></div>
+      <section id="category-panel" class="panel"></section>
+      <section class="feature-section">
+        <div class="section-heading"><div><p class="eyebrow">PROPOSALS</p><h2 id="feature-heading">Features</h2></div><span id="feature-count" class="muted"></span></div>
+        <div id="features" class="features"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="review-dialog">
+    <div class="dialog-head"><div><p id="review-id" class="eyebrow"></p><h2 id="review-title"></h2><p id="review-meta" class="muted"></p></div><button id="close-review" class="secondary" type="button">Close</button></div>
+    <pre id="review-content" class="document"></pre>
+    <section id="approval-fields" class="approval-fields" hidden>
+      <div id="review-questions"></div>
+      <label for="approval-comment">Feedback or approval comment</label>
+      <textarea id="approval-comment" rows="3" maxlength="3000" placeholder="Required to recommend a new proposal; optional when approving"></textarea>
+      <p class="muted">A recommendation saves your feedback and keeps the feature unapproved. Approval saves your answers and comment in the feature document.</p>
+    </section>
+    <div class="dialog-actions"><span id="review-status" class="badge"></span><div class="review-actions"><button id="recommend" class="secondary" type="button">Recommend new proposal</button><button id="approve" type="button">Approve feature</button></div></div>
+  </dialog>
+  <dialog id="evaluation-dialog" aria-labelledby="evaluation-title"><div class="dialog-head"><h2 id="evaluation-title">Dry-run evaluation</h2><button id="close-evaluation" type="button" class="secondary">Close</button></div><pre id="evaluation-detail" class="document"></pre></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
