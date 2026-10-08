@@ -37,6 +37,7 @@ const userFields = '_id name email emailVerifiedAt createdAt updatedAt';
 
 router.use(requireAdmin);
 router.use(createRateLimit({ max: 120, windowMs: 60 * 1000 }));
+router.use('/meal-libraries', require('./adminMealLibraries'));
 
 router.get('/notifications', async (request, response) => {
   response.json({ settings: await notificationSettings() });

@@ -49,6 +49,8 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F036 | [Managed NON_USER workspaces](family/F036-managed-non-user-workspaces.md) | Review | `feature/F036-managed-non-user-workspaces` | Not created |
 
+| F037 | [Named shared meal libraries](diet/F037-shared-meal-libraries.md) | Review | `feature/F037-shared-meal-libraries` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.

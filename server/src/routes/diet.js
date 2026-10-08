@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+const {historyRange,historyDays}=require('../services/dietHistory');
 const express = require('express');
 const multer = require('multer');
 const Session = require('../models/Session');
@@ -141,6 +143,19 @@ router.use(async (request, response, next) => {
   next();
 });
 router.use(requireFeature('diet'));
+router.use('/libraries', require('./mealLibraries'));
+
+router.get('/history', async (request,response) => {
+  const range=historyRange(request.query.end,request.query.timezone);
+  if(range.error)return response.status(400).json({error:range.error});
+  const match={userId:new mongoose.Types.ObjectId(String(request.dietUserId)),consumedOn:{$gte:range.start,$lte:range.end}};
+  const [meals,water,targets]=await Promise.all([
+    Meal.aggregate([{$match:match},{$group:{_id:'$consumedOn',count:{$sum:1},...Object.fromEntries(fields.map(key=>[key,{$sum:'$'+key}]))}}]),
+    WaterEntry.aggregate([{$match:match},{$group:{_id:'$consumedOn',count:{$sum:1},waterMilliliters:{$sum:'$amountMilliliters'}}}]),
+    Targets.findOne({userId:request.dietUserId}).lean()
+  ]);
+  response.json({...range,targetBasis:'current',targets:publicTargets(targets),days:historyDays(range,meals,water)});
+});
 
 router.get('/days/:date', async (request, response) => {
   if (!validDate(request.params.date)) return response.status(400).json({ error: 'Use a valid YYYY-MM-DD date.' });

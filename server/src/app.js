@@ -25,6 +25,7 @@ function createApp() {
   app.use((req,res,next)=>{if((req.get('X-Astitva-Member')||req.get('X-Astitva-Family'))&&!/^\/api\/(diet|priorities)(?:\/|$)/.test(req.path))return res.status(403).json({error:'This operation is unavailable in a managed workspace.'});next();});
   // Priorities authenticates before parsing JSON and handles malformed bodies locally.
   app.use('/api/priorities', require('./routes/priorities'));
+  app.use('/api/diet/libraries', express.json({limit:'1mb'}));
   app.use(express.json({ limit: '100kb' }));
 
   app.get('/api/health', (request, response) => {

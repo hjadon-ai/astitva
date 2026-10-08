@@ -52,10 +52,14 @@ function wrap(router){
  if(body===undefined)return res.status(code).end();return res.status(code).json(body);
  }catch(error){if(error.status)return res.status(error.status).json({error:error.message});next(error);}};}
 }
-async function hasData(personId,session){for(const name of ['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dailyPriorityDays'])if(await mongoose.connection.db.collection(name).findOne({userId:personId},{session,projection:{_id:1}}))return true;return false;}
+async function hasData(personId,session){if(await mongoose.connection.db.collection('mealLibraries').findOne({ownerId:personId},{session,projection:{_id:1}}))return true;for(const name of ['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dailyPriorityDays'])if(await mongoose.connection.db.collection(name).findOne({userId:personId},{session,projection:{_id:1}}))return true;return false;}
 async function transfer(personId,userId,session){
  const names=['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dailyPriorityDays'];
  for(const name of names){const collection=mongoose.connection.db.collection(name);if(await collection.findOne({userId:personId},{session})&&await collection.findOne({userId},{session}))S.fail(409,'Existing account data requires an explicit transfer review before linking.');}
  for(const name of names)await mongoose.connection.db.collection(name).updateMany({userId:personId},{$set:{userId}},{session});
+ await mongoose.connection.db.collection('mealLibraries').updateMany({ownerId:personId},{$set:{ownerId:userId},$unset:{legacyOwnerId:''}},{session});
+ const refs=await mongoose.connection.db.collection('mealLibraryReferences').find({userId:personId},{session}).toArray();
+ for(const ref of refs)if(await mongoose.connection.db.collection('mealLibraryReferences').findOne({libraryId:ref.libraryId,userId},{session}))S.fail(409,'Existing account library access requires transfer review.');
+ await mongoose.connection.db.collection('mealLibraryReferences').updateMany({userId:personId},{$set:{userId}},{session});
 }
 module.exports={authorize,members,context,updateDetails,resolveRequest,wrap,transfer,hasData};

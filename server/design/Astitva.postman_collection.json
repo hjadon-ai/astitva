@@ -312,7 +312,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"calories\": 2000,\n  \"proteinGrams\": 100,\n  \"carbohydrateGrams\": 240,\n  \"fatGrams\": 65,\n  \"fiberGrams\": 30,\n  \"waterMilliliters\": 2000\n}",
+              "raw": "{\n  \"proteinGrams\": 100,\n  \"carbohydrateGrams\": 240,\n  \"fatGrams\": 65,\n  \"fiberGrams\": 30,\n  \"waterMilliliters\": 2000\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -638,6 +638,16 @@
                 "type": "text"
               }
             ]
+          },
+          "response": []
+        },
+        {
+          "name": "Read ten-day intake history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/diet/history?timezone=America%2FLos_Angeles",
+            "description": "Defaults to latest ten days; optionally append &end=YYYY-MM-DD to browse up to three calendar months back. Uses current targets. Managed headers supported as for daily Diet."
           },
           "response": []
         }
@@ -3785,6 +3795,495 @@
           }
         }
       ]
+    },
+    {
+      "name": "Named Meal Libraries (F037)",
+      "description": "Use latest expectedRevision from GET. Fill mealLibraryId/mealLibraryItemId after create; CSV confirmation rows use preview fields. Admin calls require an Admin session.",
+      "item": [
+        {
+          "name": "List accessible libraries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create independent library",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Everyday meals\",\n  \"nutritionSource\": \"AI estimates\",\n  \"description\": \"\",\n  \"tags\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview CSV without saving",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/import-preview"
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Idempotently migrate personal templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/migrate-existing"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Read authorized library version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit owner draft metadata",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"name\": \"Updated meals\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Hard delete private or archive distributed library",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create owner draft item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/items"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"item\": {\n    \"name\": \"Rice\",\n    \"category\": \"lunch\",\n    \"servingDescription\": \"1 bowl\",\n    \"nutrition\": {\n      \"calories\": 200,\n      \"proteinGrams\": 4,\n      \"carbohydrateGrams\": 40,\n      \"fatGrams\": 2,\n      \"fiberGrams\": 1\n    },\n    \"ingredients\": \"\",\n    \"notes\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Replace owner draft item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/items/{{mealLibraryItemId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"item\": {\n    \"name\": \"Rice\",\n    \"category\": \"lunch\",\n    \"servingDescription\": \"1 bowl\",\n    \"nutrition\": {\n      \"calories\": 200,\n      \"proteinGrams\": 4,\n      \"carbohydrateGrams\": 40,\n      \"fatGrams\": 2,\n      \"fiberGrams\": 1\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove item, preserve logged snapshots",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/items/{{mealLibraryItemId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create quantity-scaled daily snapshot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/items/{{mealLibraryItemId}}/add-to-day"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-10-07\",\n  \"mealType\": \"lunch\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Share read-only with verified user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/access"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"email\": \"recipient@example.invalid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke private reference",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/access/{{recipientUserId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save published library reference",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/reference"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove own shared/saved reference",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/reference"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit locked draft to Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/diet/libraries/{{mealLibraryId}}/submit"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin review queue and published libraries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/meal-libraries"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin inspect owner draft",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/meal-libraries/{{mealLibraryId}}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Publish, return with feedback or unpublish",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/meal-libraries/{{mealLibraryId}}/review"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"action\": \"publish\",\n  \"feedback\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
@@ -3814,6 +4313,14 @@
     },
     {
       "key": "socialPostId",
+      "value": ""
+    },
+    {
+      "key": "mealLibraryId",
+      "value": ""
+    },
+    {
+      "key": "mealLibraryItemId",
       "value": ""
     }
   ]

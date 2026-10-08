@@ -37,7 +37,7 @@ test('macro target calories use the approved 4/4/9 formula', () => {
 
 test('targets require all nutrition values and a positive whole water target', () => {
   assert.deepEqual(validateTargets({ ...nutrition, waterMilliliters: 2000 }).value,
-    { ...nutrition, waterMilliliters: 2000 });
+    { ...nutrition, calories:428, waterMilliliters: 2000 });
   assert.equal(validateTargets({ ...nutrition }).fields.waterMilliliters, 'This value is required.');
   assert.ok(validateTargets({ ...nutrition, waterMilliliters: 250.5 }).fields.waterMilliliters);
 });
@@ -116,4 +116,12 @@ test('CSV confirmation revalidates flat preview rows', () => {
   };
   assert.equal(validateImportRows({ rows: [row] }).value[0].normalizedName, 'oatmeal bowl');
   assert.ok(validateImportRows({ rows: [{ ...row, calories: -1 }] }).rows);
+});
+
+test('calorie targets derive from macros, not supplied calories or fiber',()=>{
+ const input={proteinGrams:100,carbohydrateGrams:240,fatGrams:65,fiberGrams:30,waterMilliliters:2000};
+ assert.equal(validateTargets(input).value.calories,1945);
+ assert.equal(validateTargets({...input,calories:9999,fiberGrams:50}).value.calories,1945);
+ assert.equal(validateTargets({...input,proteinGrams:100.1}).value.calories,1945);
+ assert.ok(validateTargets({...input,fatGrams:-1}).fields);
 });

@@ -62,13 +62,14 @@ function macroCalories(targets) {
 function validateTargets(body) {
   const allowed = [...fields, 'waterMilliliters'];
   if (!hasOnly(body, allowed)) return { fields: { request: 'Only the six target fields are accepted.' } };
-  const targetNutrition = Object.fromEntries(fields.filter((key) => key in body).map((key) => [key, body[key]]));
+  const calculatedCalories = Math.round(body.proteinGrams * 4 + body.carbohydrateGrams * 4 + body.fatGrams * 9);
+  const targetNutrition = {...Object.fromEntries(fields.filter((key) => key in body).map((key) => [key, body[key]])), calories:calculatedCalories};
   const errors = nutritionErrors(targetNutrition, { positive: true });
   if (!('waterMilliliters' in body)) errors.waterMilliliters = 'This value is required.';
   else if (!finiteNumber(body.waterMilliliters)) errors.waterMilliliters = 'Use a JSON number.';
   else if (!Number.isInteger(body.waterMilliliters) || body.waterMilliliters <= 0) errors.waterMilliliters = 'Use a positive whole number.';
   if (Object.keys(errors).length) return { fields: errors };
-  return { value: { ...nutritionValues(body), waterMilliliters: body.waterMilliliters } };
+  return { value: { ...nutritionValues(targetNutrition), waterMilliliters: body.waterMilliliters } };
 }
 
 function validateWaterEntry(body) {

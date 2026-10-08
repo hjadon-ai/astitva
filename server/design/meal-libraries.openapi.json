@@ -1,0 +1,1315 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "F037 named meal libraries",
+    "version": "1.0.0",
+    "description": "Verified Diet users. Revision-controlled drafts; explicit read-only references; immutable Admin-approved public snapshots. CSV uses existing F008 schema. 1 MB/500 rows. No automatic AI invocation. Library reads never expose owner email; owner-only sharedWith may include recipient emails. POST migration retains legacy source records. Managed callers may manage their own person-owned library, but cannot distribute."
+  },
+  "paths": {
+    "/api/diet/libraries": {
+      "get": {
+        "summary": "List accessible libraries",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "public"
+              ],
+              "default": "mine"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create independent library",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "201": {
+            "description": "Created library or daily meal snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "nutritionSource": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    },
+                    "minItems": 1,
+                    "maxItems": 500,
+                    "description": "Optional selected normalized F008 preview rows with sourceRowNumber and CSV headers. Omit to create an empty library."
+                  }
+                }
+              },
+              "example": {
+                "name": "Everyday meals",
+                "nutritionSource": "AI estimates",
+                "description": "",
+                "tags": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/import-preview": {
+      "post": {
+        "summary": "Preview CSV without saving",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/migrate-existing": {
+      "post": {
+        "summary": "Idempotently migrate personal templates",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}": {
+      "get": {
+        "summary": "Read authorized library version",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edit owner draft metadata",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0,
+                "name": "Updated meals"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hard delete private or archive distributed library",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "204": {
+            "description": "Deleted, archived or reference removed"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/items": {
+      "post": {
+        "summary": "Create owner draft item",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "201": {
+            "description": "Created library or daily meal snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  },
+                  "item": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "string"
+                      },
+                      "servingDescription": {
+                        "type": "string"
+                      },
+                      "nutrition": {
+                        "type": "object",
+                        "properties": {
+                          "calories": {
+                            "type": "integer"
+                          },
+                          "proteinGrams": {
+                            "type": "integer"
+                          },
+                          "carbohydrateGrams": {
+                            "type": "integer"
+                          },
+                          "fatGrams": {
+                            "type": "integer"
+                          },
+                          "fiberGrams": {
+                            "type": "integer"
+                          }
+                        }
+                      },
+                      "ingredients": {
+                        "type": "string"
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0,
+                "item": {
+                  "name": "Rice",
+                  "category": "lunch",
+                  "servingDescription": "1 bowl",
+                  "nutrition": {
+                    "calories": 200,
+                    "proteinGrams": 4,
+                    "carbohydrateGrams": 40,
+                    "fatGrams": 2,
+                    "fiberGrams": 1
+                  },
+                  "ingredients": "",
+                  "notes": ""
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/items/{itemId}": {
+      "patch": {
+        "summary": "Replace owner draft item",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  },
+                  "item": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "category": {
+                        "type": "string"
+                      },
+                      "servingDescription": {
+                        "type": "string"
+                      },
+                      "nutrition": {
+                        "type": "object",
+                        "properties": {
+                          "calories": {
+                            "type": "integer"
+                          },
+                          "proteinGrams": {
+                            "type": "integer"
+                          },
+                          "carbohydrateGrams": {
+                            "type": "integer"
+                          },
+                          "fatGrams": {
+                            "type": "integer"
+                          },
+                          "fiberGrams": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0,
+                "item": {
+                  "name": "Rice",
+                  "category": "lunch",
+                  "servingDescription": "1 bowl",
+                  "nutrition": {
+                    "calories": 200,
+                    "proteinGrams": 4,
+                    "carbohydrateGrams": 40,
+                    "fatGrams": 2,
+                    "fiberGrams": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove item, preserve logged snapshots",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "204": {
+            "description": "Deleted, archived or reference removed"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/items/{itemId}/add-to-day": {
+      "post": {
+        "summary": "Create quantity-scaled daily snapshot",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "201": {
+            "description": "Created library or daily meal snapshot"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "mealType": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "date": "2026-10-07",
+                "mealType": "lunch",
+                "quantity": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/access": {
+      "put": {
+        "summary": "Share read-only with verified user",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  },
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0,
+                "email": "recipient@example.invalid"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/access/{userId}": {
+      "delete": {
+        "summary": "Revoke private reference",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "204": {
+            "description": "Deleted, archived or reference removed"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/reference": {
+      "put": {
+        "summary": "Save published library reference",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {}
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove own shared/saved reference",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          },
+          "204": {
+            "description": "Deleted, archived or reference removed"
+          }
+        }
+      }
+    },
+    "/api/diet/libraries/{id}/submit": {
+      "post": {
+        "summary": "Submit locked draft to Admin",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/meal-libraries": {
+      "get": {
+        "summary": "Admin review queue and published libraries",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        }
+      }
+    },
+    "/api/admin/meal-libraries/{id}": {
+      "get": {
+        "summary": "Admin inspect owner draft",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        }
+      }
+    },
+    "/api/admin/meal-libraries/{id}/review": {
+      "post": {
+        "summary": "Publish, return with feedback or unpublish",
+        "tags": [
+          "Meal Libraries"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success (library, libraries, saved or shared)"
+          },
+          "400": {
+            "description": "Invalid fields/CSV"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Owner/Admin or managed distribution denied"
+          },
+          "404": {
+            "description": "Unavailable or inaccessible"
+          },
+          "409": {
+            "description": "Stale revision, duplicate or review lock"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "feedback": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": 0,
+                "action": "publish",
+                "feedback": ""
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "astitva_session"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

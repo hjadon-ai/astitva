@@ -385,7 +385,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Targets"
+                "$ref": "#/components/schemas/TargetInput"
               }
             }
           }
@@ -1515,6 +1515,85 @@
           }
         ]
       }
+    },
+    "/api/diet/history": {
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Read up to ten days of intake within the last three calendar months",
+        "description": "Session-scoped totals, including water. Managed context rechecks ADMIN/EDITOR authorization. The date window uses the requested IANA timezone (default UTC). Returns current targets, not historical snapshots. Missing days have zero totals and zero entry counts. No user identifiers or meal details are returned.",
+        "parameters": [
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Inclusive end date, defaults to today; future or older-than-three-calendar-month dates return 400."
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "UTC"
+            },
+            "example": "America/Los_Angeles",
+            "description": "IANA timezone for today and bounds."
+          },
+          {
+            "name": "X-Astitva-Member",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          },
+          {
+            "name": "X-Astitva-Family",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Intake window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeHistory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date, timezone or date outside bounds"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Verification, feature access or managed-context permission required"
+          },
+          "404": {
+            "description": "Managed member/family context unavailable to this viewer"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2171,6 +2250,156 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/InvalidCsvRow"
+            }
+          }
+        }
+      },
+      "TargetInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proteinGrams",
+          "carbohydrateGrams",
+          "fatGrams",
+          "fiberGrams",
+          "waterMilliliters"
+        ],
+        "properties": {
+          "calories": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "proteinGrams": {
+            "type": "number",
+            "minimum": 0.1,
+            "multipleOf": 0.1
+          },
+          "carbohydrateGrams": {
+            "type": "number",
+            "minimum": 0.1,
+            "multipleOf": 0.1
+          },
+          "fatGrams": {
+            "type": "number",
+            "minimum": 0.1,
+            "multipleOf": 0.1
+          },
+          "fiberGrams": {
+            "type": "number",
+            "minimum": 0.1,
+            "multipleOf": 0.1
+          },
+          "waterMilliliters": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "description": "Protein, carbohydrate, fat and fiber targets plus water. Server derives whole calorie target with Math.round(proteinGrams*4 + carbohydrateGrams*4 + fatGrams*9). Fiber is separate. Optional legacy calories input is ignored."
+      },
+      "IntakeHistory": {
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "earliest",
+          "latest",
+          "targetBasis",
+          "targets",
+          "days"
+        ],
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "earliest": {
+            "type": "string",
+            "format": "date"
+          },
+          "latest": {
+            "type": "string",
+            "format": "date"
+          },
+          "targetBasis": {
+            "type": "string",
+            "enum": [
+              "current"
+            ]
+          },
+          "targets": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Targets"
+              }
+            ],
+            "nullable": true
+          },
+          "days": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "totals",
+                "mealCount",
+                "waterEntryCount"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "totals": {
+                  "type": "object",
+                  "required": [
+                    "calories",
+                    "proteinGrams",
+                    "carbohydrateGrams",
+                    "fatGrams",
+                    "fiberGrams",
+                    "waterMilliliters"
+                  ],
+                  "properties": {
+                    "calories": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "proteinGrams": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "carbohydrateGrams": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "fatGrams": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "fiberGrams": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "waterMilliliters": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "mealCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "waterEntryCount": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
             }
           }
         }

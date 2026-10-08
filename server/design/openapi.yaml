@@ -26,6 +26,34 @@ tags:
   - name: Anonymous Chat
 
 paths:
+  /api/diet/libraries:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries'
+  /api/diet/libraries/import-preview:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1import-preview'
+  /api/diet/libraries/migrate-existing:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1migrate-existing'
+  /api/diet/libraries/{id}:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}'
+  /api/diet/libraries/{id}/items:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1items'
+  /api/diet/libraries/{id}/items/{itemId}:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1items~1{itemId}'
+  /api/diet/libraries/{id}/items/{itemId}/add-to-day:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1items~1{itemId}~1add-to-day'
+  /api/diet/libraries/{id}/access:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1access'
+  /api/diet/libraries/{id}/access/{userId}:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1access~1{userId}'
+  /api/diet/libraries/{id}/reference:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1reference'
+  /api/diet/libraries/{id}/submit:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries~1{id}~1submit'
+  /api/admin/meal-libraries:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1admin~1meal-libraries'
+  /api/admin/meal-libraries/{id}:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1admin~1meal-libraries~1{id}'
+  /api/admin/meal-libraries/{id}/review:
+    $ref: './meal-libraries.openapi.json#/paths/~1api~1admin~1meal-libraries~1{id}~1review'
   /api/family/units/member-lookup:
     $ref: './family-units.openapi.json#/paths/~1api~1family~1units~1member-lookup'
   /api/family/units/managed-members:
@@ -136,6 +164,8 @@ paths:
     $ref: './finance.openapi.json#/paths/~1api~1finance~1accounts~1{accountId}'
   /api/finance/connections/{connectionId}:
     $ref: './finance.openapi.json#/paths/~1api~1finance~1connections~1{connectionId}'
+  /api/diet/history:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1history'
   /api/diet/days/{date}:
     $ref: './diet.openapi.json#/paths/~1api~1diet~1days~1{date}'
   /api/diet/meals:
