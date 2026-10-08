@@ -44,7 +44,30 @@ function UserEditor({ record, run, onSaved, reload }) {
   </Surface>;
 }
 
+function NotificationSettings({ settings, run, onSaved, reload }) {
+  const [enabled, setEnabled] = useState(settings.webEnabled);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function save() {
+    setBusy(true);
+    const result = await run('/api/admin/notifications', { method: 'PATCH', body: JSON.stringify({
+      webEnabled: enabled, expectedVersion: settings.expectedVersion
+    }) }, 'Web notification configuration saved.');
+    if (result) onSaved(result.settings);
+    setBusy(false); setConfirm(false);
+  }
+  return <Surface><h2>Notification configuration</h2>
+    <label><input type="checkbox" checked={enabled} disabled={busy} onChange={(event) => setEnabled(event.target.checked)} /> Enable web notifications globally</label>
+    <p>When off, the server stops submitting browser pushes. Each browser also needs the person’s permission. iOS notifications are unaffected.</p>
+    <Button disabled={busy || enabled === settings.webEnabled} onClick={() => setConfirm(true)}>Review change</Button>
+    <Button variant="quiet" disabled={busy} onClick={reload}>Reload configuration</Button>
+    <ConfirmDialog open={confirm} title="Change web notifications?" description={`${settings.webEnabled ? 'Enabled' : 'Disabled'} → ${enabled ? 'Enabled' : 'Disabled'}`}
+      busy={busy} confirmLabel="Save configuration" onConfirm={save} onCancel={() => setConfirm(false)} />
+  </Surface>;
+}
+
 export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, onUserRefresh }) {
+  const [notificationSettings, setNotificationSettings] = useState(null);
   const [denied, setDenied] = useState(!user.isAdmin);
   const [tab, setTab] = useState('users');
   const [message, setMessage] = useState(null);
@@ -127,9 +150,17 @@ export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, 
       <div className="admin-tabs" aria-label="Admin sections">
         <Button aria-pressed={tab === 'users'} onClick={() => { setTab('users'); setMessage(null); }}>Users</Button>
         <Button aria-pressed={tab === 'invitees'} onClick={() => { setTab('invitees'); setMessage(null); }}>Invitees</Button>
+        <Button aria-pressed={tab === 'notifications'} onClick={async () => {
+          setTab('notifications');
+          const result = await run('/api/admin/notifications');
+          if (result) setNotificationSettings(result.settings);
+        }}>Notifications</Button>
       </div>
       {message && <StatusBanner tone={message.tone} role={message.tone === 'error' ? 'alert' : 'status'}>{message.text}</StatusBanner>}
-      {tab === 'users' ? <>
+      {tab === 'notifications' ? notificationSettings && <NotificationSettings key={notificationSettings.expectedVersion || 'new'}
+        settings={notificationSettings} run={run} onSaved={setNotificationSettings} reload={async () => {
+          const result = await run('/api/admin/notifications'); if (result) setNotificationSettings(result.settings);
+        }} /> : tab === 'users' ? <>
         <Surface className="admin-search"><form onSubmit={findUsers}>
           <FormField label="Email or name"><input required maxLength={100} value={query} onChange={(event) => setQuery(event.target.value)} /></FormField>
           <Button type="submit" disabled={busy}>Find users</Button>

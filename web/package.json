@@ -7,6 +7,7 @@
     "node": ">=22.20.0 <25"
   },
   "scripts": {
+    "test": "node --test test/*.test.js",
     "dev": "vite --host 127.0.0.1 --port 3000",
     "build": "vite build",
     "build:production": "node scripts/validate-production-env.js && vite build"

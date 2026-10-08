@@ -322,4 +322,5 @@ router.post('/library-meals/:mealId/add-to-day', async (request, response) => {
   response.status(201).json({ meal: publicMeal(meal) });
 });
 
+require('../services/managedWorkspace').wrap(router);
 module.exports = router;

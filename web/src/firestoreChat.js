@@ -1,19 +1,9 @@
-import { initializeApp } from 'firebase/app';
+import { firebaseApp } from './firebaseClient';
 import { getAuth, inMemoryPersistence, setPersistence, signInWithCustomToken, signOut } from 'firebase/auth';
-import { addDoc, collection, connectFirestoreEmulator, getDocs, getFirestore, limit, onSnapshot,
-  orderBy, query, serverTimestamp, startAfter } from 'firebase/firestore';
+import { collection, connectFirestoreEmulator, getDocs, getFirestore, limit, onSnapshot,
+  orderBy, query, startAfter } from 'firebase/firestore';
 
-const config = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-const configured = Object.values(config).every(Boolean);
-const app = configured ? initializeApp(config) : null;
+const app = firebaseApp;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
 const oldestDocuments = new Map();
@@ -49,13 +39,6 @@ export async function loadOlderFirestoreMessages(chatId) {
     orderBy('createdAt', 'desc'), startAfter(cursor), limit(50)));
   oldestDocuments.set(chatId, older.docs.at(-1) || null);
   return older.docs.map(publicMessage).reverse();
-}
-
-export async function sendFirestoreMessage(chatId, text, senderAlias) {
-  if (!auth?.currentUser || !db) throw new Error('Unlock this conversation first.');
-  await addDoc(collection(db, 'chats', chatId, 'messages'), {
-    senderUid: auth.currentUser.uid, senderAlias, text: text.trim(), createdAt: serverTimestamp()
-  });
 }
 
 export async function closeFirestoreChat() {

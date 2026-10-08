@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const id = mongoose.Schema.Types.ObjectId;
 const personSchema = new mongoose.Schema({
   name: { type: String, required: true, maxlength: 80 },
+  preferredName: { type: String, default: null, maxlength: 80 },
+  birthDate: { type: String, default: null, validate: require('../services/familyDetails').validBirthDate },
+  note: { type: String, default: null, maxlength: 1000 },
   email: { type: String, default: null, lowercase: true },
   userId: { type: id, ref: 'User', default: null },
   gender: { type: String, enum: ['male', 'female', 'neutral'], default: 'neutral' },
@@ -15,11 +18,14 @@ const relationSchema = new mongoose.Schema({
   type: { type: String, enum: ['parent', 'sibling', 'partner'], required: true }
 });
 const shareSchema = new mongoose.Schema({
+  visiblePersonIds: { type: [id], default: undefined },
   ownerId: { type: id, ref: 'User', required: true },
   recipientId: { type: id, ref: 'User', required: true },
-  feature: { type: String, enum: ['diet', 'finance'], required: true }
+  feature: { type: String, enum: ['diet', 'finance', 'family'], required: true }
 }, { _id: false });
 const familySchema = new mongoose.Schema({
+  normalizedUnit: { type: Boolean, default: false },
+  pinnedPostId: { type: id, default: null },
   creatorId: { type: id, ref: 'User', required: true },
   people: { type: [personSchema], default: [] },
   relations: { type: [relationSchema], default: [] },
@@ -49,7 +55,7 @@ const activitySchema = new mongoose.Schema({
   ] },
   subjectPersonId: { type: id, default: null },
   subjectName: { type: String, default: null, maxlength: 80 },
-  feature: { type: String, enum: ['diet', 'finance'], default: null },
+  feature: { type: String, enum: ['diet', 'finance', 'family'], default: null },
   summary: { type: String, required: true, maxlength: 240 },
   createdAt: { type: Date, default: Date.now, immutable: true }
 }, { collection: 'familyActivity', versionKey: false });

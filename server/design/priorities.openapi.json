@@ -125,7 +125,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Astitva-Member",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          },
+          {
+            "name": "X-Astitva-Family",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          }
+        ]
       }
     },
     "/api/priorities/days/{date}/priorities": {
@@ -255,7 +277,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Astitva-Member",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          },
+          {
+            "name": "X-Astitva-Family",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          }
+        ]
       }
     },
     "/api/priorities/days/{date}/priorities/{priorityId}": {
@@ -395,7 +439,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Astitva-Member",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          },
+          {
+            "name": "X-Astitva-Family",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -472,7 +538,29 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-Astitva-Member",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          },
+          {
+            "name": "X-Astitva-Family",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "F036 managed context: both headers required together; ADMIN/EDITOR and general feature access rechecked."
+          }
+        ]
       }
     }
   },

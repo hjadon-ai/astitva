@@ -30,17 +30,24 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 | F017 | [Family relationship corrections](family/F017-family-relationship-corrections.md) | Proposed | Not created | Not created |
 | F018 | [Family members](family/F018-family-members.md) | Done | Not created | Not created |
 | F019 | [Manage family invitations](family/F019-family-invitation-management.md) | Approved | Not created | Not created |
-| F020 | [Family member profiles](family/F020-family-member-profiles.md) | Proposed | Not created | Not created |
+| F020 | [Family member profiles](family/F020-family-member-profiles.md) | Review | `feature/F020-family-member-profiles` | Not created |
 | F021 | [Leave an accepted family](family/F021-leave-family.md) | Proposed | Not created | Not created |
 | F022 | [Export the family directory](family/F022-export-family-directory.md) | Proposed | Not created | Not created |
-| F023 | [Family Social feed](familysocial/F023.md) | Proposed | Not created | Not created |
+| F023 | [Family Social feed](familysocial/F023.md) | Done | `feature/F023-family-social-feed` | Not created |
 | F024 | [Family chat and notifications](familysocial/F024.md) | Proposed | Not created | Not created |
 | F027 | [Anonymous chat with PIN protection](chat/F027.md) | Done | Not created | Not created |
-| F028 | [Relevant home pages](ui/F028-relevant-home-pages.md) | Approved | Not created | Not created |
+| F028 | [Family-focused home pages](ui/F028-relevant-home-pages.md) | Review | `feature/F028-family-focused-home-pages` | Not created |
 | F029 | [Firestore storage and live delivery for anonymous chat messages](chat/F029-firestore-chat-messages.md) | Done | `feature/changes_03-Oct-2026` | Not created |
 | F030 | [Compact Anonymous Chat layout](ui/F030-compact-anonymous-chat-layout.md) | Done | `feature/changes_03-Oct-2026` | Not created |
 | F031 | [Admin Panel](admin/F031-admin-panel.md) | Done | `feature/changes_04-Oct-2026` | Not created |
+| F032 | [Private Anonymous Chat push notifications](chat/F032-private-chat-push-notifications.md) | Done | `feature/changes_04-Oct-2026_2` | Not created |
 | F033 | [AI-assisted development foundation and Development Control Center](infra/F033-ai-assisted-development-foundation.md) | Done | `feature/F033-ai-assisted-development-foundation` | Not created |
+
+| F034 | [Shared family-member workspace](family/F034-family-member-profile-view.md) | Review | `feature/F034-shared-family-member-workspace` | Not created |
+
+| F035 | [Shared family units and consent-based linking](family/F035-shared-family-units.md) | Review | `feature/F035-shared-family-units` | Not created |
+
+| F036 | [Managed NON_USER workspaces](family/F036-managed-non-user-workspaces.md) | Review | `feature/F036-managed-non-user-workspaces` | Not created |
 
 ## Rules
 

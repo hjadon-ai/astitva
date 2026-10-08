@@ -1,7 +1,7 @@
 # F020: Family member profiles
 
-- **Status:** Proposed
-- **Branch:** Not created
+- **Status:** Review
+- **Branch:** `feature/F020-family-member-profiles`
 - **Pull request:** Not created
 
 ## Goal
@@ -60,7 +60,23 @@ Add nullable `preferredName`, `birthDate` as a validated `YYYY-MM-DD` date-only 
 
 After approval and implementation, review one family as creator, spouse, and child in local Stage. Confirm the same person ID and details in each view, then test READONLY and unrelated-account access through the API.
 
-## Open questions
+## Owner decisions
 
-1. Should the preferred name be visible to every accepted member or only direct relations?
-2. What text limit should the family note use, and should a person linked to an account be able to edit their own family details while READONLY?
+### 1. Should the preferred name be visible to every accepted member or only direct relations?
+
+> Yes
+
+### 2. What text limit should the family note use, and should a person linked to an account be able to edit their own family details while READONLY?
+
+> you think
+
+
+## Implementation decisions
+
+Preferred name: trimmed, single-line, maximum 80 UTF-16 code units. Note: plain text, maximum 1000 UTF-16 code units. Null clears fields; PATCH preserves omitted fields. Birth dates are real calendar dates, stored as YYYY-MM-DD; future dates show no age. READONLY cannot edit even their own family details. These choices follow the owner-delegated limits decision and preserve the approved ADMIN/EDITOR-only rule.
+
+## Implementation verification
+
+Implemented locally on `feature/F020-family-member-profiles`; ready for owner review. Two server validation tests, the opted-in family integration suite (disposable local fixture records), five web tests, relevant server syntax checks and changed-file whitespace checks pass. `npm --prefix web run build` passes with a bundle-size warning. The integration suite covers ADMIN/EDITOR writes, READONLY denial, unauthenticated/unrelated access, malformed-date and overlong-text rejection without partial changes, unchanged relations/shares, and preserved child details/person ID through invitation acceptance. API, Postman and MongoDB documentation are updated.
+
+Manual Stage/browser review remains: inspect creator, spouse and child views, edit/clear optional details, verify Save/Cancel and keyboard/mobile layout. No real family records were used for automated testing. No commit, push, PR, merge or deployment performed. Only the owner may mark Done.

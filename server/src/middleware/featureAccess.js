@@ -18,6 +18,7 @@ function requireFeature(feature) {
     if (!features[feature]) return response.status(403).json({
       error: 'This feature is not enabled for your account.', code: 'FEATURE_NOT_ENABLED', feature
     });
+    try{await require('../services/managedWorkspace').resolveRequest(request,feature);}catch(error){if(error.status)return response.status(error.status).json({error:error.message});return next(error);}
     next();
   };
 }

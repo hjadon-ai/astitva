@@ -1,4 +1,7 @@
+import FamilySocial from './FamilySocial';
+import FamilyUnits from './FamilyUnits';
 import { useEffect, useState } from 'react';
+import { familyAge } from './familyAge';
 import { MailPlus, Plus, UsersRound } from 'lucide-react';
 import { Badge, Button, EmptyState, FormField, LoadingState, PageHeader, SectionHeader, Surface } from './ui';
 
@@ -12,6 +15,8 @@ const initialPerson = { name: '', email: '', relationship: 'father' };
 
 export default function Family({ apiRequest, features = { family: true } }) {
   const [families, setFamilies] = useState(null);
+  const [normalizedUnits, setNormalizedUnits] = useState(null);
+  const legacyFamilies = normalizedUnits === null ? [] : (families || []).filter(item => !normalizedUnits.some(unit => unit.id === item.id));
   const [invitations, setInvitations] = useState([]);
   const [selected, setSelected] = useState('');
   const [form, setForm] = useState(initialPerson);
@@ -27,11 +32,13 @@ export default function Family({ apiRequest, features = { family: true } }) {
   const [activityError, setActivityError] = useState('');
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityVersion, setActivityVersion] = useState(0);
-  const family = families?.find((item) => item.id === selected) || families?.[0];
+  const family = legacyFamilies.find((item) => item.id === selected) || legacyFamilies[0];
+  const [familyPage, setFamilyPage] = useState('members');
+  const [details, setDetails] = useState(null);
   const canEdit = family && ['ADMIN', 'EDITOR'].includes(family.self.role);
   const canAdmin = family?.self.role === 'ADMIN';
   const isCreator = family?.self.userId === family?.creatorId;
-  const enabledDataFeatures = ['diet', 'finance'].filter((feature) => features[feature]);
+  const enabledDataFeatures = ['diet', 'finance', 'family'].filter((feature) => features[feature]);
   const accessibleShares = family?.sharedWithMe.filter((share) => features[share.feature]) || [];
 
   useEffect(() => {
@@ -60,6 +67,8 @@ export default function Family({ apiRequest, features = { family: true } }) {
     }).catch((error) => { if (active) setActivityError(error.message); });
     return () => { active = false; };
   }, [apiRequest, family?.id, activityVersion]);
+
+  useEffect(() => { setDetails(null); }, [family?.id]);
 
   async function acceptInvitation(invitation) {
     setBusy(true);
@@ -108,6 +117,22 @@ export default function Family({ apiRequest, features = { family: true } }) {
     if (ok) setForm(initialPerson);
   }
 
+  function editDetails(person) {
+    setDetails({ id: person.id, name: person.name, preferredName: person.preferredName || '', birthDate: person.birthDate || '', note: person.note || '' });
+  }
+  async function saveDetails(event) {
+    event.preventDefault();
+    await run(async () => {
+      const result = await apiRequest(`/api/family/${family.id}/people/${details.id}/details`, { method: 'PATCH', body: JSON.stringify({ preferredName: details.preferredName || null, birthDate: details.birthDate || null, note: details.note || null }) });
+      setDetails(null);
+      return result;
+    }, 'Family details saved.');
+  }
+  function profileDetails(person) {
+    const age = familyAge(person.birthDate);
+    return <>{person.preferredName && <small>Preferred name: {person.preferredName}</small>}{person.birthDate && <small>Birth date: {person.birthDate}{age !== null ? ` · Age ${age}` : ''}</small>}{person.note && <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{person.note}</p>}</>;
+  }
+
   async function updatePerson(person) {
     const name = person.status === 'ACCEPTED' ? null : window.prompt('Name', person.name);
     if (name === null && person.status !== 'ACCEPTED') return;
@@ -141,8 +166,8 @@ export default function Family({ apiRequest, features = { family: true } }) {
   }
 
   const groups = [
-    { id: 'bornIn', title: 'Born in family', description: 'Parents and siblings' },
-    { id: 'spouse', title: 'Spouse family', description: 'Partner and children' }
+    { id: 'bornIn', title: 'Family Roots', description: 'Parents and siblings' },
+    { id: 'spouse', title: 'Family Blossoms', description: 'Partner and children' }
   ];
   const searchTerm = search.trim().toLocaleLowerCase();
   const connections = family?.connections.filter((connection) =>
@@ -166,13 +191,15 @@ export default function Family({ apiRequest, features = { family: true } }) {
       setFamilies((current) => current.map((item) => item.id === result.family.id ? result.family : item));
       setActivityVersion((value) => value + 1);
       setShared(null);
-      setMessage(`${feature === 'diet' ? 'Diet' : 'Finance'} sharing stopped.`);
+      setMessage(`${feature === 'diet' ? 'Diet' : feature === 'family' ? 'Family' : 'Finance'} sharing stopped.`);
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   }
 
   return <section className="family-page">
-    <PageHeader eyebrow="Workspace / Family" title="Family" description="Keep one family view that follows each accepted member's perspective." />
+    <PageHeader eyebrow="Workspace / Family" title="Family" description="Your people, shared moments and permissions — all in one place." />
+    <FamilyUnits apiRequest={apiRequest} features={features} existingFamilies={families || []} onUnitsLoaded={setNormalizedUnits} />
+    {(legacyFamilies.length > 0 || invitations.length > 0) && <details className="family-existing"><summary>Existing family records & invitations{invitations.length ? ` (${invitations.length} invitations)` : ''}</summary>
     {message && <p className="form-message" role="status">{message}</p>}
     {families === null && !message && <LoadingState>Loading family…</LoadingState>}
     {invitations.length > 0 && <Surface className="family-invitations">
@@ -182,14 +209,12 @@ export default function Family({ apiRequest, features = { family: true } }) {
         <Button variant="primary" type="button" disabled={busy} onClick={() => acceptInvitation(invitation)}>{busy ? 'Accepting…' : 'Accept invitation'}</Button>
       </div>)}
     </Surface>}
-    {families?.length === 0 && invitations.length === 0 && <Surface>
-      <EmptyState icon={UsersRound} title="Start your family" description="Add yourself first, then add parents, siblings, a partner, or children. Sharing stays off until you choose recipients." />
-      <Button variant="primary" icon={Plus} disabled={busy} onClick={() => run(() => apiRequest('/api/family', { method: 'POST', body: JSON.stringify({}) }), 'Family created.')}>Create family</Button>
-    </Surface>}
     {family && <>
-      {families.length > 1 && <FormField label="Family view"><select value={family.id} onChange={(event) => { setSelected(event.target.value); setShared(null); }}>
-        {families.map((item) => <option key={item.id} value={item.id}>{item.self.userId === item.creatorId ? 'My family' : `${item.creatorName}'s family`} · {item.acceptedMembers.length} accepted members</option>)}
+      {legacyFamilies.length > 1 && <FormField label="Family view"><select value={family.id} onChange={(event) => { setSelected(event.target.value); setShared(null); }}>
+        {legacyFamilies.map((item) => <option key={item.id} value={item.id}>{item.self.userId === item.creatorId ? 'My family' : `${item.creatorName}'s family`} · {item.acceptedMembers.length} accepted members</option>)}
       </select></FormField>}
+      <div className="family-actions" aria-label="Family views"><Button type="button" aria-pressed={familyPage==='members'} onClick={()=>setFamilyPage('members')}>Members</Button><Button type="button" aria-pressed={familyPage==='social'} onClick={()=>setFamilyPage('social')}>Social</Button></div>
+      {familyPage==='social' ? <FamilySocial key={family.id} family={family} apiRequest={apiRequest}/> : <>
       <Surface className="family-self">
         <div><p className="eyebrow">Self</p><h2>{family.self.name}</h2><p>{family.self.email}</p></div>
         <div><Badge tone="success">{family.self.role}</Badge>
@@ -203,13 +228,15 @@ export default function Family({ apiRequest, features = { family: true } }) {
         {searchTerm && <p role="status">{connections.length} matching family member{connections.length === 1 ? '' : 's'}.</p>}
         {searchTerm && connections.length === 0 && <p>No matching family members.</p>}
       </Surface>
-      {groups.map((group) => <Surface key={group.id} className="family-group">
+      {groups.map((group) => <Surface key={group.id} className={`family-group family-tone-${group.id==='bornIn'?'bornIn':'formed'}`}>
         <SectionHeader title={group.title} description={group.description} />
         {connections.filter((connection) => connection.group === group.id).length === 0 ? <p>{searchTerm ? 'No matches in this group.' : 'No members added yet.'}</p> :
           <div className="family-list">{connections.filter((connection) => connection.group === group.id).map((connection) => <article key={connection.relationId} className="family-member">
             <div><strong>{connection.person.name}</strong><span>{connection.label} · {connection.person.status === 'ACCEPTED' ? connection.person.role : connection.person.status === 'PENDING' ? 'Invitation pending' : 'No account linked'}</span>
+              {profileDetails(connection.person)}
               {connection.person.email && <small>{connection.person.email}</small>}</div>
             <div className="family-actions">
+              {canEdit && <Button type="button" disabled={busy} onClick={() => editDetails(connection.person)}>Edit details</Button>}
               {canEdit && <Button type="button" disabled={busy} onClick={() => updatePerson(connection.person)}>Edit</Button>}
               {canAdmin && connection.person.status !== 'ACCEPTED' && connection.person.email && <Button icon={MailPlus} type="button" disabled={busy} onClick={() => run(() => apiRequest(`/api/family/${family.id}/people/${connection.person.id}/invite`, { method: 'POST' }), 'Invitation sent.')}>Invite</Button>}
               {isCreator && <select aria-label={`Role for ${connection.person.name}`} value={connection.person.role} disabled={busy} onChange={(event) => run(() => apiRequest(`/api/family/${family.id}/people/${connection.person.id}/role`, { method: 'PATCH', body: JSON.stringify({ role: event.target.value }) }), 'Role updated.')}>
@@ -219,6 +246,18 @@ export default function Family({ apiRequest, features = { family: true } }) {
             </div>
           </article>)}</div>}
       </Surface>)}
+      <Surface><SectionHeader title="My family details" description="Shared family information is separate from your account profile." />
+        {profileDetails(family.self)}
+        {canEdit && <Button type="button" disabled={busy} onClick={() => editDetails(family.self)}>Edit my family details</Button>}
+      </Surface>
+      {details && <Surface><SectionHeader title={`Family details for ${details.name}`} description="Visible in family views to accepted members. This does not change account details or sharing permissions." />
+        <form className="family-form" onSubmit={saveDetails}>
+          <FormField label="Preferred name"><input maxLength={80} value={details.preferredName} onChange={e => setDetails({ ...details, preferredName: e.target.value })} /></FormField>
+          <FormField label="Birth date"><input type="date" value={details.birthDate} onChange={e => setDetails({ ...details, birthDate: e.target.value })} /></FormField>
+          <FormField label="Family note"><textarea maxLength={1000} value={details.note} onChange={e => setDetails({ ...details, note: e.target.value })} /></FormField>
+          <Button type="submit" disabled={busy}>Save details</Button><Button type="button" disabled={busy} onClick={() => setDetails(null)}>Cancel</Button>
+        </form>
+      </Surface>}
       {canEdit && <Surface className="family-add"><SectionHeader title="Add a family member" description="People without an account can be invited later." />
         <form onSubmit={addPerson} className="family-form">
           <FormField label="Name"><input required maxLength="80" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></FormField>
@@ -228,35 +267,36 @@ export default function Family({ apiRequest, features = { family: true } }) {
         </form>
       </Surface>}
       {enabledDataFeatures.length > 0 && <><Surface className="family-sharing-overview">
-        <SectionHeader title="Sharing" description="Your Diet and Finance permissions, separate from family roles." />
+        <SectionHeader title="Sharing" description="Your feature permissions, separate from family roles." />
         {sharingError && <p role="alert">{sharingError}</p>}
         {!sharing && !sharingError && <LoadingState>Loading sharing…</LoadingState>}
         {sharing && <div className="family-overview-grid">{enabledDataFeatures.map((feature) => <section key={feature}>
-          <h3>{feature === 'diet' ? 'Diet' : 'Finance'}</h3>
+          <h3>{feature === 'diet' ? 'Diet' : feature === 'family' ? 'Family' : 'Finance'}</h3>
           <h4>Shared with</h4>
           {sharing[feature].sharedWith.length ? sharing[feature].sharedWith.map((entry) => <div className="family-overview-row" key={`${entry.familyId}-${entry.person.id}`}>
             <span>{entry.person.name}</span><Button type="button" disabled={busy} onClick={() => stopSharing(entry, feature)}>Stop sharing</Button>
           </div>) : <p>Not shared.</p>}
           <h4>Shared by</h4>
           {sharing[feature].sharedBy.length ? sharing[feature].sharedBy.map((entry) => <div className="family-overview-row" key={`${entry.familyId}-${entry.person.id}`}>
-            <span>{entry.person.name}</span><Button type="button" disabled={busy} onClick={() => showShared(entry.familyId, entry.person.userId, feature)}>View read only</Button>
+            <span>{entry.person.name}</span><Button type="button" disabled={busy} onClick={() => feature==='family' ? setMessage('Select this member from the member dropdown at the top right of Family to view shared Family information.') : showShared(entry.familyId, entry.person.userId, feature)}>View read only</Button>
           </div>) : <p>Not shared with you.</p>}
         </section>)}</div>}
         {family.connections.some((connection) => connection.person.status !== 'ACCEPTED') && <p className="family-share-ineligible">Not eligible for sharing yet: {family.connections.filter((connection) => connection.person.status !== 'ACCEPTED').map((connection) => `${connection.person.name} (${connection.person.status === 'PENDING' ? 'invitation pending' : 'no account linked'})`).join(', ')}.</p>}
       </Surface>
-      <Surface className="family-sharing"><SectionHeader title="Share your information" description="Choose accepted members separately for Diet and Finance. They can only view what you share." />
+      <Surface className="family-sharing"><SectionHeader title="Share your information" description="Choose accepted members separately for each feature. They can only view what you share." />
         {family.acceptedMembers.filter((member) => member.id !== family.self.id).length === 0 ? <p>Accepted family members will appear here.</p> :
           <div className="family-list">{family.acceptedMembers.filter((member) => member.id !== family.self.id).map((member) => <div key={member.id} className="family-share-row"><strong>{member.name}</strong>
             {enabledDataFeatures.map((feature) => {
               const enabled = family.myShares.some((share) => share.feature === feature && share.recipientId === member.userId);
-              return <label key={feature}><input type="checkbox" checked={enabled} disabled={busy} onChange={() => run(() => apiRequest(`/api/family/${family.id}/shares/${feature}/${member.userId}`, { method: enabled ? 'DELETE' : 'PUT' }), `${feature === 'diet' ? 'Diet' : 'Finance'} sharing ${enabled ? 'stopped' : 'enabled'}.`)} /> {feature === 'diet' ? 'Diet' : 'Finance'}</label>;
+              return <label key={feature}><input type="checkbox" checked={enabled} disabled={busy} onChange={() => run(() => apiRequest(`/api/family/${family.id}/shares/${feature}/${member.userId}`, { method: enabled ? 'DELETE' : 'PUT' }), `${feature === 'diet' ? 'Diet' : feature === 'family' ? 'Family' : 'Finance'} sharing ${enabled ? 'stopped' : 'enabled'}.`)} /> {feature === 'diet' ? 'Diet' : feature === 'family' ? 'Family' : 'Finance'}</label>;
             })}</div>)}</div>}
       </Surface>
       <Surface className="family-shared"><SectionHeader title="Shared with you" description="Read only access to information each member chose to share." />
-        {accessibleShares.length === 0 ? <p>No enabled Diet or Finance information has been shared with you.</p> : <>
+        {accessibleShares.length === 0 ? <p>No available information has been shared with you.</p> : <>
+          <p>Select a member from the member dropdown at the top right of Family to open their shared modules.</p>
           <div className="family-filters">{features.diet && <FormField label="Diet date"><input type="date" value={sharedDate} onChange={(event) => setSharedDate(event.target.value)} /></FormField>}
             {features.finance && <FormField label="Finance month"><input type="month" value={sharedMonth} onChange={(event) => setSharedMonth(event.target.value)} /></FormField>}</div>
-          <div className="family-actions">{accessibleShares.map((share) => <Button key={`${share.ownerId}-${share.feature}`} disabled={busy} onClick={() => showShared(family.id, share.ownerId, share.feature)}>{family.acceptedMembers.find((person) => person.userId === share.ownerId)?.name || 'Member'} · {share.feature}</Button>)}</div>
+          <div className="family-actions">{accessibleShares.filter(s=>s.feature!=='family').map((share) => <Button key={`${share.ownerId}-${share.feature}`} disabled={busy} onClick={() => showShared(family.id, share.ownerId, share.feature)}>{family.acceptedMembers.find((person) => person.userId === share.ownerId)?.name || 'Member'} · {share.feature}</Button>)}</div>
         </>}
         {shared && <div className="family-shared-data"><h3>{shared.owner.name}'s {shared.feature}</h3>
           {shared.feature === 'diet' ? <><p>{shared.date} · Targets: {shared.targets ? `${shared.targets.calories} calories` : 'not set'}</p>
@@ -278,6 +318,9 @@ export default function Family({ apiRequest, features = { family: true } }) {
         </li>)}</ol> : <p>No family changes yet.</p>)}
         {activity?.nextCursor && <Button type="button" disabled={activityLoading} onClick={moreActivity}>{activityLoading ? 'Loading…' : 'View more'}</Button>}
       </Surface>
+      </>}
     </>}
+    </details>}
+    {message && !legacyFamilies.length && !invitations.length && <p role="alert">{message}</p>}
   </section>;
 }

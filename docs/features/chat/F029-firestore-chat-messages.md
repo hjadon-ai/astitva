@@ -4,6 +4,10 @@
 - **Branch:** `feature/changes_03-Oct-2026`
 - **Pull request:** Not created
 
+## F032 architecture amendment
+
+F032 changes the current web send path to `client → Express → Firestore → FCM`, with validated PIN unlock, durable send identifiers, and generic iOS notifications. Message history, pagination, and live listeners remain direct Firestore reads. Legacy clients that write directly to Firestore remain compatible but do not generate push. The original F029 implementation and owner decisions below describe the initial direct-write design; this amendment supersedes their requirement that sends bypass Express. No Cloud Functions are introduced. See [F032](F032-private-chat-push-notifications.md) for current send contracts and verification.
+
 ## Goal
 
 Let participants in an existing F027 anonymous chat receive new messages live and read/send message history directly through Cloud Firestore. Once access is established, the web application must skip Render/Express chat API calls for message reads, writes, refreshes, pagination, and real-time delivery. Keep invitation, conversation, PIN, alias, deletion, and other Astitva data under the existing server's control.

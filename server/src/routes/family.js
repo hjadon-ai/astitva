@@ -12,7 +12,9 @@ const { createRateLimit } = require('../middleware/security');
 const { sessionToken } = require('../middleware/sessionToken');
 const { requireFeature } = require('../middleware/featureAccess');
 
+const sharedWorkspace = require('../services/sharedWorkspace');
 const router = express.Router();
+require('../services/familyUnitCompatibility').wrapMutations(router);
 const objectId = (value) => /^[a-f0-9]{24}$/i.test(value || '');
 const same = (a, b) => String(a) === String(b);
 const name = (value) => typeof value === 'string' ? value.trim() : '';
@@ -45,6 +47,18 @@ router.use(async (request, response, next) => {
   next();
 });
 router.use(requireFeature('family'));
+router.use(require('./familyUnits'));
+// Normalized unit identities/relationships are changed only through transactional F035 APIs.
+router.use(async (request, response, next) => {
+  const match = /^\/([a-f0-9]{24})(?:\/|$)/i.exec(request.path);
+  if (match && !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
+      !request.path.includes('/posts') && !request.path.includes('/shares/')) {
+    const unit = await require('../models/FamilyUnit').Unit.exists({ _id: match[1] });
+    if (unit) return response.status(409).json({ error: 'Use the shared family unit controls for this change.' });
+  }
+  next();
+});
+router.use('/:familyId/posts', require('./familySocial'));
 
 const acceptedPerson = (family, userId) => family.people.find((person) =>
   person.status === 'ACCEPTED' && person.userId && same(person.userId, userId));
@@ -52,6 +66,7 @@ const canWrite = (person) => ['ADMIN', 'EDITOR'].includes(person.role);
 const publicPerson = (person) => ({
   id: String(person._id), name: person.name, email: person.email,
   gender: person.gender, role: person.role, status: person.status,
+  preferredName: person.preferredName ?? null, birthDate: person.birthDate ?? null, note: person.note ?? null,
   userId: person.userId ? String(person.userId) : null
 });
 const sharePerson = (person) => ({ id: String(person._id), name: person.name,
@@ -148,7 +163,7 @@ async function pruneDisconnected(family) {
 }
 
 router.get('/', async (request, response) => {
-  const families = await Family.find({ 'people.userId': request.familyUser._id });
+  const families = await Family.find({ 'people.userId': request.familyUser._id, normalizedUnit: { $ne: true } });
   response.json({ families: families.map((family) => familyView(family, acceptedPerson(family, request.familyUser._id)))
     .sort((a, b) => b.connections.length - a.connections.length) });
 });
@@ -169,9 +184,20 @@ router.get('/invitations', async (request, response) => {
   }) });
 });
 
+router.get('/shared-workspace/members', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json(await sharedWorkspace.members(request.familyUser)); }
+  catch (e) { if(e.status)return response.status(e.status).json({error:e.message});throw e; }
+});
+router.get('/:familyId/people/:personId/shared-workspace', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json(await sharedWorkspace.context(request.familyUser, request.params.familyId, request.params.personId, request.app.locals.runtime || getRuntimeConfig())); }
+  catch (e) { if(e.status)return response.status(e.status).json({error:e.message});throw e; }
+});
+
 router.get('/sharing/summary', async (request, response) => {
   const families = await Family.find({ 'people.userId': request.familyUser._id });
-  const features = { diet: { sharedWith: [], sharedBy: [] }, finance: { sharedWith: [], sharedBy: [] } };
+  const features = { diet: { sharedWith: [], sharedBy: [] }, finance: { sharedWith: [], sharedBy: [] }, family: { sharedWith: [], sharedBy: [] } };
   for (const family of families) {
     if (!acceptedPerson(family, request.familyUser._id)) continue;
     for (const share of family.shares) {
@@ -284,6 +310,20 @@ router.post('/:familyId/people', async (request, response) => {
   await family.save();
   await recordActivity(family, request.familyUser, 'PERSON_ADDED', `Added ${person.name} to the family.`, { subject: person });
   response.status(201).json({ family: familyView(family, viewer) });
+});
+
+router.patch('/:familyId/people/:personId/details', async (request, response) => {
+  const membership = await memberFamily(request, response);
+  if (!membership) return;
+  const { family, viewer } = membership;
+  const person = objectId(request.params.personId) && family.people.id(request.params.personId);
+  if (!person) return reject(response, 'Family person not found.', 404);
+  if (!canWrite(viewer)) return reject(response, 'ADMIN or EDITOR role required.', 403);
+  const details = require('../services/familyDetails').parseDetails(request.body);
+  if (!details) return reject(response, 'Use optional preferredName (80 characters), birthDate (YYYY-MM-DD or null), and note (1000 characters) only.');
+  Object.assign(person, details);
+  await family.save();
+  response.json({ person: publicPerson(person), family: familyView(family, viewer) });
 });
 
 router.patch('/:familyId/people/:personId', async (request, response) => {
@@ -460,13 +500,13 @@ router.put('/:familyId/shares/:feature/:recipientId', async (request, response) 
   const context = await memberFamily(request, response);
   if (!context) return;
   const { family, viewer } = context;
-  if (!['diet', 'finance'].includes(request.params.feature)) return reject(response, 'Unknown feature.', 404);
+  if (!['diet', 'finance', 'family'].includes(request.params.feature)) return reject(response, 'Unknown feature.', 404);
   if (!request.features[request.params.feature]) return reject(response, 'This feature is not enabled for your account.', 403);
   const recipient = objectId(request.params.recipientId) && acceptedPerson(family, request.params.recipientId);
   if (!recipient || same(recipient.userId, viewer.userId)) return reject(response, 'Choose an accepted family member.', 400);
   if (!family.shares.some((share) => share.feature === request.params.feature &&
       same(share.ownerId, viewer.userId) && same(share.recipientId, recipient.userId))) {
-    family.shares.push({ ownerId: viewer.userId, recipientId: recipient.userId, feature: request.params.feature });
+    family.shares.push({ ownerId: viewer.userId, recipientId: recipient.userId, feature: request.params.feature, ...(request.params.feature === 'family' ? {visiblePersonIds: family.people.map(p => p._id)} : {}) });
     await family.save();
     await recordActivity(family, request.familyUser, 'SHARE_GRANTED', `Shared ${request.params.feature} with ${recipient.name}.`, { subject: recipient, feature: request.params.feature });
   }
@@ -477,7 +517,7 @@ router.delete('/:familyId/shares/:feature/:recipientId', async (request, respons
   const context = await memberFamily(request, response);
   if (!context) return;
   const { family, viewer } = context;
-  if (!['diet', 'finance'].includes(request.params.feature)) return reject(response, 'Unknown feature.', 404);
+  if (!['diet', 'finance', 'family'].includes(request.params.feature)) return reject(response, 'Unknown feature.', 404);
   const recipient = objectId(request.params.recipientId) && acceptedPerson(family, request.params.recipientId);
   const hadShare = family.shares.some((share) => share.feature === request.params.feature &&
     same(share.ownerId, viewer.userId) && same(share.recipientId, request.params.recipientId));
@@ -491,19 +531,18 @@ router.delete('/:familyId/shares/:feature/:recipientId', async (request, respons
 });
 
 router.get('/:familyId/shared/:ownerId/:feature', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
   const context = await memberFamily(request, response);
   if (!context) return;
   const { family, viewer } = context;
   const owner = objectId(request.params.ownerId) && acceptedPerson(family, request.params.ownerId);
   const feature = request.params.feature;
-  if (['diet', 'finance'].includes(feature) && !request.features[feature]) {
-    return reject(response, 'This feature is not enabled for your account.', 403);
-  }
-  if (!owner || !['diet', 'finance'].includes(feature) ||
-      !family.shares.some((share) => share.feature === feature &&
-        same(share.ownerId, owner.userId) && same(share.recipientId, viewer.userId))) {
-    return reject(response, 'This information is not shared with you.', 403);
-  }
+  if (!owner || !['diet', 'finance', 'family'].includes(feature)) return reject(response, 'This information is not shared with you.', 403);
+  try {
+    await sharedWorkspace.contextFamily(request.params.familyId, request.familyUser);
+    if (!(await sharedWorkspace.available(family, owner, request.familyUser, request.app.locals.runtime || getRuntimeConfig())).includes(feature)) return reject(response, 'This information is not shared with you.', 403);
+    if (feature === 'family') return response.json(sharedWorkspace.familyData(family, owner, request.familyUser));
+  } catch (e) { if(e.status)return reject(response,e.message,e.status);throw e; }
   if (feature === 'diet') {
     const date = request.query.date || new Date().toISOString().slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date)) ||
@@ -512,7 +551,7 @@ router.get('/:familyId/shared/:ownerId/:feature', async (request, response) => {
       Meal.find({ userId: owner.userId, consumedOn: date }).select('name mealType servingDescription consumedOn calories proteinGrams carbohydrateGrams fatGrams fiberGrams').lean(),
       Targets.findOne({ userId: owner.userId }).select(fields.join(' ')).lean()
     ]);
-    return response.json({ owner: publicPerson(owner), feature, date,
+    return response.json({ owner: { id: String(owner._id), name: owner.name }, feature, date,
       targets: targets ? Object.fromEntries(fields.map((field) => [field, targets[field]])) : null,
       meals: meals.map((meal) => ({ name: meal.name, mealType: meal.mealType,
         servingDescription: meal.servingDescription,
@@ -526,7 +565,7 @@ router.get('/:familyId/shared/:ownerId/:feature', async (request, response) => {
       .sort({ date: -1 }).limit(100).select('date name merchantName amount currency direction category pending').lean(),
     FinanceHolding.find({ userId: owner.userId }).select('name tickerSymbol securityType quantity price marketValue currency priceAsOf').lean()
   ]);
-  response.json({ owner: publicPerson(owner), feature, month, accounts, transactions, holdings });
+  response.json({ owner: { id: String(owner._id), name: owner.name }, feature, month, accounts, transactions, holdings });
 });
 
 module.exports = router;

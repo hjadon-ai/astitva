@@ -1,0 +1,749 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Astitva Family Social API (F023)",
+    "version": "1.0.0",
+    "description": "Same session/origin policy as Family APIs; accepted membership + post audience on every operation. Selected recipients retain account identity after re-entry. No notifications."
+  },
+  "paths": {
+    "/api/family/{familyId}/posts": {
+      "get": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "List visible chronological posts plus authorized pinned announcement",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque cursor from previous response."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "posts/comments, nextCursor; posts also includes pinned. Post summaries: id, authorId/name, type, text, audience, recipientIds, timestamps, version, authorized photoUrl, reactionCount/reacted, canEdit/canRemove/canPin/pinned. Images omitted."
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Create update, milestone or announcement; READONLY may post",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "payload"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "payload": {
+                    "type": "string",
+                    "description": "JSON PostInput"
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG/PNG up to 2 MiB, signature checked. Original metadata retained."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/family/{familyId}/posts/{postId}": {
+      "patch": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Author-only edit with optimistic version; photo retained",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostEdit"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Any accepted viewer may remove post; clears photo and comments",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        }
+      }
+    },
+    "/api/family/{familyId}/posts/{postId}/photo": {
+      "get": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Authenticated authorized JPEG/PNG; never a public storage URL",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; authorization checked on every request",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        }
+      }
+    },
+    "/api/family/{familyId}/posts/{postId}/pin": {
+      "put": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Any accepted viewer may pin/unpin an announcement; one family pointer",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/family/{familyId}/posts/{postId}/reactions": {
+      "post": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Idempotent caller Like; capped at 1000 unique users",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Remove caller Like",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        }
+      }
+    },
+    "/api/family/{familyId}/posts/{postId}/comments": {
+      "get": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Visible post comments, newest first",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque cursor from previous response."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "posts/comments, nextCursor; posts also includes pinned. Post summaries: id, authorId/name, type, text, audience, recipientIds, timestamps, version, authorized photoUrl, reactionCount/reacted, canEdit/canRemove/canPin/pinned. Images omitted."
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Family Social"
+        ],
+        "summary": "Any accepted viewer including READONLY may comment",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success; authorization checked on every request"
+          },
+          "400": {
+            "description": "Invalid payload/cursor/type/audience/photo signature"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled Family required, or author-only edit"
+          },
+          "404": {
+            "description": "Not an accepted member, wrong family, invisible/removed post"
+          },
+          "409": {
+            "description": "Stale edit or reaction capacity reached"
+          },
+          "413": {
+            "description": "Photo exceeds 2 MiB"
+          },
+          "415": {
+            "description": "Unsupported create-post content type"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentInput"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PostInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "type",
+          "audience"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "update",
+              "milestone",
+              "announcement"
+            ]
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "family",
+              "selected"
+            ]
+          },
+          "recipientIds": {
+            "type": "array",
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "Selected audience requires at least one other currently accepted user; family requires empty array."
+          }
+        }
+      },
+      "CommentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "PinInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pinned"
+        ],
+        "properties": {
+          "pinned": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PostEdit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "type",
+          "audience",
+          "version"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "update",
+              "milestone",
+              "announcement"
+            ]
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "family",
+              "selected"
+            ]
+          },
+          "recipientIds": {
+            "type": "array",
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "Selected audience requires at least one other currently accepted user; family requires empty array."
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

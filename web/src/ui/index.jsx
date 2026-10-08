@@ -161,8 +161,8 @@ const navigation = [
   { id: 'admin', label: 'Admin Panel', icon: Shield, admin: true }
 ];
 
-export function AppShell({ page, user, runtime, onLogout, children }) {
-  const visibleNavigation = navigation.filter((item) => item.admin ? user.isAdmin :
+export function AppShell({ page, user, runtime, onLogout, children, sharedModules, workspaceControls }) {
+  const visibleNavigation = navigation.filter((item) => sharedModules ? sharedModules.includes(item.id) : item.admin ? user.isAdmin :
     !item.feature || (user.features || { family: true })[item.feature]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef(null);
@@ -218,7 +218,7 @@ export function AppShell({ page, user, runtime, onLogout, children }) {
           <Button variant="quiet" icon={LogOut} className="sidebar-logout" type="button" onClick={onLogout}>Log out</Button>
         </aside>
       </div>}
-      <main className="app-main">{children}</main>
+      <main className="app-main">{workspaceControls && <header className="workspace-header">{workspaceControls}</header>}{children}</main>
     </div>
   );
 }

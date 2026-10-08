@@ -1,8 +1,11 @@
+import { createMessageAlerts } from './privateNotification';
+import { enableWebNotifications, disableWebNotifications, notificationsWanted, showWebNotification } from './webNotifications';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, FormField, PageHeader, Surface } from './ui';
-import { closeFirestoreChat, loadOlderFirestoreMessages, openFirestoreChat, sendFirestoreMessage } from './firestoreChat';
+import { createChatSender } from './chatSender';
+import { closeFirestoreChat, loadOlderFirestoreMessages, openFirestoreChat } from './firestoreChat';
 
-export default function Chat({ apiRequest }) {
+export default function Chat({ apiRequest, webNotificationsEnabled }) {
   const [conversations, setConversations] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -14,10 +17,14 @@ export default function Chat({ apiRequest }) {
   const [unlocks, setUnlocks] = useState({});
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(notificationsWanted);
   const [connection, setConnection] = useState('Locked');
   const listener = useRef(null);
   const messageBoard = useRef(null);
   const previousBoard = useRef(null);
+  const sender = useRef(null);
+  if (!sender.current) sender.current = createChatSender(apiRequest);
+  const viewGeneration = useRef(0);
 
   useLayoutEffect(() => {
     const board = messageBoard.current;
@@ -46,23 +53,37 @@ export default function Chat({ apiRequest }) {
     setConversations(chats.conversations);
     setInvitations(pending.invitations);
     if (selected) setSelected(chats.conversations.find((chat) => chat.id === selected.id) || null);
+    else {
+      const requested = new URLSearchParams(window.location.search).get('chat');
+      const target = chats.conversations.find((chat) => chat.id === requested);
+      if (target) setSelected(target); // Selection does not restore an unlock.
+    }
   }
   useEffect(() => {
     refresh().catch((error) => setNotice(error.message));
-    return () => { listener.current?.(); closeFirestoreChat().catch(() => {}); };
+    return () => { viewGeneration.current++; sender.current.clear(); listener.current?.(); closeFirestoreChat().catch(() => {}); };
   }, []);
 
   async function startListener(chat, customToken) {
+    const generation = viewGeneration.current;
+    const alertMessages = createMessageAlerts((payload) => showWebNotification(payload).catch(() => {}));
     listener.current?.();
     setConnection('Connecting');
-    listener.current = await openFirestoreChat(customToken, chat.id, (latest) => setMessages((current) => {
-      const latestIds = new Set(latest.map((message) => message.id));
-      const cutoff = latest[0]?.createdAt;
-      const older = current.filter((message) => !latestIds.has(message.id) && cutoff && message.createdAt < cutoff);
-      return [...older, ...latest];
-    }), (error) => {
+    const unsubscribe = await openFirestoreChat(customToken, chat.id, (latest) => {
+      if (generation !== viewGeneration.current) return;
+      alertMessages(chat.id, latest);
+      setMessages((current) => {
+        const latestIds = new Set(latest.map((message) => message.id));
+        const cutoff = latest[0]?.createdAt;
+        const older = current.filter((message) => !latestIds.has(message.id) && cutoff && message.createdAt < cutoff);
+        return [...older, ...latest];
+      });
+    }, (error) => {
+      if (generation !== viewGeneration.current) return;
       setConnection('Disconnected'); setNotice(error.message);
     });
+    if (generation !== viewGeneration.current) { unsubscribe(); return; }
+    listener.current = unsubscribe;
     setConnection('Live');
   }
   async function reconnect() {
@@ -122,19 +143,34 @@ export default function Chat({ apiRequest }) {
     });
   }
   async function load(chat) {
+    viewGeneration.current++;
+    listener.current?.(); listener.current = null;
+    await closeFirestoreChat();
+    setUnlocks({});
+    setMessage(sender.current.pendingText(chat.id) || '');
     setSelected(chat);
     setAlias(chat.aliases.find((entry) => entry.self)?.alias || '');
     setMessages([]);
     setPin('');
     setNotice('');
-    if (!unlocks[chat.id]) setConnection('Locked');
+    setConnection('Locked');
+    setBusy(false);
   }
   async function send(event) {
     event.preventDefault();
-    await action(async () => {
-      await sendFirestoreMessage(selected.id, message, alias);
-      setMessage('');
-    }, false);
+    if (!selected || !unlocks[selected.id] || busy || sender.current.isBusy()) return;
+    const generation = viewGeneration.current;
+    const chatId = selected.id;
+    setBusy(true); setNotice('');
+    try {
+      const result = await sender.current.send(chatId, message, unlocks[chatId].token);
+      if (result && generation === viewGeneration.current) {
+        setMessage('');
+        setNotice(result.warning || '');
+      }
+    } catch (error) {
+      if (generation === viewGeneration.current) setNotice(error.message);
+    } finally { if (generation === viewGeneration.current) setBusy(false); }
   }
   async function loadOlder() {
     if (!selected || !unlocks[selected.id]) return;
@@ -146,6 +182,7 @@ export default function Chat({ apiRequest }) {
     }, false);
   }
   async function lockChat(chatId) {
+    viewGeneration.current++;
     await action(async () => {
       await apiRequest(`/api/chat/conversations/${chatId}/lock`, { method: 'POST' });
       listener.current?.(); listener.current = null;
@@ -175,7 +212,8 @@ export default function Chat({ apiRequest }) {
       await apiRequest(all ? '/api/chat/conversations' : `/api/chat/conversations/${selected.id}`, {
         method: 'DELETE'
       });
-      setSelected(null); setMessages([]); setUnlocks({});
+      viewGeneration.current++; sender.current.clear();
+      setSelected(null); setMessages([]); setUnlocks({}); setMessage('');
       listener.current?.(); listener.current = null; await closeFirestoreChat(); setConnection('Locked');
       setNotice('Chat data deleted for both participants.');
     });
@@ -183,6 +221,20 @@ export default function Chat({ apiRequest }) {
   const activeToken = selected && unlocks[selected.id];
   return <main className="chat-page">
     <PageHeader eyebrow="Workspace / Chat" title="Anonymous chat" description="Share a private link manually. Your alias appears in chat; your account remains authenticated." />
+    <Surface><h2>Web notifications</h2>
+      <p>Private “Daily Check” alerts. Opening a notification still requires login and your chat PIN.</p>
+      {!webNotificationsEnabled ? <p>Web notifications are disabled by the administrator.</p> :
+        <Button disabled={busy} onClick={() => action(async () => {
+          if (notificationsEnabled) {
+            await disableWebNotifications(apiRequest); setNotificationsEnabled(false); setNotice('Web notifications disabled for this browser.');
+          } else {
+            const mode = await enableWebNotifications(apiRequest);
+            setNotificationsEnabled(true);
+            setNotice(mode === 'background' ? 'Web notifications enabled, including when the page is closed.'
+              : 'Notifications enabled for open chats. Background delivery needs the Firebase Web Push public key.');
+          }
+        }, false)}>{notificationsEnabled ? 'Disable notifications' : 'Enable notifications'}</Button>}
+    </Surface>
     {notice && <p className="form-message" role="status">{notice}</p>}
     {inviteToken && <Surface>
       <h2>Chat invitation</h2><p>A signed-in account can claim this link once. Your account identity will not appear in the conversation.</p>
@@ -193,7 +245,7 @@ export default function Chat({ apiRequest }) {
     <Surface className="chat-conversations"><div className="chat-heading"><h2>Conversations</h2><Button variant="danger" type="button" disabled={busy || !conversations.length} onClick={() => remove(true)}>Delete all my anonymous chats</Button></div>
       {!conversations.length && <p>No active chats yet.</p>}
       <div className="chat-list">{conversations.map((chat) => <div className="chat-list-item" key={chat.id}>
-        <button type="button" className={selected?.id === chat.id ? 'active' : ''} onClick={() => load(chat)}>
+        <button type="button" className={selected?.id === chat.id ? 'active' : ''} disabled={busy} onClick={() => load(chat)}>
           {chat.aliases.find((entry) => !entry.self)?.alias || 'Anonymous'} <small>· {chat.messageCount} messages</small></button>
         {unlocks[chat.id] && <Button type="button" disabled={busy} onClick={() => lockChat(chat.id)}>Lock</Button>}
       </div>)}</div>
@@ -212,7 +264,7 @@ export default function Chat({ apiRequest }) {
           <Button type="submit" disabled={busy}>Save alias</Button></form>
           <div><Button type="button" disabled={busy} onClick={loadOlder}>Load older messages</Button></div>
           <div className="chat-messages" ref={messageBoard}>{!messages.length && <p>No messages yet.</p>}{messages.map((entry) => <article key={entry.id} className={entry.self ? 'chat-message-sent' : 'chat-message-received'}><strong>{entry.alias}{entry.self ? ' (you)' : ''}</strong><p>{entry.text}</p><small>{new Date(entry.createdAt).toLocaleString()}</small></article>)}</div>
-          <form onSubmit={send} className="chat-inline-form"><FormField label="Message"><input value={message} maxLength="2000" onChange={(event) => setMessage(event.target.value)} required /></FormField>
+          <form onSubmit={send} className="chat-inline-form"><FormField label="Message"><input value={message} disabled={busy || sender.current.pendingText(selected.id) !== undefined} maxLength="2000" onChange={(event) => setMessage(event.target.value)} required /></FormField>
             <Button variant="primary" type="submit" disabled={busy}>Send</Button></form></>}
     </Surface>}
     {!inviteToken && <Surface>

@@ -1,12 +1,15 @@
+import { useSharedWorkspace } from './SharedWorkspace.jsx';
+import SignedInHome, { PublicHomeIntro, PublicHomeSections } from './HomeContent';
+import { disableWebNotifications, setWebNotificationsAllowed } from './webNotifications';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Database, FolderKanban, LogIn, Mail, UserPlus, UserRound } from 'lucide-react';
+import { ArrowLeft, LogIn, Mail, UserPlus } from 'lucide-react';
 import Diet from './Diet';
 import Priorities from './Priorities';
 import Finance from './Finance';
 import Family from './Family';
 import Chat from './Chat';
 import Admin from './Admin';
-import { AppShell, Badge, Button, EnvironmentBanner, FormField, LoadingState, PageHeader, StatCard, Surface } from './ui';
+import { AppShell, Button, EnvironmentBanner, FormField, LoadingState } from './ui';
 import { version as webVersion } from '../package.json';
 
 const emptyForm = { name: '', email: '', password: '' };
@@ -36,6 +39,7 @@ async function apiRequest(path, options = {}) {
   });
 
   if (response.status === 204) return null;
+  if (response.ok && options.responseType === 'blob') return response.blob();
   const body = await response.json();
   if (!response.ok) {
     const details = body.error;
@@ -349,8 +353,8 @@ function PublicHome({ onAuthenticated, runtime }) {
       <header className="site-header shell">
         <a className="brand" href="#top">Astitva<span>.</span></a>
         <nav aria-label="Main navigation">
-          <a href="#work">Work</a>
-          <a href="#about">About</a>
+          <a href="#families">About families</a>
+          <a href="#privacy">Privacy</a>
           <Button variant="quiet" type="button" onClick={() => setMode('login')}>Login</Button>
         </nav>
       </header>
@@ -358,9 +362,7 @@ function PublicHome({ onAuthenticated, runtime }) {
       <main id="top" className="shell">
         <section className="hero">
           <div>
-            <p className="eyebrow">Personal workspace</p>
-            <h1>Your private workspace, <em>organized around your life.</em></h1>
-            <p className="lede">Projects, health, finance, and notes in one private application that keeps you in control.</p>
+            <PublicHomeIntro />
           </div>
           {mode === 'forgot-password' ? (
             <ForgotPasswordPanel onBack={() => setMode('login')} />
@@ -374,21 +376,7 @@ function PublicHome({ onAuthenticated, runtime }) {
           )}
         </section>
 
-        <section id="work" className="content-section">
-          <div className="section-heading">
-            <p className="eyebrow">Selected work</p>
-            <h2>Projects will live here.</h2>
-          </div>
-          <div className="project-grid">
-            <article><span>01</span><h3>Project one</h3><p>Project details will be added in a later step.</p></article>
-            <article><span>02</span><h3>Project two</h3><p>Project details will be added in a later step.</p></article>
-          </div>
-        </section>
-
-        <section id="about" className="content-section about">
-          <div><p className="eyebrow">About</p><h2>A place to introduce your story.</h2></div>
-          <p>Your biography, experience, and interests can be added after the authenticated flow is reviewed.</p>
-        </section>
+        <PublicHomeSections runtime={runtime} />
       </main>
       <footer className="site-footer shell" aria-label="Application versions">
         <span>Web v{webVersion}</span>
@@ -400,7 +388,7 @@ function PublicHome({ onAuthenticated, runtime }) {
 
 function Profile({ user, onLogout, runtime }) {
   const pageFromHash = () => {
-    const requested = window.location.pathname === '/chat-invite' ? 'chat' : window.location.hash.slice(1);
+    const requested = window.location.pathname === '/chat-invite' ? 'chat' : window.location.hash.slice(1).split('?')[0];
     return (user.features || { family: true })[requested] ? requested : 'profile';
   };
   const [page, setPage] = useState(pageFromHash);
@@ -410,37 +398,13 @@ function Profile({ user, onLogout, runtime }) {
     window.addEventListener('hashchange', change);
     return () => window.removeEventListener('hashchange', change);
   }, [user.features]);
+  const shared = useSharedWorkspace({apiRequest,user,page});
   return (
-    <AppShell page={page} user={user} runtime={runtime} onLogout={onLogout}>
-      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} /> : <section className="profile-content" id="profile">
-        <PageHeader
-          eyebrow="Workspace / Overview"
-          title={`Good to see you, ${user.name}.`}
-          description="A clear summary of your private local workspace."
-          actions={<div className="avatar" aria-hidden="true">{user.name.charAt(0).toUpperCase()}</div>}
-        />
-
-        <Surface className="profile-card">
-          <div>
-            <p className="eyebrow">Your account</p>
-            <h2>{user.name}</h2>
-            <p>{user.email}</p>
-          </div>
-          <Badge tone="success"><CheckCircle2 size={15} aria-hidden="true" /> Session active</Badge>
-        </Surface>
-
-        <section className="profile-grid" id="projects">
-          <StatCard label="Projects" value="2" helper="Sample placeholders" icon={FolderKanban} accent="blue" />
-          <StatCard label="Profile" value="25%" helper="Ready for your content" icon={UserRound} accent="pink" />
-          <StatCard label="Database" value={runtime?.dataLocation === 'cloud' ? 'Cloud' : 'Local'} helper={runtime?.dataLocation === 'cloud' ? 'MongoDB Atlas' : 'MongoDB connection'} icon={Database} accent="purple" />
-        </section>
-
-        <Surface className="workspace-card" id="notes">
-          <p className="eyebrow">Workspace</p>
-          <h2>Your private area starts here.</h2>
-          <p>This is a sample layout. We can decide what real profile content belongs here next.</p>
-        </Surface>
-      </section>}
+    <AppShell page={shared.page} user={user} runtime={runtime} onLogout={onLogout} sharedModules={shared.selected ? shared.modules : undefined} workspaceControls={shared.controls}>
+      {shared.notice}
+      {shared.selected ? shared.content : <>
+      {page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} webNotificationsEnabled={user.webNotificationsEnabled} /> : <SignedInHome user={user} runtime={runtime} />}
+      </>}
     </AppShell>
   );
 }
@@ -460,6 +424,7 @@ export default function App() {
   }, []);
 
   function expireSession() {
+    disableWebNotifications(apiRequest).catch(() => {});
     setSessionToken(null);
     setUser(null);
   }
@@ -483,7 +448,16 @@ export default function App() {
     return () => { active = false; window.removeEventListener('focus', refresh); window.clearInterval(timer); };
   }, [user?.id]);
 
+  useEffect(() => {
+    const allowed = Boolean(user?.emailVerified && user?.features?.chat && user?.webNotificationsEnabled);
+    setWebNotificationsAllowed(allowed, apiRequest).catch(() => {});
+    const foreground = () => { if (allowed) setWebNotificationsAllowed(true, apiRequest).catch(() => {}); };
+    window.addEventListener('focus', foreground);
+    return () => window.removeEventListener('focus', foreground);
+  }, [user?.id, user?.emailVerified, user?.features?.chat, user?.webNotificationsEnabled]);
+
   async function logout() {
+    await disableWebNotifications(apiRequest).catch(() => {});
     try { await apiRequest('/api/auth/logout', { method: 'POST' }); }
     finally { setSessionToken(null); setUser(null); }
   }

@@ -41,12 +41,12 @@ function scaledNutrition(meal, quantity) {
     : rounded(meal.nutrition[key] * quantity)]));
 }
 
-export default function Diet({ apiRequest }) {
+export default function Diet({ apiRequest, readOnly = false, loadDay }) {
   const [date, setDate] = useState(localDate);
-  return <DietDay key={date} date={date} setDate={setDate} apiRequest={apiRequest} />;
+  return <DietDay key={date} date={date} setDate={setDate} apiRequest={apiRequest} readOnly={readOnly} loadDay={loadDay} />;
 }
 
-function DietDay({ date, setDate, apiRequest }) {
+function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -59,11 +59,11 @@ function DietDay({ date, setDate, apiRequest }) {
   useEffect(() => {
     let active = true;
     setData(null);
-    apiRequest(`/api/diet/days/${date}`).then((result) => {
-      if (active) { setData(requireCurrentDietResponse(result)); setError(''); }
+    (readOnly ? loadDay(date) : apiRequest(`/api/diet/days/${date}`)).then((result) => {
+      if (active) { setData(readOnly ? result : requireCurrentDietResponse(result)); setError(''); }
     }).catch((requestError) => { if (active) setError(requestError.message); });
     return () => { active = false; };
-  }, [date, version, apiRequest]);
+  }, [date, version, apiRequest, readOnly, loadDay]);
 
   function moveDate(amount) {
     const next = new Date(`${date}T12:00:00`);
@@ -89,7 +89,7 @@ function DietDay({ date, setDate, apiRequest }) {
   } });
 
   return <section className="profile-content diet-page">
-    <PageHeader eyebrow="Personal / Diet" title="Daily diet" description="Track meals, water, and daily nutrition in one place." />
+    <PageHeader eyebrow={readOnly ? "Shared / Diet · Read only" : "Personal / Diet"} title="Daily diet" description={readOnly ? "Authorized shared meals and daily nutrition." : "Track meals, water, and daily nutrition in one place."} />
     <div className="diet-toolbar">
       <Button icon={ChevronLeft} disabled={busy} onClick={() => moveDate(-1)}>Previous</Button>
       <label className="diet-date"><CalendarDays size={18} aria-hidden="true" /><span>Date</span><input aria-label="Diet date" type="date" value={date} disabled={busy}
@@ -102,7 +102,7 @@ function DietDay({ date, setDate, apiRequest }) {
     {!data && !error && <LoadingState>Loading diet record…</LoadingState>}
     {data && <>
       <section className="diet-target-section">
-        <SectionHeader eyebrow="Daily targets" title="Nutrition" action={<Button icon={Target} disabled={busy} onClick={startTargets}>Edit targets</Button>} />
+        <SectionHeader eyebrow="Daily targets" title="Nutrition" action={!readOnly && <Button icon={Target} disabled={busy} onClick={startTargets}>Edit targets</Button>} />
         <div className="diet-summary">{nutrients.map(([key, nutrientLabel, unit]) =>
           <Surface as="article" key={key} className={data.overTarget?.[key] > 0 ? 'over-target' : ''}>
             <p className="eyebrow">{nutrientLabel}</p><strong>{data.totals[key]} <small>{unit}</small></strong>
@@ -110,24 +110,24 @@ function DietDay({ date, setDate, apiRequest }) {
             {data.targets && <progress aria-label={`${nutrientLabel} toward target`} value={Math.min(data.totals[key], data.targets[key])} max={data.targets[key]} />}
             {data.overTarget?.[key] > 0 && <span>{data.overTarget[key]} {unit} over target</span>}
           </Surface>)}</div>
-        {data.macroCalories ? <MacroSummary macro={data.macroCalories} /> : <StatusBanner>Set your six daily targets to compare macros, calories, and water.</StatusBanner>}
+        {!readOnly && (data.macroCalories ? <MacroSummary macro={data.macroCalories} /> : <StatusBanner>Set your six daily targets to compare macros, calories, and water.</StatusBanner>)}
       </section>
 
-      <WaterTracker water={data.water} date={date} busy={busy} onAdd={(amountMilliliters) => mutate('/api/diet/water-entries', 'POST', { date, amountMilliliters }, `${amountMilliliters} ml added.`)} onDelete={(id) => mutate(`/api/diet/water-entries/${id}`, 'DELETE', null, 'Water entry deleted.')} />
+      {!readOnly && <WaterTracker water={data.water} date={date} busy={busy} onAdd={(amountMilliliters) => mutate('/api/diet/water-entries', 'POST', { date, amountMilliliters }, `${amountMilliliters} ml added.`)} onDelete={(id) => mutate(`/api/diet/water-entries/${id}`, 'DELETE', null, 'Water entry deleted.')} />}
 
-      <div className="diet-toolbar diet-actions">
+      {!readOnly && <div className="diet-toolbar diet-actions">
         <Button variant="primary" icon={Plus} disabled={busy} onClick={startMeal}>Add meal</Button>
         <Button icon={Library} disabled={busy} onClick={() => setLibraryOpen((open) => !open)}>{libraryOpen ? 'Hide Meal Library' : 'Meal Library'}</Button>
-      </div>
+      </div>}
 
-      {libraryOpen && <MealLibrary apiRequest={apiRequest} selectedDate={date} onAdded={(addedDate) => {
+      {libraryOpen && !readOnly && <MealLibrary apiRequest={apiRequest} selectedDate={date} onAdded={(addedDate) => {
         setMessage(`Library meal added to ${addedDate}.`);
         if (addedDate === date) setVersion((value) => value + 1);
       }} />}
 
       <section className="daily-meals">
         <SectionHeader eyebrow="Selected day" title="Meals" />
-        {!data.meals.length && <EmptyState icon={Utensils} title="No meals yet" description="Add a one-off meal or choose one from your Meal Library." action={<Button variant="primary" icon={Plus} onClick={startMeal}>Add meal</Button>} />}
+        {!data.meals.length && <EmptyState icon={Utensils} title="No meals yet" description={readOnly ? "No shared meals for this date." : "Add a one-off meal or choose one from your Meal Library."} action={!readOnly && <Button variant="primary" icon={Plus} onClick={startMeal}>Add meal</Button>} />}
         {types.map((type) => {
           const meals = data.meals.filter((meal) => meal.mealType === type);
           return meals.length > 0 && <section className="diet-meal-group" key={type}><h2>{label(type)}</h2>
@@ -135,18 +135,18 @@ function DietDay({ date, setDate, apiRequest }) {
               <div><div className="meal-title"><h3>{meal.name}</h3>{meal.source === 'library' && <Badge tone="neutral">Library · {meal.quantity}×</Badge>}</div>
                 {meal.servingDescription && <p>{meal.servingDescription}</p>}
                 <p className="diet-nutrition">{nutrients.map(([key, nutrientLabel, unit]) => `${nutrientLabel}: ${meal.nutrition[key]} ${unit}`).join(' · ')}</p></div>
-              <div className="diet-toolbar"><Button icon={Pencil} disabled={busy} onClick={() => setEditor({ ...meal, kind: 'meal' })}>Edit</Button>
-                <Button variant="danger" icon={Trash2} disabled={busy} onClick={() => setDeleting(meal.id)}>Delete</Button></div>
+              {!readOnly && <div className="diet-toolbar"><Button icon={Pencil} disabled={busy} onClick={() => setEditor({ ...meal, kind: 'meal' })}>Edit</Button>
+                <Button variant="danger" icon={Trash2} disabled={busy} onClick={() => setDeleting(meal.id)}>Delete</Button></div>}
             </Surface>)}</section>;
         })}
       </section>
     </>}
 
-    {editor && <DietForm key={`${editor.kind}-${editor.id || 'new'}`} initial={editor} busy={busy} onCancel={() => setEditor(null)} onSave={(values) => {
+    {!readOnly && editor && <DietForm key={`${editor.kind}-${editor.id || 'new'}`} initial={editor} busy={busy} onCancel={() => setEditor(null)} onSave={(values) => {
       if (editor.kind === 'targets') return mutate('/api/diet/targets', 'PUT', values, 'Daily targets saved.');
       return mutate(`/api/diet/meals${editor.id ? `/${editor.id}` : ''}`, editor.id ? 'PATCH' : 'POST', values, 'Meal saved.');
     }} />}
-    <ConfirmDialog open={Boolean(deletingMeal)} title="Delete meal?" description={deletingMeal ? `${deletingMeal.name} will be removed from this daily record.` : ''} confirmLabel="Delete meal" busy={busy} onCancel={() => setDeleting(null)} onConfirm={() => mutate(`/api/diet/meals/${deletingMeal.id}`, 'DELETE', null, 'Meal deleted.')} />
+    <ConfirmDialog open={!readOnly && Boolean(deletingMeal)} title="Delete meal?" description={deletingMeal ? `${deletingMeal.name} will be removed from this daily record.` : ''} confirmLabel="Delete meal" busy={busy} onCancel={() => setDeleting(null)} onConfirm={() => mutate(`/api/diet/meals/${deletingMeal.id}`, 'DELETE', null, 'Meal deleted.')} />
   </section>;
 }
 

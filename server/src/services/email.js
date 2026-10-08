@@ -95,4 +95,15 @@ async function sendAdminInvitationEmail(email, registered = false) {
   });
 }
 
-module.exports = { sendAdminInvitationEmail, sendPasswordResetEmail, sendVerificationEmail, sendFamilyInvitationEmail };
+async function sendFamilyRequestEmail(inviter, request) {
+  const runtime = getRuntimeConfig();
+  await sendEmail({ from: runtime.smtp.from, to: request.targetEmail,
+    subject: 'A family relationship request is waiting in Astitva',
+    text: [`${inviter.name} requested a family relationship.`,
+      'Sign in with this email address, or register and verify it if invited.',
+      `${runtime.webUrl}/#family?request=${request._id}`,
+      'Review and explicitly accept or decline inside Astitva. Opening this link does not accept anything.',
+      'This request expires in seven days. Private information remains separately permission-controlled.'].join('\n') });
+}
+
+module.exports = { sendFamilyRequestEmail, sendAdminInvitationEmail, sendPasswordResetEmail, sendVerificationEmail, sendFamilyInvitationEmail };

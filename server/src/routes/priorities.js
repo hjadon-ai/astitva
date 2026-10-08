@@ -71,4 +71,5 @@ router.use((error, req, res, next) => {
   }
   res.status(500).json({ error: 'The server could not complete this request.' });
 });
+require('../services/managedWorkspace').wrap(router);
 module.exports = router;

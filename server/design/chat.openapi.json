@@ -357,22 +357,7 @@
         "tags": [
           "Anonymous Chat"
         ],
-        "summary": "Read messages after unlock",
-        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "description": "Authentication required"
-          },
-          "403": {
-            "description": "Not authorized or PIN locked"
-          },
-          "404": {
-            "description": "Not found"
-          }
-        },
+        "summary": "Legacy REST history is unavailable; use direct Firestore reads",
         "parameters": [
           {
             "name": "id",
@@ -381,36 +366,125 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "X-Chat-Unlock",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Short-lived token from unlock; required for message and alias operations."
           }
-        ]
+        ],
+        "responses": {
+          "410": {
+            "description": "History, pagination and listeners use Firestore directly"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Verification or Chat access required"
+          }
+        }
       },
       "post": {
         "tags": [
           "Anonymous Chat"
         ],
         "summary": "Send a message after unlock",
-        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "description": "F032: active verified cookie or bearer Astitva session, effective Chat access, participation, and X-Chat-Unlock. Native bearer writes require X-Astitva-Client: ios without Origin/Cookie. Clients initialize Firestore reads with /api/chat/firebase-session as before. Persist once before submitting a generic iOS FCM notification; no Cloud Functions. UUID retries never dispatch twice; claims remain pending after ambiguous interruption. Older direct-write clients do not trigger push.",
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Replay: saved message and latest recorded dispatch status; no new submission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "messageId",
+                    "messageSaved",
+                    "notificationStatus"
+                  ],
+                  "properties": {
+                    "messageId": {
+                      "type": "string"
+                    },
+                    "messageSaved": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "notificationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "submitted",
+                        "not_requested",
+                        "failed",
+                        "pending"
+                      ]
+                    },
+                    "warning": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Message saved; dispatch may have failed or be unconfirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "messageId",
+                    "messageSaved",
+                    "notificationStatus"
+                  ],
+                  "properties": {
+                    "messageId": {
+                      "type": "string"
+                    },
+                    "messageSaved": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "notificationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "submitted",
+                        "not_requested",
+                        "failed",
+                        "pending"
+                      ]
+                    },
+                    "warning": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload or forbidden fields"
           },
           "401": {
-            "description": "Authentication required"
+            "description": "Missing or expired session"
           },
           "403": {
-            "description": "Not authorized or PIN locked"
+            "description": "Verification, feature access or unlock denied"
           },
           "404": {
-            "description": "Not found"
+            "description": "Conversation unavailable"
+          },
+          "409": {
+            "description": "Identifier reused with different text"
+          },
+          "429": {
+            "description": "Rate limited; 120/minute in Production"
+          },
+          "503": {
+            "description": "Persistence unconfirmed; retry the same UUID"
           }
         },
         "parameters": [
@@ -439,13 +513,23 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "text"
+                  "text",
+                  "clientMessageId"
                 ],
                 "properties": {
                   "text": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "Trimmed text; whitespace-only input rejected."
+                  },
+                  "clientMessageId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID v4 retained for every retry of the same text, scoped to sender and conversation."
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }
@@ -511,6 +595,168 @@
           },
           "404": {
             "description": "Conversation not found"
+          }
+        }
+      }
+    },
+    "/api/notifications/devices": {
+      "put": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Register or refresh a session-bound iOS token",
+        "description": "Active verified Astitva cookie/bearer session required. Native transport uses X-Astitva-Client: ios and bearer without Origin/Cookie. Registration reassigns unique token ownership, supports multiple devices, expires after two days without refresh. Logout/session expiry makes devices ineligible. No token echo. Production rate limit: 30 requests/minute.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "token",
+                  "platform"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9_.:\\-]+$",
+                    "description": "Sensitive FCM registration token; never returned."
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": [
+                      "ios"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered: { registered: true }"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Verified account/security checks required"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Registration service unavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Remove only the current account\u2019s device token",
+        "description": "Active verified Astitva cookie/bearer session required. Native transport uses X-Astitva-Client: ios and bearer without Origin/Cookie. Registration reassigns unique token ownership, supports multiple devices, expires after two days without refresh. Logout/session expiry makes devices ineligible. No token echo. Production rate limit: 30 requests/minute.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 4096,
+                    "pattern": "^[A-Za-z0-9_.:\\-]+$",
+                    "description": "Sensitive FCM registration token; never returned."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Idempotent deletion, no body"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Verified account/security checks required"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "503": {
+            "description": "Registration service unavailable"
+          }
+        }
+      }
+    },
+    "/api/chat/firebase-session": {
+      "post": {
+        "tags": [
+          "Anonymous Chat"
+        ],
+        "summary": "Bootstrap existing direct Firestore history/listener access",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Chat-Unlock",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "conversationId"
+                ],
+                "properties": {
+                  "conversationId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "customToken, grantId and expiresAt; keep credentials private"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Chat access or unlock required"
+          },
+          "404": {
+            "description": "Conversation unavailable"
+          },
+          "503": {
+            "description": "Firebase unavailable"
           }
         }
       }
