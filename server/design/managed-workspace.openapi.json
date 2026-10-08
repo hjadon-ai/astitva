@@ -1,0 +1,140 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "F036 managed member contexts",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/family/units/managed-members": {
+      "get": {
+        "summary": "List eligible NON_USER members for ADMIN/EDITOR",
+        "responses": {
+          "200": {
+            "description": "Managed context or member list"
+          },
+          "401": {
+            "description": "Verified session required"
+          },
+          "403": {
+            "description": "Feature disabled, insufficient role or member linked"
+          },
+          "404": {
+            "description": "Unknown unit/member"
+          }
+        }
+      }
+    },
+    "/api/family/units/{unitId}/people/{personId}/managed-workspace": {
+      "get": {
+        "summary": "Get enabled general modules and member-perspective family information",
+        "responses": {
+          "200": {
+            "description": "Managed context or member list"
+          },
+          "401": {
+            "description": "Verified session required"
+          },
+          "403": {
+            "description": "Feature disabled, insufficient role or member linked"
+          },
+          "404": {
+            "description": "Unknown unit/member"
+          }
+        },
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Edit managed member family details",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "expectedRevision",
+                  "details"
+                ],
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "details": {
+                    "type": "object",
+                    "properties": {
+                      "preferredName": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 80
+                      },
+                      "birthDate": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "note": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 1000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved"
+          },
+          "403": {
+            "description": "Member linked or insufficient permission"
+          },
+          "409": {
+            "description": "Stale family revision"
+          }
+        }
+      }
+    }
+  }
+}

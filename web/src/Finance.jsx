@@ -34,7 +34,7 @@ const money = (value, currency = 'USD') => {
   }
 };
 
-function TransactionList({ transactions, empty = 'No synchronized transactions yet.' }) {
+export function TransactionList({ transactions, empty = 'No synchronized transactions yet.' }) {
   if (!transactions.length) return <p className="finance-muted">{empty}</p>;
   return <div className="finance-transactions">
     {transactions.map((transaction) => {

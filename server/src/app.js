@@ -22,6 +22,7 @@ function createApp() {
   }));
   app.use(unsafeOriginGuard(runtime));
   app.use(cookieParser());
+  app.use((req,res,next)=>{if((req.get('X-Astitva-Member')||req.get('X-Astitva-Family'))&&!/^\/api\/(diet|priorities)(?:\/|$)/.test(req.path))return res.status(403).json({error:'This operation is unavailable in a managed workspace.'});next();});
   // Priorities authenticates before parsing JSON and handles malformed bodies locally.
   app.use('/api/priorities', require('./routes/priorities'));
   app.use(express.json({ limit: '100kb' }));
@@ -48,6 +49,7 @@ function createApp() {
   app.use('/api/diet', require('./routes/diet'));
   app.use('/api/finance', require('./routes/finance'));
   app.use('/api/family', require('./routes/family'));
+  app.use('/api/notifications', require('./routes/notifications'));
   app.use('/api/chat', require('./routes/chat'));
 
   app.use((error, request, response, next) => {

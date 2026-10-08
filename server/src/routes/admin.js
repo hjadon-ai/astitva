@@ -8,6 +8,8 @@ const { createRateLimit } = require('../middleware/security');
 const { revokeFirebaseGrants } = require('../services/firebaseAdmin');
 
 const { sendAdminInvitationEmail } = require('../services/email');
+const NotificationSetting = require('../models/NotificationSetting');
+const { notificationSettings } = require('../services/notificationSettings');
 const router = express.Router();
 const invitationRateLimit = createRateLimit({ max: 10, windowMs: 60 * 1000 });
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -35,6 +37,27 @@ const userFields = '_id name email emailVerifiedAt createdAt updatedAt';
 
 router.use(requireAdmin);
 router.use(createRateLimit({ max: 120, windowMs: 60 * 1000 }));
+
+router.get('/notifications', async (request, response) => {
+  response.json({ settings: await notificationSettings() });
+});
+router.patch('/notifications', async (request, response) => {
+  const body = request.body;
+  if (!object(body) || Object.keys(body).some((key) => !['webEnabled', 'expectedVersion'].includes(key)) ||
+      typeof body.webEnabled !== 'boolean' || !(body.expectedVersion === null || typeof body.expectedVersion === 'string')) {
+    return fail(response, 400, 'A boolean webEnabled and the loaded expectedVersion are required.');
+  }
+  const version = crypto.randomUUID();
+  try {
+    if (body.expectedVersion === null) await NotificationSetting.create({ key: 'web', enabled: body.webEnabled, version });
+    else if (!await NotificationSetting.findOneAndUpdate({ key: 'web', version: body.expectedVersion },
+      { $set: { enabled: body.webEnabled, version } }, { runValidators: true })) return conflict(response);
+  } catch (error) {
+    if (error.code === 11000) return conflict(response);
+    throw error;
+  }
+  return response.json({ settings: { webEnabled: body.webEnabled, expectedVersion: version } });
+});
 
 router.get('/users', async (request, response) => {
   const q = request.query.q;

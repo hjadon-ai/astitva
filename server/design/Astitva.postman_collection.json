@@ -2548,6 +2548,28 @@
             "method": "GET",
             "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/finance?month=2026-09"
           }
+        },
+        {
+          "name": "Update family person details (F020)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/people/{{personId}}/details",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferredName\": \"Case\",\n  \"birthDate\": \"2000-02-29\",\n  \"note\": \"Shared family note\"\n}"
+            },
+            "description": "ADMIN/EDITOR only. Null clears; omitted fields unchanged. 400 invalid/unknown fields; 401 unauthenticated; 403 READONLY/unverified; 404 outside family view. Account profile unchanged."
+          }
         }
       ]
     },
@@ -2739,9 +2761,30 @@
             "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/messages",
             "body": {
               "mode": "raw",
-              "raw": "{\"text\": \"Hello\"}"
+              "raw": "{\n  \"text\": \"Hello\",\n  \"clientMessageId\": \"{{chatClientMessageId}}\"\n}"
+            },
+            "description": "F032: retain chatClientMessageId on unknown failures. Reusing it with different text returns 409. Message-saved notification failures must not be resent. Listener/history remain direct Firestore."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"chatClientMessageId\")) pm.environment.set(\"chatClientMessageId\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code) && pm.response.json().messageSaved) pm.environment.unset(\"chatClientMessageId\");"
+                ]
+              }
             }
-          }
+          ]
         },
         {
           "name": "Delete a conversation for both participants",
@@ -3015,6 +3058,733 @@
           }
         }
       ]
+    },
+    {
+      "name": "Notifications (F032)",
+      "description": "Disable the cookie jar. Never share populated device tokens. Refresh registration before two days of inactivity and deregister before logout. Use only fixtures for automated tests.",
+      "item": [
+        {
+          "name": "Register iOS device",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Astitva-Client",
+                "value": "ios"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/devices",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{notificationDeviceToken}}\",\n  \"platform\": \"ios\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Remove my device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Astitva-Client",
+                "value": "ios"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/notifications/devices",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{notificationDeviceToken}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Family Social (F023)",
+      "description": "Synthetic local review. Set socialPostId from a create response. Requires accepted Family membership. Any visible accepted member may remove/pin; author-only edit. No public photo URLs.",
+      "item": [
+        {
+          "name": "List visible chronological posts plus authorized pinned announcement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts",
+            "description": "List visible chronological posts plus authorized pinned announcement. Refer to family-social.openapi.json for errors and access rules."
+          }
+        },
+        {
+          "name": "Create update, milestone or announcement; READONLY may post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts",
+            "description": "Create update, milestone or announcement; READONLY may post. Refer to family-social.openapi.json for errors and access rules.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Family fixture update\",\n  \"type\": \"announcement\",\n  \"audience\": \"family\",\n  \"recipientIds\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Author-only edit with optimistic version; photo retained",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}",
+            "description": "Author-only edit with optimistic version; photo retained. Refer to family-social.openapi.json for errors and access rules.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Family fixture update\",\n  \"type\": \"announcement\",\n  \"audience\": \"family\",\n  \"recipientIds\": [],\n  \"version\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Any accepted viewer may remove post; clears photo and comments",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}",
+            "description": "Any accepted viewer may remove post; clears photo and comments. Refer to family-social.openapi.json for errors and access rules."
+          }
+        },
+        {
+          "name": "Authenticated authorized JPEG/PNG; never a public storage URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}/photo",
+            "description": "Authenticated authorized JPEG/PNG; never a public storage URL. Refer to family-social.openapi.json for errors and access rules."
+          }
+        },
+        {
+          "name": "Any accepted viewer may pin/unpin an announcement; one family pointer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}/pin",
+            "description": "Any accepted viewer may pin/unpin an announcement; one family pointer. Refer to family-social.openapi.json for errors and access rules.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pinned\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Idempotent caller Like; capped at 1000 unique users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}/reactions",
+            "description": "Idempotent caller Like; capped at 1000 unique users. Refer to family-social.openapi.json for errors and access rules.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Remove caller Like",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}/reactions",
+            "description": "Remove caller Like. Refer to family-social.openapi.json for errors and access rules."
+          }
+        },
+        {
+          "name": "Visible post comments, newest first",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}/comments",
+            "description": "Visible post comments, newest first. Refer to family-social.openapi.json for errors and access rules."
+          }
+        },
+        {
+          "name": "Any accepted viewer including READONLY may comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts/{{socialPostId}}/comments",
+            "description": "Any accepted viewer including READONLY may comment. Refer to family-social.openapi.json for errors and access rules.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Fixture comment\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create post with JPEG/PNG photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/posts",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "payload",
+                  "type": "text",
+                  "value": "{\"text\": \"Photo update\", \"type\": \"update\", \"audience\": \"family\", \"recipientIds\": []}"
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "description": "Select synthetic JPEG/PNG up to 2 MiB; do not set multipart Content-Type manually."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shared Family Units (F035)",
+      "item": [
+        {
+          "name": "List authorized normalized units and transaction capability",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units",
+            "description": "List authorized normalized units and transaction capability. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures."
+          }
+        },
+        {
+          "name": "Establish a unit through a relationship context",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units",
+            "description": "Establish a unit through a relationship context. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relationship\": \"son\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Read a normalized unit perspective",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units/{{familyUnitId}}",
+            "description": "Read a normalized unit perspective. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures."
+          }
+        },
+        {
+          "name": "Add explicit NON_USER without invitation or account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units/{{familyUnitId}}/people",
+            "description": "Add explicit NON_USER without invitation or account. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Casey (fixture)\",\n  \"kind\": \"NON_USER\",\n  \"relationship\": \"son\",\n  \"expectedRevision\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update authorized unit details or ADMIN role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units/{{familyUnitId}}/people/{{familyPersonId}}",
+            "description": "Update authorized unit details or ADMIN role. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"details\": {\n    \"preferredName\": \"Case\",\n    \"note\": \"Synthetic fixture\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ADMIN previews NON_USER removal references",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units/{{familyUnitId}}/people/{{familyPersonId}}/removal-preview",
+            "description": "ADMIN previews NON_USER removal references. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures."
+          }
+        },
+        {
+          "name": "ADMIN removes unit membership after explicit reference handling",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/units/{{familyUnitId}}/people/{{familyPersonId}}",
+            "description": "ADMIN can remove another linked or NON_USER membership with preview and confirmation. Accounts/private data stay intact; affected grants and incident edges are detached. Self or pending references return 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"confirmation\": true,\n  \"confirmDetachRelationships\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List latest 100 authorized requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/requests",
+            "description": "List latest 100 authorized requests. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures."
+          }
+        },
+        {
+          "name": "Record an exact-email relationship request; generic receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/requests",
+            "description": "Record an exact-email relationship request; generic receipt. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures. Optional findMember=true uses consent-gated exact-email resolution; requestedRole may be READONLY, EDITOR or ADMIN. A selected role is pending until acceptance, not an immediate access grant.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceUnitId\": \"{{familyUnitId}}\",\n  \"targetEmail\": \"{{familyRequestEmail}}\",\n  \"relationship\": \"son\",\n  \"inviteToRegister\": false,\n  \"expectedRevision\": 0,\n  \"idempotencyKey\": \"{{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Read authorized request and consent/impact preview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/requests/{{familyRequestId}}",
+            "description": "Read authorized request and consent/impact preview. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures."
+          }
+        },
+        {
+          "name": "Addressed verified recipient accepts or declines",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/requests/{{familyRequestId}}/relationship-decision",
+            "description": "Addressed verified recipient accepts or declines. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"accept\",\n  \"expectedRevision\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "One current ADMIN from each source explicitly decides",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/requests/{{familyRequestId}}/merge-decision",
+            "description": "One current ADMIN from each source explicitly decides. Refresh actual revisions and previewRevisions before mutations; use synthetic local fixtures.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitId\": \"{{familyUnitId}}\",\n  \"decision\": \"accept\",\n  \"expectedRevision\": 0,\n  \"previewRevisions\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shared workspace (F034)",
+      "item": [
+        {
+          "name": "Eligible members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/shared-workspace/members",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        },
+        {
+          "name": "Shared context",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/people/{{personId}}/shared-workspace",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        },
+        {
+          "name": "Shared Diet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/diet?date={{dietDate}}",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        },
+        {
+          "name": "Shared Finance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/finance?month={{financeMonth}}",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        },
+        {
+          "name": "Shared Family",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/shared/{{ownerId}}/family",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        },
+        {
+          "name": "Grant Family (Self only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/shares/family/{{recipientId}}",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        },
+        {
+          "name": "Revoke Family (Self only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "http://localhost:3000"
+              }
+            ],
+            "url": "{{baseUrl}}/api/family/{{familyId}}/shares/family/{{recipientId}}",
+            "description": "Use actual accepted family/person and linked owner/recipient user IDs from the response. No writes during shared viewing. Grant/revoke only as signed-in owner."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Correct normalized family relationship",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"expectedRevision\": 0,\n  \"relationship\": \"sister\"\n}"
+        },
+        "url": "{{baseUrl}}/api/family/units/{{unitId}}/people/{{personId}}",
+        "description": "ADMIN/EDITOR only. Preserves identity and grants; rejects unsafe, stale, cross-circle or dependent corrections."
+      }
+    },
+    {
+      "name": "Exact-email member lookup",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/family/units/member-lookup",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"member@example.com\"\n}"
+        },
+        "description": "Authenticated exact-email lookup. Returns found only; 30 per UTC day. Does not send email."
+      }
+    },
+    {
+      "name": "Managed NON_USER workspaces (F036)",
+      "item": [
+        {
+          "name": "Eligible members",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/family/units/managed-members"
+          }
+        },
+        {
+          "name": "Managed context",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/family/units/{{unitId}}/people/{{personId}}/managed-workspace"
+          }
+        },
+        {
+          "name": "Managed Diet day",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/diet/days/2026-10-07",
+            "header": [
+              {
+                "key": "X-Astitva-Member",
+                "value": "{{personId}}"
+              },
+              {
+                "key": "X-Astitva-Family",
+                "value": "{{unitId}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Managed family details",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/family/units/{{unitId}}/people/{{personId}}/managed-workspace",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expectedRevision\": 0,\n  \"details\": { \"note\": \"Member note\" }\n}"
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -3040,6 +3810,10 @@
     },
     {
       "key": "adminInviteeVersion",
+      "value": ""
+    },
+    {
+      "key": "socialPostId",
       "value": ""
     }
   ]

@@ -13,6 +13,7 @@ const { createRateLimit, isNativeRequest } = require('../middleware/security');
 const { sessionToken } = require('../middleware/sessionToken');
 const { revokeFirebaseGrants } = require('../services/firebaseAdmin');
 const { featuresForEmail } = require('../middleware/featureAccess');
+const { notificationSettings } = require('../services/notificationSettings');
 const { isAdmin } = require('../middleware/adminAccess');
 
 const router = express.Router();
@@ -34,6 +35,7 @@ async function publicUser(user) {
     email: user.email,
     emailVerified: Boolean(user.emailVerifiedAt),
     isAdmin: isAdmin(user),
+    webNotificationsEnabled: (await notificationSettings()).webEnabled,
     features: await featuresForEmail(user.email)
   };
 }

@@ -1,6 +1,7 @@
 const { cert, getApps, initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore } = require('firebase-admin/firestore');
+const { getMessaging } = require('firebase-admin/messaging');
 
 function firebaseConfig() {
   const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
@@ -32,6 +33,13 @@ function firebaseFirestore() {
   return getFirestore(app);
 }
 
+function firebaseMessaging() {
+  const config = firebaseConfig();
+  if (!config) return null;
+  const app = getApps()[0] || initializeApp({ projectId: config.projectId, credential: cert(config.serviceAccount) });
+  return getMessaging(app);
+}
+
 async function revokeFirebaseGrants({ userId, sessionHash }) {
   const firestore = firebaseFirestore();
   if (!firestore || (!userId && !sessionHash)) return;
@@ -47,4 +55,4 @@ async function revokeFirebaseGrants({ userId, sessionHash }) {
   }
 }
 
-module.exports = { firebaseAuth, firebaseFirestore, revokeFirebaseGrants };
+module.exports = { firebaseAuth, firebaseFirestore, firebaseMessaging, revokeFirebaseGrants };

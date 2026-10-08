@@ -93,6 +93,42 @@ F012 adds a locally reviewable Production profile and deployment configuration f
 
 F008 Diet targets and Meal Library is implemented on `feature/F008-diet-targets-meal-library` and merged into main. It adds six daily targets, water tracking, a personal Meal Library, and CSV preview/import.
 
+## Anonymous Chat notifications (F032)
+
+Message sends now use `POST /api/chat/conversations/:id/messages` with `{ text, clientMessageId }` and `X-Chat-Unlock`. Keep the UUID v4 unchanged for retries. The server derives identity/alias and atomically saves the Firestore message and a durable notification claim. History, pagination, and live listeners stay direct Firestore reads. Older direct-write clients do not trigger notifications; no Cloud Functions or browser push are used.
+
+Future iOS clients register an FCM token with `PUT /api/notifications/devices` (`{ token, platform: "ios" }`) and remove it with authenticated `DELETE` (`{ token }`). Registrations belong to one account/session and expire after two inactive days; refresh on login, foreground entry, and token changes, and remove before logout/account switch. Logout/expiry disables notification eligibility even before TTL cleanup.
+
+The generic payload is **Daily Check** / **You have a new chat message.** Only notification type and conversation ID are routing data; tapping must still enforce session, feature access and PIN unlock. Never show message text/aliases or persist PINs from push data. Saved-message responses distinguish `submitted`, `not_requested`, `failed`, and `pending`. Submission does not guarantee display. There is no notification retry worker: an interrupted claim may miss a notification, and resending the same message identifier never resubmits it.
+
+Reuse server `FIREBASE_PROJECT_ID` and `FIREBASE_SERVICE_ACCOUNT_BASE64`; no new server environment variables or secrets are required. Enable the FCM HTTP v1 API and grant the existing service account Messaging permissions in the same Firebase project. Later iOS work must register the real bundle ID/Firebase iOS app, configure APNs credentials in Firebase, enable the Push Notifications entitlement, request notification permission, integrate Firebase Messaging token refresh, and handle authenticated locked-chat navigation. These external settings and actual device display are not verified by local mocked tests. [FCM has no usage charge](https://firebase.google.com/pricing); Firestore operations, Render, storage, and other infrastructure retain separate quotas/costs.
+
+Local verification: `cd server && ASTITVA_TEST_NOTIFICATIONS=1 ASTITVA_TEST_CHAT=1 npm test`; then `cd ../web && npm test && npm run build`. These integration checks use random local MongoDB fixtures and fake Firebase/FCM, never production records or real notifications. Current status and handoff context live in [F032](docs/features/chat/F032-private-chat-push-notifications.md).
+
 ## Local Development Control Center
 
 Tracked source: [tools/control-center](tools/control-center/README.md). Start with `node tools/control-center/server.mjs`; validate with `npm --prefix tools/control-center test` and `npm --prefix tools/control-center run check`. Node `>=22.20.0 <25`, no dependencies. Runtime data remains ignored under `.local/control-center/`. Development evaluations are manual dry runs only.
+
+
+## Shared family units (F035, local review)
+
+The Family tab includes shared Born-in/Formed units, relationship-first NON_USER creation, exact-email requests and explicit in-app relationship/merge decisions. Combining two units needs one current ADMIN acceptance from each side; email links only open the inbox. Existing legacy families remain separately available and are never automatically converted. An account with legacy family records needs an owner-reviewed conversion mapping before normalized creation/linking. See [F035](docs/features/family/F035-shared-family-units.md).
+
+All normalized writes require replica-set transactions. The local MongoDB service now uses the single-node `astitvaLocal` replica set with the same database directory and port 27017. Dev/Stage database isolation and environment files remain unchanged. No production configuration or data conversion was performed.
+
+F035 validation uses an isolated test replica set at port 27135, named `f035test`, with a disposable `f035_fixture_*` database:
+
+```sh
+ASTITVA_TEST_FAMILY_UNITS=1 F035_TEST_MONGODB_URL='mongodb://127.0.0.1:27135/f035_fixture_review?replicaSet=f035test' node --test server/test/family-graph.test.js server/test/family-units.integration.test.js
+node server/scripts/family-conversion-preview.js server/test/fixtures/f035-conversion.json
+```
+
+The test requires that isolated replica set to be running; it refuses other URIs and removes only its disposable database. Email is mocked. The conversion preview uses synthetic input and never changes records. API documentation: `server/design/family-units.openapi.json`, aggregate OpenAPI and the **Shared Family Units (F035)** Postman folder. Refresh actual revisions/previewRevisions before Postman mutations; cookie writes require an approved Origin header.
+
+## Shared family-member workspace (F034, local review)
+
+In your personal Family view, use Sharing to grant or revoke Diet, Finance or scoped Family information for accepted members. The top-right **Viewing workspace** selector opens only another member's explicitly shared modules, using read-only module layouts. **Self** or **Back to my profile** restores your own workspace. F035's existing family units/requests remain in place; legacy data is not automatically converted.
+
+From the Astitva repository, run `./scripts/start-local.sh stage` (local Stage) or `./scripts/start-local.sh dev` (Sandbox), then open http://localhost:3000. Start only one profile on ports 3000/3001. This requires your existing local MongoDB/Mailpit and ignored profile configuration. Shared Family grants retain their original member scope; additional members need a fresh explicit grant. No deployment was performed.
+
+F036 managed NON_USER workspaces: ADMIN/EDITOR select a Non User from the family selector to manage enabled general modules (Diet, Daily Priorities, Family information). Finance, Anonymous Chat and Admin are premium and unavailable. No separate account or session is created. Category registration is explicit in server/src/services/featureCategories.js. Claiming transfers managed records atomically; conflicting existing account data/identity requires review, and automatic manager access ends. No editing-consent grant API is introduced; existing account sharing remains read-only.

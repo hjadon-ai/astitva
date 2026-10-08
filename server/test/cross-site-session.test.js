@@ -34,6 +34,7 @@ test('Production bearer session opens Family when cross-site cookies are unavail
     people: [{ _id: userId, userId, name: user.name, email: user.email,
       gender: 'neutral', role: 'ADMIN', status: 'ACCEPTED' }], relations: [], shares: []
   }]);
+  t.mock.method(require('../src/services/notificationSettings'), 'notificationSettings', async () => ({ webEnabled: false, expectedVersion: null }));
   const { createApp } = require('../src/app');
   const server = createApp().listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));

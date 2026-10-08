@@ -1,65 +1,795 @@
 {
   "openapi": "3.0.3",
-  "info": { "title": "Astitva Family API", "version": "1.0.0" },
+  "info": {
+    "title": "Astitva Family API",
+    "version": "1.0.0"
+  },
   "paths": {
+    "/api/family/{familyId}/people/{personId}/details": {
+      "patch": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN or EDITOR updates shared family details, including self; never account data",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "$ref": "#/components/parameters/personId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FamilyDetails"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated person and perspective family view; reads include nullable preferredName, birthDate and note"
+          },
+          "400": {
+            "description": "Invalid fields, date or text limits; no partial update"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified enabled account and ADMIN/EDITOR required"
+          },
+          "404": {
+            "description": "Not accepted member or person not found"
+          }
+        }
+      }
+    },
     "/api/family": {
-      "get": { "tags": ["Family"], "summary": "List the verified user's accepted family views", "responses": { "200": { "description": "Perspective based family views" }, "401": { "description": "Session required" }, "403": { "description": "Verified email required" } } },
-      "post": { "tags": ["Family"], "summary": "Create the first family with the caller as creator ADMIN", "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "gender": { "$ref": "#/components/schemas/Gender" } } } } } }, "responses": { "201": { "description": "Family created" }, "409": { "description": "Caller already has a family" } } }
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "List the verified user's accepted family views",
+        "responses": {
+          "200": {
+            "description": "Perspective based family views"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified email required"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Create the first family with the caller as creator ADMIN",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gender": {
+                    "$ref": "#/components/schemas/Gender"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Family created"
+          },
+          "409": {
+            "description": "Caller already has a family"
+          }
+        }
+      }
     },
     "/api/family/invitations": {
-      "get": { "tags": ["Family"], "summary": "List active invitations addressed to the verified signed-in email", "responses": { "200": { "description": "Pending invitations awaiting explicit acceptance" }, "401": { "description": "Session required" }, "403": { "description": "Verified email required" } } }
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "List active invitations addressed to the verified signed-in email",
+        "responses": {
+          "200": {
+            "description": "Pending invitations awaiting explicit acceptance"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified email required"
+          }
+        }
+      }
     },
     "/api/family/sharing/summary": {
-      "get": { "tags": ["Family"], "summary": "Summarize the caller's active Diet and Finance share grants by feature and direction", "responses": { "200": { "description": "Accepted recipients and owners only; no private feature data" }, "401": { "description": "Session required" }, "403": { "description": "Verified email required" } } }
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Summarize the caller's active Diet and Finance share grants by feature and direction",
+        "responses": {
+          "200": {
+            "description": "Accepted recipients and owners only; no private feature data"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Verified email required"
+          }
+        }
+      }
     },
     "/api/family/invitations/{invitationId}/accept": {
-      "post": { "tags": ["Family"], "summary": "Accept an inbox invitation as the verified recipient", "parameters": [{ "name": "invitationId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Existing person linked and an empty duplicate personal family removed" }, "403": { "description": "Wrong email" }, "410": { "description": "Expired or used invitation" } } }
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Accept an inbox invitation as the verified recipient",
+        "parameters": [
+          {
+            "name": "invitationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Existing person linked and an empty duplicate personal family removed"
+          },
+          "403": {
+            "description": "Wrong email"
+          },
+          "410": {
+            "description": "Expired or used invitation"
+          }
+        }
+      }
     },
     "/api/family/{familyId}": {
-      "get": { "tags": ["Family"], "summary": "Get one family from the accepted member's perspective", "parameters": [{ "$ref": "#/components/parameters/familyId" }], "responses": { "200": { "description": "Self, direct relationships, accepted recipients and share grants" }, "404": { "description": "Not an accepted member or not found" } } }
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Get one family from the accepted member's perspective",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Self, direct relationships, accepted recipients and share grants"
+          },
+          "404": {
+            "description": "Not an accepted member or not found"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/activity": {
-      "get": { "tags": ["Family"], "summary": "Read the last seven days of family activity as an accepted member", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 50, "default": 20 } }, { "name": "before", "in": "query", "description": "Opaque pagination cursor returned by the previous page", "schema": { "type": "string" } }], "responses": { "200": { "description": "Display-safe events and optional nextCursor" }, "400": { "description": "Invalid limit or cursor" }, "404": { "description": "Not an accepted member or not found" } } }
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Read the last seven days of family activity as an accepted member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "Opaque pagination cursor returned by the previous page",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Display-safe events and optional nextCursor"
+          },
+          "400": {
+            "description": "Invalid limit or cursor"
+          },
+          "404": {
+            "description": "Not an accepted member or not found"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/self": {
-      "patch": { "tags": ["Family"], "summary": "Choose labels used for the caller in relatives' views", "parameters": [{ "$ref": "#/components/parameters/familyId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["gender"], "properties": { "gender": { "$ref": "#/components/schemas/Gender" } } } } } }, "responses": { "200": { "description": "Updated view" } } }
+      "patch": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Choose labels used for the caller in relatives' views",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "gender"
+                ],
+                "properties": {
+                  "gender": {
+                    "$ref": "#/components/schemas/Gender"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated view"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/people": {
-      "post": { "tags": ["Family"], "summary": "ADMIN or EDITOR adds an unlinked person relative to themselves", "parameters": [{ "$ref": "#/components/parameters/familyId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["name", "relationship"], "properties": { "name": { "type": "string", "maxLength": 80 }, "email": { "type": "string", "format": "email" }, "relationship": { "$ref": "#/components/schemas/Relationship" } } } } } }, "responses": { "201": { "description": "Person and relationship created; children also attach to an existing partner" }, "403": { "description": "Editor access required" }, "409": { "description": "Duplicate email or second partner" } } }
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN or EDITOR adds an unlinked person relative to themselves",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "relationship"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "relationship": {
+                    "$ref": "#/components/schemas/Relationship"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Person and relationship created; children also attach to an existing partner"
+          },
+          "403": {
+            "description": "Editor access required"
+          },
+          "409": {
+            "description": "Duplicate email or second partner"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/people/{personId}": {
-      "patch": { "tags": ["Family"], "summary": "ADMIN or EDITOR edits an unlinked person or chosen relationship label", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "$ref": "#/components/parameters/personId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "gender": { "$ref": "#/components/schemas/Gender" } } } } } }, "responses": { "200": { "description": "Updated view" }, "403": { "description": "Editor access required" }, "409": { "description": "Accepted member must edit their own account" } } }
+      "patch": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN or EDITOR edits an unlinked person or chosen relationship label",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "$ref": "#/components/parameters/personId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "gender": {
+                    "$ref": "#/components/schemas/Gender"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated view"
+          },
+          "403": {
+            "description": "Editor access required"
+          },
+          "409": {
+            "description": "Accepted member must edit their own account"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/people/{personId}/role": {
-      "patch": { "tags": ["Family"], "summary": "Creator alone grants or revokes ADMIN and EDITOR", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "$ref": "#/components/parameters/personId" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["role"], "properties": { "role": { "type": "string", "enum": ["ADMIN", "EDITOR", "READONLY"] } } } } } }, "responses": { "200": { "description": "Role updated; inactive until invitation acceptance" }, "403": { "description": "Creator required" } } }
+      "patch": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Creator alone grants or revokes ADMIN and EDITOR",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "$ref": "#/components/parameters/personId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "EDITOR",
+                      "READONLY"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role updated; inactive until invitation acceptance"
+          },
+          "403": {
+            "description": "Creator required"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/relations/{relationId}": {
-      "delete": { "tags": ["Family"], "summary": "ADMIN removes one direct relationship without deleting any user account", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "name": "relationId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Updated view" }, "403": { "description": "Admin required" } } }
+      "delete": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN removes one direct relationship without deleting any user account",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "name": "relationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated view"
+          },
+          "403": {
+            "description": "Admin required"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/people/{personId}/invite": {
-      "post": { "tags": ["Family"], "summary": "ADMIN emails a seven day invitation to an unlinked person", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "$ref": "#/components/parameters/personId" }], "responses": { "202": { "description": "Invitation email sent; no access granted yet" }, "503": { "description": "Email delivery failed" } } }
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN emails a seven day invitation to an unlinked person",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "$ref": "#/components/parameters/personId"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Invitation email sent; no access granted yet"
+          },
+          "503": {
+            "description": "Email delivery failed"
+          }
+        }
+      }
     },
     "/api/family/invitations/accept": {
-      "post": { "tags": ["Family"], "summary": "Verified invited account accepts and links to the existing person", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["token"], "properties": { "token": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" } } } } } }, "responses": { "200": { "description": "Invitation accepted; same person now linked" }, "403": { "description": "Wrong email" }, "410": { "description": "Expired or used token" } } }
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Verified invited account accepts and links to the existing person",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invitation accepted; same person now linked"
+          },
+          "403": {
+            "description": "Wrong email"
+          },
+          "410": {
+            "description": "Expired or used token"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/shares/{feature}/{recipientId}": {
-      "put": { "tags": ["Family"], "summary": "Owner opts in to share Diet or Finance read only with an accepted member", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "$ref": "#/components/parameters/feature" }, { "$ref": "#/components/parameters/recipientId" }], "responses": { "200": { "description": "Sharing enabled" } } },
-      "delete": { "tags": ["Family"], "summary": "Owner immediately revokes one share grant", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "$ref": "#/components/parameters/feature" }, { "$ref": "#/components/parameters/recipientId" }], "responses": { "200": { "description": "Sharing disabled" } } }
+      "put": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Owner opts in to share Diet, Finance or scoped Family read only with an accepted member",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "$ref": "#/components/parameters/feature"
+          },
+          {
+            "$ref": "#/components/parameters/recipientId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sharing enabled"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Owner immediately revokes one share grant",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "$ref": "#/components/parameters/feature"
+          },
+          {
+            "$ref": "#/components/parameters/recipientId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sharing disabled"
+          }
+        }
+      }
     },
     "/api/family/{familyId}/shared/{ownerId}/{feature}": {
-      "get": { "tags": ["Family"], "summary": "Read explicitly shared Diet day or Finance month without credentials or write access", "parameters": [{ "$ref": "#/components/parameters/familyId" }, { "name": "ownerId", "in": "path", "required": true, "schema": { "type": "string" } }, { "$ref": "#/components/parameters/feature" }, { "name": "date", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Diet day" }, { "name": "month", "in": "query", "schema": { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" }, "description": "Finance month" }], "responses": { "200": { "description": "Only display safe owner data" }, "403": { "description": "Explicit active share grant required" } } }
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Read explicitly shared Diet day, Finance month or scoped Family without credentials or write access",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/familyId"
+          },
+          {
+            "name": "ownerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/feature"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Diet day"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "description": "Finance month"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Only display safe owner data"
+          },
+          "403": {
+            "description": "Explicit active share grant required"
+          }
+        },
+        "description": "Family returns only visiblePersonIds from the original explicit grant intersected with current unit people; relationship labels use owner perspective. No account emails, roles, invitations, admin controls or other units. Diet and Finance retain existing limited read-only contracts; finance reads at most 100 transactions, not a complete month report. Owner eligibility and runtime are rechecked. Responses are no-store."
+      }
+    },
+    "/api/family/shared-workspace/members": {
+      "get": {
+        "tags": [
+          "Shared workspace"
+        ],
+        "responses": {
+          "200": {
+            "description": "No-store, read-only; modules may be empty",
+            "content": {
+              "application/json": {
+                "example": {
+                  "owner": {
+                    "personId": "person-id",
+                    "userId": "user-id",
+                    "name": "B"
+                  },
+                  "familyId": "unit-id",
+                  "readOnly": true,
+                  "modules": [
+                    "diet",
+                    "family"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Feature disabled or not verified"
+          },
+          "404": {
+            "description": "Out-of-scope member"
+          },
+          "409": {
+            "description": "Unsafe family mapping"
+          }
+        },
+        "summary": "Accepted linked members in authorized units, including owners with no grants"
+      }
+    },
+    "/api/family/{familyId}/people/{personId}/shared-workspace": {
+      "get": {
+        "tags": [
+          "Shared workspace"
+        ],
+        "responses": {
+          "200": {
+            "description": "No-store, read-only; modules may be empty",
+            "content": {
+              "application/json": {
+                "example": {
+                  "owner": {
+                    "personId": "person-id",
+                    "userId": "user-id",
+                    "name": "B"
+                  },
+                  "familyId": "unit-id",
+                  "readOnly": true,
+                  "modules": [
+                    "diet",
+                    "family"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Feature disabled or not verified"
+          },
+          "404": {
+            "description": "Out-of-scope member"
+          },
+          "409": {
+            "description": "Unsafe family mapping"
+          }
+        },
+        "summary": "Explicit supported grants intersected with viewer, owner and runtime eligibility",
+        "parameters": [
+          {
+            "name": "familyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
     "parameters": {
-      "familyId": { "name": "familyId", "in": "path", "required": true, "schema": { "type": "string" } },
-      "personId": { "name": "personId", "in": "path", "required": true, "schema": { "type": "string" } },
-      "recipientId": { "name": "recipientId", "in": "path", "required": true, "schema": { "type": "string" } },
-      "feature": { "name": "feature", "in": "path", "required": true, "schema": { "type": "string", "enum": ["diet", "finance"] } }
+      "familyId": {
+        "name": "familyId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "personId": {
+        "name": "personId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "recipientId": {
+        "name": "recipientId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "feature": {
+        "name": "feature",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "diet",
+            "finance",
+            "family"
+          ]
+        }
+      }
     },
     "schemas": {
-      "Gender": { "type": "string", "enum": ["male", "female", "neutral"] },
-      "Relationship": { "type": "string", "enum": ["father", "mother", "parent", "brother", "sister", "sibling", "husband", "wife", "partner", "son", "daughter", "child"] }
+      "FamilyDetails": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "preferredName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 80
+          },
+          "birthDate": {
+            "type": "string",
+            "nullable": true,
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+            "description": "Real calendar date; null clears; no timezone conversion."
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 1000
+          }
+        }
+      },
+      "Gender": {
+        "type": "string",
+        "enum": [
+          "male",
+          "female",
+          "neutral"
+        ]
+      },
+      "Relationship": {
+        "type": "string",
+        "enum": [
+          "father",
+          "mother",
+          "parent",
+          "brother",
+          "sister",
+          "sibling",
+          "husband",
+          "wife",
+          "partner",
+          "son",
+          "daughter",
+          "child"
+        ]
+      }
     }
   }
 }

@@ -3,7 +3,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  worker: { format: 'es', rollupOptions: { output: { entryFileNames: 'notificationWorker-[hash].js' } } },
   server: {
+    headers: { 'Service-Worker-Allowed': '/' },
     proxy: {
       '/api': 'http://127.0.0.1:3001'
     }

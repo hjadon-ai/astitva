@@ -1,0 +1,920 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Astitva Shared Family Units (F035)",
+    "version": "1.0.0",
+    "description": "Verified sessions and enabled Family access. Local cookie mutations also require an approved Origin. Exact email requests never return account-existence confirmation. Two sends per sender/recipient/UTC day; seven-day expiry. Writes require replica-set transactions. Legacy records are not automatically converted."
+  },
+  "paths": {
+    "/api/family/units": {
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "List authorized normalized units and transaction capability",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Establish a unit through a relationship context",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "relationship"
+                ],
+                "properties": {
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "father",
+                      "mother",
+                      "parent",
+                      "brother",
+                      "sister",
+                      "sibling",
+                      "husband",
+                      "wife",
+                      "partner",
+                      "son",
+                      "daughter",
+                      "child"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": " Duplicate father/mother relationships return 409; one father and one mother per person."
+      }
+    },
+    "/api/family/units/{unitId}": {
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Read a normalized unit perspective",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        }
+      }
+    },
+    "/api/family/units/{unitId}/people": {
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Add explicit NON_USER without invitation or account",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "kind",
+                  "relationship",
+                  "expectedRevision"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "NON_USER"
+                    ]
+                  },
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "father",
+                      "mother",
+                      "parent",
+                      "brother",
+                      "sister",
+                      "sibling",
+                      "husband",
+                      "wife",
+                      "partner",
+                      "son",
+                      "daughter",
+                      "child"
+                    ]
+                  },
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": " Duplicate father/mother relationships return 409; one father and one mother per person."
+      }
+    },
+    "/api/family/units/{unitId}/people/{personId}": {
+      "patch": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Update authorized unit details or ADMIN role",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "expectedRevision"
+                ],
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "EDITOR",
+                      "READONLY"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "details": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "preferredName": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 80
+                      },
+                      "birthDate": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "date"
+                      },
+                      "note": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "father",
+                      "mother",
+                      "brother",
+                      "sister",
+                      "husband",
+                      "wife",
+                      "son",
+                      "daughter"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": " ADMIN/EDITOR may send relationship to correct an existing direct edge in the same circle. Revision checking and graph validation apply. Linked/multi-unit gender corrections, pending requests and dependent changes return 409. Duplicate father/mother relationships return 409; one father and one mother per person. Self birthDate edits update a canonical person birth date across active unit cards; notes remain unit-specific."
+      },
+      "delete": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN removes unit membership after explicit reference handling",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "expectedRevision",
+                  "confirmation",
+                  "confirmDetachRelationships"
+                ],
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "confirmation": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "confirmDetachRelationships": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "ADMIN removal of another linked or NON_USER membership only; preserves accounts/private data/other units, revokes affected unit grants, detaches edges and requires revision and explicit confirmation. Self and pending references are blocked."
+      }
+    },
+    "/api/family/units/{unitId}/people/{personId}/removal-preview": {
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "ADMIN previews NON_USER removal references",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "description": "Preview removal for another linked or NON_USER member; ADMIN only."
+      }
+    },
+    "/api/family/requests": {
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "List latest 100 authorized requests",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Record an exact-email relationship request; generic receipt",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "sourceUnitId",
+                  "targetEmail",
+                  "relationship",
+                  "expectedRevision",
+                  "idempotencyKey"
+                ],
+                "properties": {
+                  "sourceUnitId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "targetEmail": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "relationship": {
+                    "type": "string",
+                    "enum": [
+                      "father",
+                      "mother",
+                      "parent",
+                      "brother",
+                      "sister",
+                      "sibling",
+                      "husband",
+                      "wife",
+                      "partner",
+                      "son",
+                      "daughter",
+                      "child"
+                    ]
+                  },
+                  "existingPersonId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "inviteToRegister": {
+                    "type": "boolean"
+                  },
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "description": "Required for inviteToRegister when no existingPersonId; creates a NON_USER before invitation."
+                  },
+                  "findMember": {
+                    "type": "boolean"
+                  },
+                  "requestedRole": {
+                    "type": "string",
+                    "enum": [
+                      "READONLY",
+                      "EDITOR",
+                      "ADMIN"
+                    ],
+                    "default": "READONLY"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": " findMember=true resolves exact email internally and invites to register only if absent; response stays generic. requestedRole is READONLY, EDITOR or ADMIN, defaults READONLY and activates only after consent and approval; elevated role requires initiating ADMIN at completion. Duplicate father/mother relationships return 409; one father and one mother per person."
+      }
+    },
+    "/api/family/requests/{requestId}": {
+      "get": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Read authorized request and consent/impact preview",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        }
+      }
+    },
+    "/api/family/requests/{requestId}/relationship-decision": {
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "Addressed verified recipient accepts or declines",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "decision",
+                  "expectedRevision"
+                ],
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "decline"
+                    ]
+                  },
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "targetUnitId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": " Duplicate father/mother relationships return 409; one father and one mother per person."
+      }
+    },
+    "/api/family/requests/{requestId}/merge-decision": {
+      "post": {
+        "tags": [
+          "Family"
+        ],
+        "summary": "One current ADMIN from each source explicitly decides",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Invalid shape or fields"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Wrong role, unverified, disabled feature or origin"
+          },
+          "404": {
+            "description": "Absent or unauthorized record"
+          },
+          "409": {
+            "description": "Stale revision, invalid graph, unsafe references or transactions unavailable"
+          },
+          "429": {
+            "description": "Persistent invitation quota exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "unitId",
+                  "decision",
+                  "expectedRevision",
+                  "previewRevisions"
+                ],
+                "properties": {
+                  "unitId": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "decline"
+                    ]
+                  },
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "previewRevisions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "pinChoice": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{24}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": " Duplicate father/mother relationships return 409; one father and one mother per person."
+      }
+    },
+    "/api/family/units/member-lookup": {
+      "post": {
+        "summary": "Exact-email member lookup for family invitation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lookup result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "found": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or self email"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "ADMIN required for existing family member"
+          },
+          "429": {
+            "description": "30 lookups per UTC day exceeded"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "astitva_dev_session"
+      },
+      "BearerSession": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "security": [
+    {
+      "SessionCookie": []
+    },
+    {
+      "BearerSession": []
+    }
+  ]
+}

@@ -75,6 +75,18 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const child = await request('POST', `/${familyId}/people`, { name: 'Casey',
     email: `f018-${ids[2]}@example.invalid`, relationship: 'son' });
   assert.equal(child.status, 201);
+  const detailChildId = child.body.family.connections.find(edge => edge.person.name === 'Casey').person.id;
+  const detailPath = `/${familyId}/people/${detailChildId}/details`;
+  assert.equal((await request('PATCH', detailPath, {note:'No session'}, null)).status, 401);
+  assert.equal((await request('PATCH', detailPath, {note:'Unrelated'}, 2)).status, 404);
+  const beforeDetails = await Family.findById(familyId).lean();
+  assert.equal((await request('PATCH', detailPath, {preferredName:'Case', birthDate:'2000-02-29', note:'<b>literal</b>'})).status, 200);
+  assert.equal((await request('PATCH', detailPath, {preferredName:'Discard', birthDate:'2023-02-29'})).status, 400);
+  assert.equal((await request('PATCH', detailPath, {note:'x'.repeat(1001)})).status, 400);
+  const afterDetails = await Family.findById(familyId).lean();
+  assert.deepEqual(afterDetails.relations, beforeDetails.relations);
+  assert.deepEqual(afterDetails.shares, beforeDetails.shares);
+  assert.equal(afterDetails.people.find(p => String(p._id) === detailChildId).preferredName, 'Case');
   const daisyEmail = `f018-daisy-${ids[0]}@example.invalid`;
   const daisy = await request('POST', `/${familyId}/people`, { name: 'Daisy', email: daisyEmail, relationship: 'daughter' });
   assert.equal(daisy.status, 201);
@@ -107,6 +119,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
   assert.equal((await request('POST', '/invitations/accept', { token }, 2)).status, 403);
   const accepted = await request('POST', '/invitations/accept', { token }, 1);
   assert.equal(accepted.status, 200);
+  assert.equal((await request('PATCH', detailPath, {note:'READONLY'}, 1)).status, 403);
   assert.equal(accepted.body.family.self.role, 'READONLY');
   assert.equal((await request('GET', `/${familyId}/activity`, undefined, 1)).status, 200);
   assert.equal(accepted.body.family.connections[0].label, 'Husband');
@@ -131,6 +144,14 @@ test('F018 invitation, perspective, roles, and private sharing', {
   const wifeView = await request('GET', `/${familyId}`, undefined, 1);
   assert.equal(wifeView.body.family.connections.find((edge) => edge.person.name === 'Casey').label, 'Son');
   assert.equal(wifeView.body.family.connections.find((edge) => edge.person.name === 'Daisy').label, 'Daughter');
+  assert.equal((await request('PATCH', `/${familyId}/people/${wifeId}/role`, { role: 'EDITOR' })).status, 200);
+  assert.equal((await request('PATCH', detailPath, {note:'Editor update'}, 1)).status, 200);
+  const childView = await request('GET', `/${familyId}`, undefined, 2);
+  assert.equal(childView.body.family.self.id, detailChildId);
+  assert.equal(childView.body.family.self.preferredName, 'Case');
+  assert.equal(childView.body.family.self.note, 'Editor update');
+
+  assert.equal((await request('PATCH', `/${familyId}/people/${wifeId}/role`, { role: 'READONLY' })).status, 200);
   const childEdge = child.body.family.connections.find((edge) => edge.person.name === 'Casey');
   assert.equal((await request('DELETE', `/${familyId}/relations/${childEdge.relationId}`)).status, 200);
   assert.equal((await request('GET', `/${familyId}`, undefined, 1)).body.family.connections.some((edge) => edge.person.name === 'Casey'), false,
@@ -145,6 +166,7 @@ test('F018 invitation, perspective, roles, and private sharing', {
   assert.equal((await request('POST', `/${familyId}/people`, { name: 'Dana', relationship: 'mother' }, 1)).status, 201);
   assert.equal((await request('DELETE', `/${familyId}/relations/${wifeView.body.family.connections[0].relationId}`, undefined, 1)).status, 403);
   assert.equal((await request('PUT', `/${familyId}/shares/diet/${ids[1]}`)).status, 200);
+
   const ownerSummary = (await request('GET', '/sharing/summary')).body.features;
   const recipientSummary = (await request('GET', '/sharing/summary', undefined, 1)).body.features;
   assert.equal(ownerSummary.diet.sharedWith[0].person.name, 'Blair');

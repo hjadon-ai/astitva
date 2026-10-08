@@ -21,9 +21,51 @@ tags:
   - name: Finance
   - name: Daily Priorities
   - name: Family
+  - name: Family Social
+  - name: Notifications
   - name: Anonymous Chat
 
 paths:
+  /api/family/units/member-lookup:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1units~1member-lookup'
+  /api/family/units/managed-members:
+    $ref: './managed-workspace.openapi.json#/paths/~1api~1family~1units~1managed-members'
+  /api/family/units/{unitId}/people/{personId}/managed-workspace:
+    $ref: './managed-workspace.openapi.json#/paths/~1api~1family~1units~1{unitId}~1people~1{personId}~1managed-workspace'
+  /api/family/units:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1units'
+  /api/family/units/{unitId}:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1units~1{unitId}'
+  /api/family/units/{unitId}/people:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1units~1{unitId}~1people'
+  /api/family/units/{unitId}/people/{personId}:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1units~1{unitId}~1people~1{personId}'
+  /api/family/units/{unitId}/people/{personId}/removal-preview:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1units~1{unitId}~1people~1{personId}~1removal-preview'
+  /api/family/requests:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1requests'
+  /api/family/requests/{requestId}:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1requests~1{requestId}'
+  /api/family/requests/{requestId}/relationship-decision:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1requests~1{requestId}~1relationship-decision'
+  /api/family/requests/{requestId}/merge-decision:
+    $ref: './family-units.openapi.json#/paths/~1api~1family~1requests~1{requestId}~1merge-decision'
+  /api/family/{familyId}/posts:
+    $ref: './family-social.openapi.json#/paths/~1api~1family~1{familyId}~1posts'
+  /api/family/{familyId}/posts/{postId}:
+    $ref: './family-social.openapi.json#/paths/~1api~1family~1{familyId}~1posts~1{postId}'
+  /api/family/{familyId}/posts/{postId}/photo:
+    $ref: './family-social.openapi.json#/paths/~1api~1family~1{familyId}~1posts~1{postId}~1photo'
+  /api/family/{familyId}/posts/{postId}/pin:
+    $ref: './family-social.openapi.json#/paths/~1api~1family~1{familyId}~1posts~1{postId}~1pin'
+  /api/family/{familyId}/posts/{postId}/reactions:
+    $ref: './family-social.openapi.json#/paths/~1api~1family~1{familyId}~1posts~1{postId}~1reactions'
+  /api/family/{familyId}/posts/{postId}/comments:
+    $ref: './family-social.openapi.json#/paths/~1api~1family~1{familyId}~1posts~1{postId}~1comments'
+  /api/notifications/devices:
+    $ref: './chat.openapi.json#/paths/~1api~1notifications~1devices'
+  /api/chat/firebase-session:
+    $ref: './chat.openapi.json#/paths/~1api~1chat~1firebase-session'
   /api/chat/invitations:
     $ref: './chat.openapi.json#/paths/~1api~1chat~1invitations '
   /api/chat/invitations/{token}/accept:
@@ -62,6 +104,8 @@ paths:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people'
   /api/family/{familyId}/people/{personId}:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}'
+  /api/family/{familyId}/people/{personId}/details:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}~1details'
   /api/family/{familyId}/people/{personId}/role:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}~1role'
   /api/family/{familyId}/relations/{relationId}:
@@ -341,6 +385,11 @@ paths:
       responses:
         "204":
           description: Logout completed.
+
+  /api/family/shared-workspace/members:
+    $ref: './family.openapi.json#/paths/~1api~1family~1shared-workspace~1members'
+  /api/family/{familyId}/people/{personId}/shared-workspace:
+    $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1people~1{personId}~1shared-workspace'
 
 components:
   securitySchemes:

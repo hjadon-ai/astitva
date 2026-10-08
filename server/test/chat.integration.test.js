@@ -8,6 +8,10 @@ test('F027 Stage invitation, PIN, isolation and deletion', {
   Object.assign(process.env, { ASTITVA_ENV: 'stage', MONGODB_URL: 'mongodb://127.0.0.1:27017/astitva_stage',
     PLAID_ENV: 'production', PLAID_CLIENT_ID: 'local-test', PLAID_SECRET: 'local-test',
     FINANCE_TOKEN_ENCRYPTION_KEY: '11'.repeat(32) });
+  const { FakeChatFirestore } = require('./helpers/fakeChatFirestore');
+  const firestore = new FakeChatFirestore();
+  t.mock.method(require('../src/services/firebaseAdmin'), 'firebaseFirestore', () => firestore);
+  t.mock.method(require('../src/services/firebaseAdmin'), 'firebaseMessaging', () => null);
   const mongoose = require('mongoose');
   const express = require('express');
   const User = require('../src/models/User');
@@ -73,8 +77,8 @@ test('F027 Stage invitation, PIN, isolation and deletion', {
   await ChatInvitation.updateOne({ _id: expired.body.id }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
   assert.equal((await req('POST', `/invitations/${expired.body.token}/accept`, { alias: 'Late' }, 1)).status, 404);
   assert.equal((await req('GET', '/conversations', undefined, 2)).body.conversations.length, 0);
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 2)).status, 404);
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 0)).status, 403);
+  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 2)).status, 410);
+  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 0)).status, 410);
   assert.equal((await req('POST', `/conversations/${id}/pin`, { pin: '123456' }, 0)).status, 204);
   assert.equal((await req('POST', `/conversations/${id}/pin`, { pin: '654321' }, 1)).status, 204);
   for (let i = 0; i < 3; i++) assert.equal((await req('POST', `/conversations/${id}/unlock`, { pin: '000000' })).status, 403);
@@ -100,26 +104,30 @@ test('F027 Stage invitation, PIN, isolation and deletion', {
   const a = await req('POST', `/conversations/${id}/unlock`, { pin: '123456' });
   let b = await req('POST', `/conversations/${id}/unlock`, { pin: '654321' }, 1);
   assert.equal(a.status, 200); assert.equal(b.status, 200);
-  assert.equal((await req('POST', `/conversations/${id}/messages`, { text: 'Hello' }, 0, a.body.token)).status, 201);
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 1, b.body.token)).body.messages.length, 1,
-    'refresh reads the latest messages');
+  firestore.documents.set(`chats/${id}`, { active: true, participants: ids.slice(0, 2).map(String) });
+  const sent = await req('POST', `/conversations/${id}/messages`, { text: 'Hello', clientMessageId: crypto.randomUUID() }, 0, a.body.token);
+  assert.equal(sent.status, 201);
+  assert.equal((await firestore.collection(`chats/${id}/messages`).get()).size, 1);
+  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 1, b.body.token)).status, 410,
+    'reads stay direct Firestore');
   assert.equal((await req('POST', `/conversations/${id}/lock`, {}, 2)).status, 404);
   assert.equal((await req('POST', `/conversations/${id}/lock`, {}, 1)).status, 204);
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 1, b.body.token)).status, 403,
+  assert.equal((await req('POST', `/conversations/${id}/messages`, { text: 'Locked', clientMessageId: crypto.randomUUID() }, 1, b.body.token)).status, 403,
     'lock invalidates the previous token');
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 0, a.body.token)).status, 200,
+  assert.equal((await req('POST', `/conversations/${id}/messages`, { text: 'Still open', clientMessageId: crypto.randomUUID() }, 0, a.body.token)).status, 201,
     'locking one participant leaves the other unlocked');
   b = await req('POST', `/conversations/${id}/unlock`, { pin: '654321' }, 1);
   assert.equal(b.status, 200);
   assert.equal((await req('PATCH', `/conversations/${id}/alias`, { alias: 'Ocean' }, 1, b.body.token)).status, 204);
   assert.equal((await req('PATCH', `/conversations/${id}/alias`, { alias: 'Wrong' }, 2, b.body.token)).status, 404);
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 1, b.body.token)).body.messages[0].alias, 'Sky');
-  assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 2, a.body.token)).status, 404);
+  assert.equal(firestore.documents.get(`chats/${id}/messages/${sent.body.messageId}`).senderAlias, 'Sky');
+  assert.equal((await req('POST', `/conversations/${id}/messages`, { text: 'Third party', clientMessageId: crypto.randomUUID() }, 2, a.body.token)).status, 404);
   assert.equal((await req('DELETE', `/conversations/${id}`, undefined, 1)).status, 200,
     'forgotten PIN does not prevent deleting a conversation');
   assert.equal((await req('GET', '/conversations', undefined, 0)).body.conversations.length, 0);
   const deletion = await ChatDeletion.findOne({ emailIds: emails[0] });
-  assert.equal(deletion.messageCount, 1);
+  assert.equal(deletion.messageCount, 2);
+  assert.equal((await firestore.collection(`chats/${id}/sendRequests`).get()).size, 0);
   assert.equal(deletion.emailIds.length, 2);
   assert.ok(deletion.bytesDeleted > 0);
 });
