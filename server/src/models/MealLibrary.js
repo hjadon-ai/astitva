@@ -1,0 +1,8 @@
+const mongoose=require('mongoose');
+const {fields,categories}=require('./Diet');const id=mongoose.Schema.Types.ObjectId;
+const item=new mongoose.Schema({name:{type:String,required:true},normalizedName:{type:String,required:true},category:{type:String,enum:categories,required:true},servingDescription:{type:String,required:true},...Object.fromEntries(fields.map(f=>[f,{type:Number,required:true,min:0}])),ingredients:String,notes:String});
+const snapshot=new mongoose.Schema({name:String,nutritionSource:String,description:String,tags:[String],items:[item],publishedAt:Date},{_id:false});
+const schema=new mongoose.Schema({ownerId:{type:id,required:true,index:true},legacyOwnerId:{type:id},name:{type:String,required:true,maxlength:100},nutritionSource:{type:String,enum:['AI estimates','Product labels','Reference source','Mixed','Existing personal meals'],required:true},description:{type:String,maxlength:1000,default:''},tags:[String],items:{type:[item],validate:v=>v.length<=500},published:snapshot,reviewStatus:{type:String,enum:['draft','submitted','published','returned'],default:'draft'},feedback:{type:String,default:''},archivedAt:{type:Date,default:null},everDistributed:{type:Boolean,default:false},revision:{type:Number,default:0}},{timestamps:true,collection:'mealLibraries'});
+schema.index({legacyOwnerId:1},{unique:true,sparse:true});
+const reference=new mongoose.Schema({libraryId:{type:id,required:true},userId:{type:id,required:true},kind:{type:String,enum:['owner','shared','saved'],required:true}},{timestamps:true,collection:'mealLibraryReferences'});reference.index({libraryId:1,userId:1},{unique:true});
+module.exports={Library:mongoose.model('MealLibrary',schema),Reference:mongoose.model('MealLibraryReference',reference)};

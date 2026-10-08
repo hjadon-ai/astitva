@@ -1,0 +1,32 @@
+import {useEffect,useState,useRef} from 'react';
+import {ChevronLeft,ChevronRight,RotateCw} from 'lucide-react';
+import {Button,IconButton,LoadingState,StatusBanner} from './ui';
+const metrics=[['calories','Calories','kcal','#a96c16'],['proteinGrams','Protein','g','#c44268'],['carbohydrateGrams','Carbs','g','#216cba'],['fatGrams','Fat','g','#287850'],['fiberGrams','Fiber','g','#7853af'],['waterMilliliters','Water','ml','#087f98']];
+const shift=(date,n)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const dateLabel=date=>new Date(date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
+export default function DietHistory({apiRequest}){
+ const chartRef=useRef(null),[plotWidth,setPlotWidth]=useState(700),[plotHeight,setPlotHeight]=useState(140);
+ const [end,setEnd]=useState(''),[data,setData]=useState(null),[error,setError]=useState(''),[retry,setRetry]=useState(0),[chosen,setChosen]=useState(null),[visible,setVisible]=useState(metrics.map(m=>m[0]));
+ useEffect(()=>{let active=true;setData(null);setError('');const params=new URLSearchParams({timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,...(end?{end}:{})});apiRequest('/api/diet/history?'+params).then(r=>{if(active){setData(r);setChosen(r.days.length-1)}}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[apiRequest,end,retry]);
+ useEffect(()=>{if(!data||!chartRef.current)return;const observer=new ResizeObserver(entries=>{setPlotWidth(Math.max(280,Math.round(entries[0].contentRect.width)));setPlotHeight(Math.max(60,Math.round(entries[0].contentRect.height)))});observer.observe(chartRef.current);return()=>observer.disconnect()},[data]);
+ if(error)return <StatusBanner tone="error" role="alert">{error}<Button icon={RotateCw} onClick={()=>setRetry(r=>r+1)}>Retry</Button></StatusBanner>;
+ if(!data)return <LoadingState>Loading intake history…</LoadingState>;
+ const usable=metrics.filter(([key])=>data.targets?.[key]>0&&visible.includes(key));
+ const values=usable.flatMap(([key])=>data.days.map(d=>d.totals[key]/data.targets[key]*100));const max=Math.max(120,Math.ceil(Math.max(0,...values)/40)*40);
+ const x=i=>54+i*(plotWidth-84)/Math.max(1,data.days.length-1),y=p=>plotHeight-18-p/max*(plotHeight-52);
+ const day=data.days[chosen??data.days.length-1];
+ return <div className="diet-history">
+  <div className="history-toolbar"><div><strong>{dateLabel(data.start)} – {dateLabel(data.end)}</strong><span>10 days · past 3 months</span></div><div className="history-navigation"><IconButton icon={ChevronLeft} label="Previous ten days" disabled={data.start===data.earliest} onClick={()=>setEnd(shift(data.start,-1))}/><Button variant="quiet" disabled={data.end===data.latest} onClick={()=>setEnd('')}>Latest</Button><IconButton icon={ChevronRight} label="Next ten days" disabled={data.end===data.latest} onClick={()=>setEnd(shift(data.end,10)>data.latest?data.latest:shift(data.end,10))}/></div></div>
+  <div className="history-legend" aria-label="Chart metrics">{metrics.map(([key,name,,color])=><button key={key} type="button" disabled={!data.targets?.[key]} aria-pressed={visible.includes(key)} onClick={()=>setVisible(v=>v.includes(key)?v.filter(k=>k!==key):[...v,key])}><i style={{background:color}} aria-hidden="true"/>{name}{!data.targets?.[key]?' · no target':''}</button>)}</div>
+  <svg className="intake-history-chart" ref={chartRef} viewBox={`0 0 ${plotWidth} ${plotHeight}`} preserveAspectRatio="none" role="img" aria-labelledby="intake-history-title intake-history-description"><title id="intake-history-title">Daily intake compared with current targets</title><desc id="intake-history-description">Six intake series over the selected date window. The dashed line marks 100 percent of current targets. Daily values are available below the chart.</desc>
+   {[0,max/4,max/2,max*3/4,max].map(p=><g key={p}><line x1="54" x2={plotWidth-30} y1={y(p)} y2={y(p)} stroke="#e1e8ef" strokeWidth="1" vectorEffect="non-scaling-stroke" shapeRendering="crispEdges"/><text x="44" y={y(p)+4} textAnchor="end" fill="#6b7c8c" fontSize="12">{Math.round(p)}%</text></g>)}
+   <line x1="54" x2={plotWidth-30} y1={y(100)} y2={y(100)} stroke="#8195a8" strokeWidth="1.2" vectorEffect="non-scaling-stroke" strokeDasharray="4 4"/><text x={plotWidth-30} y={y(100)-7} textAnchor="end" fill="#64748b" fontSize="11">Target 100%</text>
+   {chosen!==null&&<line x1={x(chosen)} x2={x(chosen)} y1="26" y2={plotHeight-18} stroke="#9cb3c4" strokeDasharray="3 4" vectorEffect="non-scaling-stroke"/>}
+   {usable.map(([key,,,color])=><g key={key}><polyline points={data.days.map((d,i)=>`${x(i)},${y(d.totals[key]/data.targets[key]*100)}`).join(' ')} fill="none" stroke={color} strokeWidth="2.2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round"/>{data.days.map((d,i)=><circle key={d.date} cx={x(i)} cy={y(d.totals[key]/data.targets[key]*100)} r={i===chosen?4.5:3} stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" fill={(key==='waterMilliliters'?d.waterEntryCount:d.mealCount)?color:'#fff'}/>)}</g>)}
+   {data.days.map((d,i)=><rect key={d.date} x={Math.max(48,x(i)-(plotWidth-84)/Math.max(1,data.days.length-1)/2)} y="26" width={(plotWidth-84)/Math.max(1,data.days.length-1)} height={plotHeight-26} fill="transparent" onPointerEnter={()=>setChosen(i)} onClick={()=>setChosen(i)}><title>{dateLabel(d.date)}: {metrics.map(([key,name,unit])=>`${name} ${d.totals[key]} ${unit}`).join(', ')}</title></rect>)}
+  </svg>
+  <div className="history-days" style={{paddingLeft:54,paddingRight:30}} role="group" aria-label="Inspect a day">{data.days.map((d,i)=><button key={d.date} aria-label={dateLabel(d.date)} aria-pressed={chosen===i} onClick={()=>setChosen(i)}><span>{new Date(d.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short'})}</span><strong>{d.date.slice(8)}</strong></button>)}</div>
+  {day&&<div className="history-day-detail"><div className="history-detail-header"><strong>{dateLabel(day.date)}</strong><span>{day.mealCount} meals · {day.waterEntryCount} water entries</span></div><div className="history-detail-values">{metrics.map(([key,name,unit,color])=><span key={key}><i style={{background:color}} aria-hidden="true"/><span>{name}</span><b>{day.totals[key]} <small>{unit}</small></b></span>)}</div></div>}
+  <p className="history-note">{!usable.length?'Select a metric with a target. ':''}Current targets · Hollow points: no logged entries.</p>
+ </div>
+}

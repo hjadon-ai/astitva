@@ -1,3 +1,4 @@
+import {AdminMealLibraries} from './NamedMealLibraries';
 import { useRef, useState } from 'react';
 import { AppShell, Button, ConfirmDialog, FormField, LoadingState, PageHeader, StatusBanner, Surface } from './ui';
 
@@ -147,7 +148,7 @@ export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, 
   return <AppShell page="admin" user={user} runtime={runtime} onLogout={onLogout}>
     <section className="admin-page">
       <PageHeader title="Admin Panel" description={`Signed in as ${user.email}`} actions={<a className="button button-secondary" href="/">Return to Home</a>} />
-      <div className="admin-tabs" aria-label="Admin sections">
+      <div className="admin-tabs" aria-label="Admin sections"><Button aria-pressed={tab === 'meal-libraries'} onClick={()=>setTab('meal-libraries')}>Meal libraries</Button>
         <Button aria-pressed={tab === 'users'} onClick={() => { setTab('users'); setMessage(null); }}>Users</Button>
         <Button aria-pressed={tab === 'invitees'} onClick={() => { setTab('invitees'); setMessage(null); }}>Invitees</Button>
         <Button aria-pressed={tab === 'notifications'} onClick={async () => {
@@ -157,7 +158,7 @@ export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, 
         }}>Notifications</Button>
       </div>
       {message && <StatusBanner tone={message.tone} role={message.tone === 'error' ? 'alert' : 'status'}>{message.text}</StatusBanner>}
-      {tab === 'notifications' ? notificationSettings && <NotificationSettings key={notificationSettings.expectedVersion || 'new'}
+      {tab === 'meal-libraries' ? <AdminMealLibraries apiRequest={apiRequest}/> : tab === 'notifications' ? notificationSettings && <NotificationSettings key={notificationSettings.expectedVersion || 'new'}
         settings={notificationSettings} run={run} onSaved={setNotificationSettings} reload={async () => {
           const result = await run('/api/admin/notifications'); if (result) setNotificationSettings(result.settings);
         }} /> : tab === 'users' ? <>

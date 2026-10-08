@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import DietHistory from './DietHistory';
+import QuickMealLog from './QuickMealLog';
+import {updateWaterIntake} from './waterIntake';
+import NamedMealLibraries from './NamedMealLibraries';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   CalendarDays, Check, ChevronLeft, ChevronRight, Droplets, Library, Pencil,
-  Plus, RotateCw, Save, Search, Target, Trash2, Upload, Utensils
+  Plus, RotateCw, Save, Search, Target, ChartNoAxesCombined, Trash2, Upload, Utensils, Sunrise, Sun, Moon, Coffee
 } from 'lucide-react';
 import {
-  Badge, Button, ConfirmDialog, EmptyState, LoadingState, PageHeader,
+  Badge, Button, IconButton, ConfirmDialog, EmptyState, LoadingState, PageHeader,
   SectionHeader, StatusBanner, Surface
 } from './ui';
 
@@ -51,8 +55,14 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [waterBusy,setWaterBusy] = useState(false);
+  const targetKeyboard = useRef(false);
+  const targetTrigger = useRef(null);
+  const [waterError,setWaterError] = useState('');
   const [editor, setEditor] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [historyOpen,setHistoryOpen]=useState(false);
+  const [historyVisited,setHistoryVisited]=useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [version, setVersion] = useState(0);
 
@@ -81,6 +91,16 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
     finally { setBusy(false); }
   }
 
+  async function mutateWater(path,method,body,deletedId) {
+    setWaterBusy(true);setWaterError('');
+    try {
+      const result=await apiRequest(path,{method,...(body?{body:JSON.stringify(body)}:{})});
+      setData(current=>current?{...current,water:updateWaterIntake(current.water,deletedId?{deletedId}:{entry:result.entry})}:current);
+      return true;
+    } catch(requestError){setWaterError(requestError.message);return false;}
+    finally{setWaterBusy(false);}
+  }
+
   const deletingMeal = data?.meals.find((meal) => meal.id === deleting);
   const startMeal = () => setEditor({ kind: 'meal', date, name: '', mealType: 'breakfast', servingDescription: '', nutrition: blankNutrition() });
   const startTargets = () => setEditor({ kind: 'targets', targets: {
@@ -90,59 +110,85 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
 
   return <section className="profile-content diet-page">
     <PageHeader eyebrow={readOnly ? "Shared / Diet · Read only" : "Personal / Diet"} title="Daily diet" description={readOnly ? "Authorized shared meals and daily nutrition." : "Track meals, water, and daily nutrition in one place."} />
-    <div className="diet-toolbar">
-      <Button icon={ChevronLeft} disabled={busy} onClick={() => moveDate(-1)}>Previous</Button>
-      <label className="diet-date"><CalendarDays size={18} aria-hidden="true" /><span>Date</span><input aria-label="Diet date" type="date" value={date} disabled={busy}
-        onChange={(event) => { if (event.target.value) setDate(event.target.value); }} /></label>
-      <Button disabled={busy} onClick={() => setDate(localDate())}>Today</Button>
-      <Button icon={ChevronRight} disabled={busy} onClick={() => moveDate(1)}>Next</Button>
-    </div>
+    <nav className="diet-date-navigation" aria-label="Diet day navigation">
+      <div className="diet-date-controls">
+        <Button className="diet-day-arrow" icon={ChevronLeft} aria-label="Previous day" title="Previous day" disabled={busy} onClick={() => moveDate(-1)} />
+        <label className="diet-date"><CalendarDays size={18} aria-hidden="true" /><span className="sr-only">Date</span><input aria-label="Diet date" type="date" value={date} disabled={busy}
+          onChange={(event) => { if (event.target.value) setDate(event.target.value); }} /></label>
+        <Button className="diet-day-arrow" icon={ChevronRight} aria-label="Next day" title="Next day" disabled={busy} onClick={() => moveDate(1)} />
+      </div>
+      <Button className="diet-today-button" disabled={busy} onClick={() => setDate(localDate())}>Today</Button>
+    </nav>
     {error && <StatusBanner tone="error" role="alert">{error} <button className="text-action" onClick={() => setVersion((value) => value + 1)}><RotateCw size={15} aria-hidden="true" /> Retry</button></StatusBanner>}
     {message && <StatusBanner tone="success" role="status">{message}</StatusBanner>}
     {!data && !error && <LoadingState>Loading diet record…</LoadingState>}
     {data && <>
-      <section className="diet-target-section">
-        <SectionHeader eyebrow="Daily targets" title="Nutrition" action={!readOnly && <Button icon={Target} disabled={busy} onClick={startTargets}>Edit targets</Button>} />
-        <div className="diet-summary">{nutrients.map(([key, nutrientLabel, unit]) =>
-          <Surface as="article" key={key} className={data.overTarget?.[key] > 0 ? 'over-target' : ''}>
-            <p className="eyebrow">{nutrientLabel}</p><strong>{data.totals[key]} <small>{unit}</small></strong>
-            <p>{data.targets ? `Target ${data.targets[key]} ${unit}` : 'No target set'}</p>
-            {data.targets && <progress aria-label={`${nutrientLabel} toward target`} value={Math.min(data.totals[key], data.targets[key])} max={data.targets[key]} />}
-            {data.overTarget?.[key] > 0 && <span>{data.overTarget[key]} {unit} over target</span>}
-          </Surface>)}</div>
-        {!readOnly && (data.macroCalories ? <MacroSummary macro={data.macroCalories} /> : <StatusBanner>Set your six daily targets to compare macros, calories, and water.</StatusBanner>)}
+      <div className={`diet-intake-overview${readOnly ? ' is-shared' : ''}`}><section className="diet-target-section nutrition-dashboard">
+        <SectionHeader eyebrow="Daily overview" title={historyOpen?"Intake trends":"Nutrition"} description={historyOpen?"Daily intake against your current targets.":"Each bar shows intake against its own daily target."} action={!readOnly && <div className="overview-view-actions"><IconButton icon={historyOpen?Utensils:ChartNoAxesCombined} label={historyOpen?"Show daily overview":"Show intake history"} aria-pressed={historyOpen} onClick={()=>{setHistoryVisited(true);setHistoryOpen(v=>!v);setEditor(null);}} /><div className="target-editor-anchor" onPointerDown={()=>{targetKeyboard.current=false;}} onKeyDown={event=>{targetKeyboard.current=true;if(event.key==='Escape'&&!busy){setEditor(null);targetTrigger.current?.focus();}}} onPointerLeave={event=>{if(event.pointerType==='mouse'&&!busy&&!targetKeyboard.current)setEditor(current=>current?.kind==='targets'?null:current);}} onBlur={event=>{if(!busy&&!event.currentTarget.contains(event.relatedTarget))setEditor(current=>current?.kind==='targets'?null:current);}}>
+          <IconButton ref={targetTrigger} icon={Target} label="Edit targets" disabled={busy} aria-expanded={editor?.kind==='targets'} aria-controls="diet-target-popup" onClick={()=>editor?.kind==='targets'?setEditor(null):startTargets()} />
+          {editor?.kind==='targets'&&<div className="target-editor-hover-area"><div id="diet-target-popup" className="overview-target-editor target-editor-popup"><DietForm key="overview-targets" initial={editor} busy={busy} onCancel={()=>setEditor(null)} onSave={(values)=>mutate('/api/diet/targets','PUT',values,'Daily targets saved.')} /></div></div>}
+        </div></div>} />
+        <div className="overview-flip-stage"><div className={`overview-flip-card${historyOpen&&!readOnly?' is-flipped':''}`}>
+        <div className="overview-face overview-face-daily" aria-hidden={historyOpen&&!readOnly} inert={historyOpen&&!readOnly}>
+        <div className="diet-summary nutrition-vertical-summary">{nutrients.map(([key, nutrientLabel, unit]) => {
+          const target = data.targets?.[key];
+          const hasTarget = Number.isFinite(target) && target > 0;
+          const consumed = data.totals[key];
+          const percent = hasTarget ? Math.min(100, Math.max(0, consumed / target * 100)) : 0;
+          return <article key={key} className={`nutrition-card nutrition-${key}${data.overTarget?.[key] > 0 ? ' over-target' : ''}`}>
+            <strong className="nutrition-value">{consumed}<span className="nutrition-value-target">{hasTarget ? ` / ${target}` : ''}</span> <small>{unit}</small></strong>
+            <div className="nutrition-bar-track" role={hasTarget ? 'progressbar' : undefined}
+              aria-label={hasTarget ? `${nutrientLabel} toward target` : undefined}
+              aria-valuemin={hasTarget ? 0 : undefined} aria-valuemax={hasTarget ? target : undefined}
+              aria-valuenow={hasTarget ? Math.min(consumed, target) : undefined}
+              aria-valuetext={hasTarget ? `${consumed} of ${target} ${unit} consumed` : undefined}>
+              <div className="nutrition-bar-fill" style={{height:`${percent}%`}} />
+            </div>
+            <p className="nutrition-label">{nutrientLabel}</p>
+            <p className="nutrition-target">{hasTarget ? `${Math.round(consumed / target * 100)}% of target` : 'No target set'}</p>
+            {hasTarget && <span className={consumed > target ? 'nutrition-exceeded' : 'nutrition-remaining'}>{Math.round(Math.abs(target-consumed)*10)/10} {unit} {consumed > target ? 'over' : 'remaining'}</span>}
+          </article>;
+        })}</div>
+        {!readOnly && (data.macroCalories ? <MacroSummary macro={data.macroCalories} /> : <StatusBanner>Set your daily targets to compare macros, calories, and water.</StatusBanner>)}
+        </div>
+        {!readOnly&&<div className="overview-face overview-face-history" aria-hidden={!historyOpen} inert={!historyOpen}>{historyVisited&&<DietHistory apiRequest={apiRequest}/>}</div>}
+        </div></div>
       </section>
 
-      {!readOnly && <WaterTracker water={data.water} date={date} busy={busy} onAdd={(amountMilliliters) => mutate('/api/diet/water-entries', 'POST', { date, amountMilliliters }, `${amountMilliliters} ml added.`)} onDelete={(id) => mutate(`/api/diet/water-entries/${id}`, 'DELETE', null, 'Water entry deleted.')} />}
-
-      {!readOnly && <div className="diet-toolbar diet-actions">
-        <Button variant="primary" icon={Plus} disabled={busy} onClick={startMeal}>Add meal</Button>
-        <Button icon={Library} disabled={busy} onClick={() => setLibraryOpen((open) => !open)}>{libraryOpen ? 'Hide Meal Library' : 'Meal Library'}</Button>
-      </div>}
-
-      {libraryOpen && !readOnly && <MealLibrary apiRequest={apiRequest} selectedDate={date} onAdded={(addedDate) => {
-        setMessage(`Library meal added to ${addedDate}.`);
-        if (addedDate === date) setVersion((value) => value + 1);
-      }} />}
-
-      <section className="daily-meals">
-        <SectionHeader eyebrow="Selected day" title="Meals" />
-        {!data.meals.length && <EmptyState icon={Utensils} title="No meals yet" description={readOnly ? "No shared meals for this date." : "Add a one-off meal or choose one from your Meal Library."} action={!readOnly && <Button variant="primary" icon={Plus} onClick={startMeal}>Add meal</Button>} />}
+      <section className="diet-intake-panel" role="region" aria-label={readOnly ? 'Shared daily meals' : 'Daily water and meals'}>
+      <header className="daily-tracker-header"><div><h2>Daily tracker</h2><p>Water and meals, together for the day.</p></div><span className="daily-tracker-date"><CalendarDays size={15} aria-hidden="true" /><time dateTime={date}>{new Date(`${date}T12:00:00`).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</time></span></header>
+      {!readOnly && <div className="tracker-entry-grid"><WaterTracker water={data.water} date={date} busy={busy||waterBusy} error={waterError} onAdd={(amountMilliliters) => mutateWater('/api/diet/water-entries', 'POST', { date, amountMilliliters })} onDelete={(id) => mutateWater(`/api/diet/water-entries/${id}`, 'DELETE', null, id)} />
+        <QuickMealLog apiRequest={apiRequest} date={date} libraryOpen={libraryOpen} onManual={startMeal} onLibraries={()=>setLibraryOpen(open=>!open)} onAdded={async()=>{const fresh=requireCurrentDietResponse(await apiRequest(`/api/diet/days/${date}`));setData(current=>({...fresh,water:current.water}));}} /></div>}
+      <div className="daily-meal-workspace">
+        <div className="daily-meal-history-heading"><h3>Meal timeline</h3><span>{data.meals.length} {data.meals.length===1?'entry':'entries'}</span></div>
+        <section className="daily-meals" aria-label="Meals for selected day">
+        {!data.meals.length && <EmptyState icon={Utensils} title="No meals yet" description={readOnly ? "No shared meals for this date." : "Search above to log your first meal, or enter one manually."} />}
         {types.map((type) => {
           const meals = data.meals.filter((meal) => meal.mealType === type);
-          return meals.length > 0 && <section className="diet-meal-group" key={type}><h2>{label(type)}</h2>
+          const MealIcon = {breakfast:Sunrise,lunch:Sun,dinner:Moon,snack:Coffee}[type];
+          return meals.length > 0 && <section className="diet-meal-group" key={type}><h4 className="diet-meal-group-title"><MealIcon size={17} aria-hidden="true" />{label(type)}<span>{meals.reduce((sum,meal)=>sum+meal.nutrition.calories,0)} kcal</span></h4>
             {meals.map((meal) => <Surface as="article" className="diet-meal" key={meal.id}>
-              <div><div className="meal-title"><h3>{meal.name}</h3>{meal.source === 'library' && <Badge tone="neutral">Library · {meal.quantity}×</Badge>}</div>
+              <span className="diet-meal-marker" aria-hidden="true"><MealIcon size={20}/></span><div className="diet-meal-content"><div className="meal-title"><h3>{meal.name}</h3>{meal.source === 'library' && <Badge tone="neutral">Library · {meal.quantity}×</Badge>}</div>
                 {meal.servingDescription && <p>{meal.servingDescription}</p>}
-                <p className="diet-nutrition">{nutrients.map(([key, nutrientLabel, unit]) => `${nutrientLabel}: ${meal.nutrition[key]} ${unit}`).join(' · ')}</p></div>
-              {!readOnly && <div className="diet-toolbar"><Button icon={Pencil} disabled={busy} onClick={() => setEditor({ ...meal, kind: 'meal' })}>Edit</Button>
-                <Button variant="danger" icon={Trash2} disabled={busy} onClick={() => setDeleting(meal.id)}>Delete</Button></div>}
+                <div className="diet-meal-nutrients">{nutrients.map(([key, nutrientLabel, unit]) => <span key={key} className={`meal-nutrient nutrition-${key}`}><span>{nutrientLabel}</span><strong>{meal.nutrition[key]} {unit}</strong></span>)}</div></div>
+              {!readOnly && <div className="diet-toolbar"><IconButton icon={Pencil} label={`Edit ${meal.name}`} disabled={busy} onClick={() => setEditor({ ...meal, kind: 'meal' })} />
+                <IconButton icon={Trash2} label={`Delete ${meal.name}`} disabled={busy} onClick={() => setDeleting(meal.id)} /></div>}
             </Surface>)}</section>;
         })}
+        </section>
+      </div>
       </section>
+      </div>
+
+      {libraryOpen && !readOnly && <div id="diet-meal-library"><NamedMealLibraries apiRequest={apiRequest} selectedDate={date} onAdded={(addedDate) => {
+        setMessage(`Library meal added to ${addedDate}.`);
+        if (addedDate === date) setVersion((value) => value + 1);
+      }} /></div>}
+
+
     </>}
 
-    {!readOnly && editor && <DietForm key={`${editor.kind}-${editor.id || 'new'}`} initial={editor} busy={busy} onCancel={() => setEditor(null)} onSave={(values) => {
+    {!readOnly && editor && editor.kind !== 'targets' && <DietForm key={`${editor.kind}-${editor.id || 'new'}`} initial={editor} busy={busy} onCancel={() => setEditor(null)} onSave={(values) => {
       if (editor.kind === 'targets') return mutate('/api/diet/targets', 'PUT', values, 'Daily targets saved.');
       return mutate(`/api/diet/meals${editor.id ? `/${editor.id}` : ''}`, editor.id ? 'PATCH' : 'POST', values, 'Meal saved.');
     }} />}
@@ -152,14 +198,14 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
 
 function MacroSummary({ macro }) {
   const difference = macro.differenceFromCalorieTarget;
-  return <Surface className="macro-summary">
+  return <details className="macro-summary macro-disclosure"><summary><span>Macro target</span><strong>{macro.total} kcal</strong><span className="macro-disclosure-hint">How it is calculated</span></summary><div className="macro-disclosure-content">
     <div><strong>Macro target</strong><span>Protein {macro.protein} + Carbs {macro.carbohydrates} + Fat {macro.fat} = {macro.total} kcal</span></div>
     <Badge tone={difference === 0 ? 'success' : 'neutral'}>{difference === 0 ? 'Matches calorie target' : `${Math.abs(difference)} kcal ${difference < 0 ? 'below' : 'above'} calorie target`}</Badge>
-    <small>Protein and carbohydrates use 4 kcal/g; fat uses 9 kcal/g. Fiber is shown separately. Food-label calories may differ because of rounding and other nutrients.</small>
-  </Surface>;
+    <small>Protein and carbohydrates use 4 kcal/g; fat uses 9 kcal/g. Fiber is shown separately. Food-label calories may differ because of rounding and other nutrients.</small></div>
+  </details>;
 }
 
-function WaterTracker({ water, date, busy, onAdd, onDelete }) {
+function WaterTracker({ water, date, busy, error, onAdd, onDelete }) {
   const [custom, setCustom] = useState('');
   const [deleting, setDeleting] = useState(null);
   const target = water.targetMilliliters;
@@ -168,16 +214,27 @@ function WaterTracker({ water, date, busy, onAdd, onDelete }) {
     const amount = Number(custom);
     if (Number.isInteger(amount) && amount > 0 && amount <= 5000 && await onAdd(amount)) setCustom('');
   };
-  return <Surface className="water-card">
-    <SectionHeader eyebrow="Daily intake" title="Water" action={<strong>{water.consumedMilliliters} / {target ?? '—'} ml</strong>} />
-    {target !== null && <progress aria-label="Water toward target" value={Math.min(water.consumedMilliliters, target)} max={target} />}
-    <p>{target === null ? 'Add a water target to see progress.' : water.overTargetMilliliters > 0 ? `${water.overTargetMilliliters} ml over target` : `${water.remainingMilliliters} ml remaining`}</p>
+  const hasTarget = Number.isFinite(target) && target > 0;
+  const fill = hasTarget ? Math.min(100, Math.max(0, water.consumedMilliliters / target * 100)) : 0;
+  return <Surface className="water-card water-jug-card">
+    <div className="water-jug-overview">
+      <div className="water-jug" role={hasTarget ? 'progressbar' : 'img'} aria-label="Daily water intake"
+        aria-valuemin={hasTarget ? 0 : undefined} aria-valuemax={hasTarget ? target : undefined}
+        aria-valuenow={hasTarget ? Math.min(water.consumedMilliliters, target) : undefined}
+        aria-valuetext={hasTarget ? `${water.consumedMilliliters} of ${target} ml` : undefined}>
+        <span className="water-jug-handle" aria-hidden="true" />
+        <div className="water-jug-vessel" aria-hidden="true"><div className="water-jug-fill" style={{height:`${fill}%`}} /></div>
+      </div>
+      <div className="water-jug-copy"><h2>Daily water</h2><strong className="water-intake-total">{water.consumedMilliliters}<span> / {hasTarget ? target : '—'} ml</span></strong>
+      <p>{!hasTarget ? 'Set a water target to see progress.' : water.overTargetMilliliters > 0 ? `${water.overTargetMilliliters} ml over target` : `${water.remainingMilliliters} ml remaining`}</p></div>
+    </div>
+    {error&&<StatusBanner tone="error" role="alert">{error}</StatusBanner>}
     <div className="water-actions">
       <Button icon={Droplets} disabled={busy} onClick={() => onAdd(250)}>+250 ml</Button>
       <Button icon={Droplets} disabled={busy} onClick={() => onAdd(500)}>+500 ml</Button>
-      <form onSubmit={submitCustom}><input aria-label="Custom water amount in milliliters" type="number" min="1" max="5000" step="1" value={custom} onChange={(event) => setCustom(event.target.value)} placeholder="Custom ml" /><Button type="submit" disabled={busy || !custom}>Add</Button></form>
+      <details className="water-custom"><summary>Custom amount</summary><form onSubmit={submitCustom}><input aria-label="Custom water amount in milliliters" type="number" min="1" max="5000" step="1" value={custom} onChange={(event) => setCustom(event.target.value)} placeholder="Custom ml" /><Button type="submit" disabled={busy || !custom}>Add</Button></form></details>
     </div>
-    {water.entries.length > 0 && <div className="water-entries" aria-label={`Water entries for ${date}`}>{water.entries.map((entry) => <span key={entry.id}><Droplets size={14} aria-hidden="true" /> {entry.amountMilliliters} ml <button type="button" aria-label={`Delete ${entry.amountMilliliters} ml water entry`} title="Delete water entry" onClick={() => setDeleting(entry)}><Trash2 size={14} aria-hidden="true" /></button></span>)}</div>}
+    {water.entries.length > 0 && <details className="water-history"><summary>Entries ({water.entries.length})</summary><div className="water-entries" aria-label={`Water entries for ${date}`}>{water.entries.map((entry) => <span key={entry.id}><Droplets size={14} aria-hidden="true" /> {entry.amountMilliliters} ml <button type="button" aria-label={`Delete ${entry.amountMilliliters} ml water entry`} title="Delete water entry" onClick={() => setDeleting(entry)}><Trash2 size={14} aria-hidden="true" /></button></span>)}</div></details>}
     <ConfirmDialog open={Boolean(deleting)} title="Delete water entry?" description={deleting ? `${deleting.amountMilliliters} ml will be removed from this day.` : ''} confirmLabel="Delete entry" busy={busy} onCancel={() => setDeleting(null)} onConfirm={async () => { const entry = deleting; setDeleting(null); await onDelete(entry.id); }} />
   </Surface>;
 }
@@ -187,11 +244,11 @@ function DietForm({ initial, busy, onCancel, onSave }) {
   const [form, setForm] = useState(targets ? initial.targets : initial);
   const macro = targets ? calculateMacroCalories(form) : null;
   const field = (key) => ({ value: form[key], onChange: (event) => setForm({ ...form, [key]: event.target.value }) });
-  return <Surface className="diet-editor"><h2>{targets ? 'Daily targets' : initial.id ? 'Edit meal' : 'Add meal manually'}</h2>
-    {targets && <p>Targets stay independently editable. The calculator explains their relationship without changing them.</p>}
+  return <Surface className={`diet-editor${targets ? ' diet-target-editor' : ''}`}><h2>{targets ? 'Daily targets' : initial.id ? 'Edit meal' : 'Add meal manually'}</h2>
+    {targets && <p>Set protein, carbs, fat and fiber. Calories are calculated from protein × 4 + carbs × 4 + fat × 9; fiber is tracked separately.</p>}
     <form onSubmit={(event) => {
       event.preventDefault();
-      if (targets) return onSave(Object.fromEntries([...nutrients.map(([key]) => key), 'waterMilliliters'].map((key) => [key, Number(form[key])])));
+      if (targets) return onSave(Object.fromEntries([...nutrients.filter(([key])=>key!=='calories').map(([key]) => key), 'waterMilliliters'].map((key) => [key, Number(form[key])])));
       const nutrition = Object.fromEntries(nutrients.map(([key]) => [key, Number(form.nutrition[key])]));
       return onSave({ date: form.date, name: form.name, mealType: form.mealType, servingDescription: form.servingDescription, nutrition });
     }}><fieldset disabled={busy} className="diet-form-grid">
@@ -202,9 +259,9 @@ function DietForm({ initial, busy, onCancel, onSave }) {
         <label>Serving (optional)<input {...field('servingDescription')} maxLength={80} placeholder="e.g. 1 bowl" /></label>
       </>}
       {targets ? <>
-        {nutrients.map(([key, nutrientLabel, unit]) => <label key={key}>{nutrientLabel} ({unit})<input required type="number" min={key === 'calories' ? 1 : .1} step={key === 'calories' ? 1 : .1} {...field(key)} /></label>)}
+        {nutrients.filter(([key])=>key!=='calories').map(([key, nutrientLabel, unit]) => <label key={key}>{nutrientLabel} ({unit})<input required type="number" min="0.1" step="0.1" {...field(key)} /></label>)}<label>Calories (automatic)<input readOnly value={macro ? `${Math.round(macro.total)} kcal` : '—'} /></label>
         <label>Water (ml)<input required type="number" min="1" step="1" {...field('waterMilliliters')} /></label>
-        {macro && <div className="macro-form-preview"><strong>{macro.total} kcal from macros</strong><span>{macro.protein} protein + {macro.carbohydrates} carbs + {macro.fat} fat</span><span>{Math.abs(macro.differenceFromCalorieTarget)} kcal {macro.differenceFromCalorieTarget < 0 ? 'below' : macro.differenceFromCalorieTarget > 0 ? 'above' : 'equal to'} calorie target</span></div>}
+        {macro && <div className="macro-form-preview"><span>Protein {macro.protein} + Carbs {macro.carbohydrates} + Fat {macro.fat} kcal</span></div>}
       </> : nutrients.map(([key, nutrientLabel, unit]) => <label key={key}>{nutrientLabel} ({unit})<input required type="number" min="0" step={key === 'calories' ? 1 : .1} value={form.nutrition[key]} onChange={(event) => setForm({ ...form, nutrition: { ...form.nutrition, [key]: event.target.value } })} /></label>)}
       <div className="diet-toolbar"><Button variant="primary" icon={Save} type="submit">{busy ? 'Saving…' : 'Save'}</Button><Button type="button" onClick={onCancel}>Cancel</Button></div>
     </fieldset></form>
@@ -267,7 +324,7 @@ function MealLibrary({ apiRequest, selectedDate, onAdded }) {
   </Surface>;
 }
 
-function LibraryMealForm({ initial, busy, onCancel, onSave }) {
+export function LibraryMealForm({ initial, busy, onCancel, onSave }) {
   const [form, setForm] = useState({ ...initial, nutrition: { ...initial.nutrition } });
   const set = (key, value) => setForm({ ...form, [key]: value });
   return <Surface className="library-editor"><h3>{initial.id ? 'Edit library meal' : 'Add library meal'}</h3><form onSubmit={(event) => { event.preventDefault(); onSave({ name: form.name, category: form.category, servingDescription: form.servingDescription, nutrition: Object.fromEntries(nutrients.map(([key]) => [key, Number(form.nutrition[key])])), ingredients: form.ingredients, notes: form.notes }); }}><fieldset disabled={busy} className="diet-form-grid">
@@ -281,7 +338,7 @@ function LibraryMealForm({ initial, busy, onCancel, onSave }) {
   </fieldset></form></Surface>;
 }
 
-function AddLibraryMealForm({ meal, initialDate, selectedDate, busy, onCancel, onSave }) {
+export function AddLibraryMealForm({ meal, initialDate, selectedDate, busy, onCancel, onSave }) {
   const [form, setForm] = useState({ date: initialDate, mealType: meal.category, quantity: 1 });
   const result = useMemo(() => scaledNutrition(meal, Number(form.quantity) || 0), [meal, form.quantity]);
   return <Surface className="library-editor"><h3>Add {meal.name} to a day</h3><p>One serving is {meal.servingDescription}. The form defaults to today; choose another date if needed.</p>{initialDate !== selectedDate && <button className="text-action" type="button" onClick={() => setForm({ ...form, date: selectedDate })}>Use selected date ({selectedDate})</button>}<form onSubmit={(event) => { event.preventDefault(); onSave({ date: form.date, mealType: form.mealType, quantity: Number(form.quantity) }); }}><fieldset disabled={busy} className="diet-form-grid">

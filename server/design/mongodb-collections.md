@@ -178,3 +178,7 @@ Family requests: requestedRole (READONLY default, EDITOR or ADMIN) records the i
 F035 Self birth date: `familyPeople.birthDate` is an optional validated YYYY-MM-DD/null field. An explicit Self birth-date edit sets this canonical value and refreshes all active unit projections in one transaction. Membership notes/preferred names remain per-unit. Absent canonical values retain existing per-unit dates until the owner saves Self.
 
 F036 managed ownership: existing dietMeals, dietNutritionTargets, dietWaterEntries, dietLibraryMeals and dailyPriorityDays userId keys may refer to an unlinked familyPeople ID. Only authorized managed-context services resolve those IDs. No pseudo User is created. Linking atomically transfers these keys to the verified account, rejecting existing recipient records. Managed writes increment the person's optimistic version and unit version inside the data transaction to serialize against linking/removal.
+
+## F037 named meal libraries
+
+`mealLibraries` embeds up to 500 validated one-serving items, ownerId, metadata, revision and immutable published snapshot; archivedAt and everDistributed preserve distribution history. `mealLibraryReferences` links libraryId/userId with owner/shared/saved kind and unique pair. OwnerId may be a managed family person; claim transfers it and references atomically. Unique sparse legacyOwnerId makes F008 migration idempotent. Legacy meals and daily nutrition snapshots remain stored.

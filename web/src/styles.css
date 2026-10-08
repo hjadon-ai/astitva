@@ -947,3 +947,443 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
 .family-shared-other .family-circle-card { display:grid; grid-template-columns:40px minmax(0,1fr) auto; padding:16px; border-radius:16px; flex:1 1 220px; max-width:300px; }
 .family-shared-other .family-circle-male { background:#eff6ff; border-color:#93c5fd; }
 .family-shared-other .family-circle-female { background:#fff1f7; border-color:#f9a8d4; }
+
+/* Named meal libraries */
+.named-library-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin:20px 0;}
+.named-library-card {display:flex;flex-direction:column;gap:8px;text-align:left;border:1px solid var(--border,#ddd);border-radius:16px;background:var(--surface,#fff);padding:18px;cursor:pointer;color:var(--text,#172033);}
+.named-library-card:hover,.named-library-card:focus-visible {border-color:#0d9488;background:#f0fdfa;}
+.named-library-card strong {font-size:1.1rem;}
+.named-library-details {border-top:1px solid var(--border,#ddd);padding-top:24px;}
+.named-libraries pre {white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f9;padding:12px;border-radius:10px;}
+.named-libraries .diet-toolbar {margin:16px 0;}
+.named-libraries label {display:flex;flex-direction:column;gap:6px;}
+.named-libraries .csv-preview label {flex-direction:row;align-items:flex-start;}
+
+/* Diet library browsing: clear collection, access and review hierarchy */
+.library-browse-bar {justify-content:space-between;gap:16px;}
+.library-view-switch {display:flex;gap:4px;padding:4px;background:var(--color-surface-muted,#f1f5f9);border-radius:14px;}
+.library-view-switch button[aria-pressed="true"] {background:#fff;color:var(--color-primary);box-shadow:0 2px 6px #0f172a12;}
+.named-library-card {border-top:3px solid var(--library-accent);transition:background .15s,border-color .15s;}
+.library-access-owned {--library-accent:#0f766e;--library-tint:#ecfdf5;}
+.library-access-shared {--library-accent:#7c3aed;--library-tint:#f5f3ff;}
+.library-access-public {--library-accent:#2563eb;--library-tint:#eff6ff;}
+.named-library-card:hover,.named-library-card:focus-visible,.named-library-card.is-selected {border-color:var(--library-accent);background:var(--library-tint);}
+.library-card-top,.library-card-count {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.library-card-icon {display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--library-tint);color:var(--library-accent);}
+.library-access-badge {font-size:.72rem;font-weight:700;color:var(--library-accent);background:var(--library-tint);padding:5px 9px;border-radius:100px;}
+.library-card-count {font-size:.88rem;color:var(--color-muted);}
+.library-review-badge {align-self:flex-start;font-size:.72rem;padding:4px 8px;border-radius:6px;background:#f1f5f9;color:#475569;}
+.library-review-submitted {background:var(--color-warning-soft);color:var(--color-warning);}
+.library-review-published {background:var(--color-success-soft);color:var(--color-success);}
+.library-review-returned {background:var(--color-danger-soft);color:var(--color-danger);}
+.library-owner-actions {padding:12px;background:var(--color-surface-muted,#f8fafc);border-radius:12px;}
+@media (max-width:600px){.library-browse-bar {align-items:stretch;}.library-view-switch {width:100%;}.library-view-switch button {flex:1;}.library-owner-actions button {flex:1 1 140px;}}
+@media (prefers-reduced-motion:reduce){.named-library-card {transition:none;}}
+
+/* Diet day navigation, scoped below the unchanged page header. */
+.diet-date-navigation {display:flex;flex-wrap:wrap;align-items:center;gap:10px;align-self:flex-start;padding:8px;background:#f0fdfa;border:1px solid #03589d;border-radius:16px;}
+.diet-date-controls {display:flex;align-items:center;gap:4px;min-width:0;}
+.diet-date-navigation .diet-day-arrow {min-width:44px;min-height:44px;padding:10px;color:#0f766e;background:transparent;border-color:transparent;}
+.diet-date-navigation .diet-day-arrow:hover:not(:disabled) {background:#ccfbf1;}
+.diet-date-navigation .diet-date {min-height:44px;padding:0 8px;border-color:transparent;background:#fff;color:#0f766e;}
+.diet-date-navigation .diet-date input {min-width:0;color:var(--color-ink);font-weight:600;}
+.diet-date-navigation .diet-today-button {min-height:44px;background:#fff;border-color:#99f6e4;color:#115e59;}
+.diet-date-navigation button:focus-visible,.diet-date-navigation input:focus-visible {outline:3px solid #0f766e;outline-offset:3px;}
+@media(max-width:420px){.diet-date-navigation {width:100%;}.diet-date-controls {flex:1;justify-content:space-between;}.diet-date-navigation .diet-date {flex:1;}.diet-date-navigation .diet-date input {width:100%;}.diet-date-navigation .diet-today-button {margin-left:auto;}}
+
+/* A single restrained nutrition dashboard with aligned target columns. */
+.nutrition-dashboard {padding:20px 24px;background:var(--color-surface,#fff);border:1px solid var(--color-border,#e2e8f0);border-radius:18px;box-shadow:0 3px 14px #0f172a04;}
+.nutrition-dashboard .section-header {margin-bottom:8px;}
+.nutrition-calories {--nutrient-ink:#ca8a2b;}
+.nutrition-proteinGrams {--nutrient-ink:#ce6478;}
+.nutrition-carbohydrateGrams {--nutrient-ink:#4385c6;}
+.nutrition-fatGrams {--nutrient-ink:#58936d;}
+.nutrition-fiberGrams {--nutrient-ink:#8c72b7;}
+.diet-summary.nutrition-vertical-summary {grid-template-columns:1.35fr repeat(4,minmax(0,1fr));gap:0;margin:20px 0 12px;}
+.nutrition-vertical-summary .nutrition-card {display:flex;flex-direction:column;align-items:center;min-width:0;padding:0 12px;border:0;border-radius:0;background:transparent;text-align:center;box-shadow:none;}
+.nutrition-vertical-summary .nutrition-calories {border-right:1px solid var(--color-border,#e2e8f0);margin-right:12px;}
+.nutrition-vertical-summary .nutrition-value {color:var(--color-ink);line-height:1.2;margin:0 0 12px;font-size:1.3rem;font-weight:650;}
+.nutrition-vertical-summary .nutrition-value small {font-size:.65rem;color:var(--color-subtle);font-weight:500;}
+.nutrition-bar-track {position:relative;flex-shrink:0;width:22px;height:86px;overflow:hidden;border-radius:4px;background:#f0f2f5;}
+.nutrition-calories .nutrition-bar-track {width:44px;}
+.nutrition-bar-fill {position:absolute;bottom:0;left:0;width:100%;border-radius:3px 3px 0 0;background:var(--nutrient-ink);transform-origin:bottom;animation:nutrition-rise .45s ease-out both;transition:height .35s ease;}
+.nutrition-vertical-summary .nutrition-label {color:var(--color-ink);margin:10px 0 3px;font-size:.75rem;font-weight:600;line-height:1.3;}
+.nutrition-vertical-summary .nutrition-target {margin:0;color:var(--color-subtle);font-size:.68rem;line-height:1.4;}
+.nutrition-vertical-summary .nutrition-card.over-target {background:transparent;border:0;}
+.nutrition-vertical-summary .nutrition-card .nutrition-exceeded {margin-top:4px;color:var(--color-danger);font-size:.65rem;font-weight:600;}
+.nutrition-dashboard .macro-summary {margin-top:16px;box-shadow:none;border-color:var(--color-border);background:#f8fafc;}
+@keyframes nutrition-rise {from{transform:scaleY(0);}to{transform:scaleY(1);}}
+@media(max-width:650px){.nutrition-dashboard {padding:16px 12px;}.nutrition-vertical-summary .nutrition-card {padding:0 4px;}.nutrition-vertical-summary .nutrition-calories {margin-right:4px;}.nutrition-vertical-summary .nutrition-label {font-size:.65rem;min-height:28px;display:flex;align-items:center;}.nutrition-vertical-summary .nutrition-value {font-size:1rem;}.nutrition-bar-track {width:16px;height:76px;}.nutrition-calories .nutrition-bar-track {width:32px;}.nutrition-vertical-summary .nutrition-target {font-size:.6rem;}}
+@media(max-width:360px){.nutrition-dashboard {padding:14px 8px;}.nutrition-vertical-summary .nutrition-value {font-size:.85rem;}.nutrition-vertical-summary .nutrition-label {font-size:.58rem;overflow-wrap:anywhere;}}
+@media(prefers-reduced-motion:reduce){.nutrition-bar-fill {animation:none;transition:none;}}
+
+.nutrition-vertical-summary .nutrition-value-target {color:var(--color-subtle);font-size:.75em;font-weight:500;}
+.nutrition-vertical-summary .nutrition-remaining {margin-top:4px;color:var(--color-muted);font-size:.65rem;}
+.nutrition-vertical-summary .nutrition-value {min-height:32px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:3px;}
+
+.nutrition-dashboard .macro-disclosure {display:block;padding:12px 14px;border:1px solid var(--color-border);border-radius:10px;}
+.macro-disclosure summary {cursor:pointer;color:var(--color-muted);font-size:.8rem;}
+.macro-disclosure summary strong {margin-left:10px;color:var(--color-ink);font-size:.85rem;}
+.macro-disclosure-hint {float:right;font-size:.72rem;color:var(--color-subtle);}
+.macro-disclosure-content {display:grid;gap:10px;margin-top:14px;}
+.macro-disclosure summary:focus-visible {outline:2px solid var(--color-primary);outline-offset:4px;}
+@media(max-width:500px){.macro-disclosure-hint {float:none;display:block;margin:6px 0 0 16px;}}
+
+/* Compact water intake controls. */
+.diet-page .water-card {padding:18px 22px;background:#fff;border-color:#dbe7f2;box-shadow:none;}
+.water-intake-total {color:#245f98;font-size:1.2rem;font-variant-numeric:tabular-nums;}
+.water-intake-total span {font-size:.8rem;color:var(--color-subtle);font-weight:500;}
+.diet-page .water-card progress {height:6px;accent-color:#4385c6;width:100%;}
+.diet-page .water-card > p {font-size:.8rem;color:var(--color-muted);margin:8px 0 14px;}
+.diet-page .water-actions {display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.diet-page .water-actions > button {background:#f0f6fc;color:#245f98;border-color:#dbe7f2;min-height:44px;}
+.diet-page .water-actions form {display:flex;gap:6px;margin-left:auto;align-items:center;}
+.diet-page .water-actions input {width:130px;min-height:44px;}
+.diet-page .water-entries {border-top:1px solid var(--color-border);margin-top:14px;padding-top:12px;}
+@media(max-width:500px){.diet-page .water-card {padding:16px;}.diet-page .water-actions form {margin-left:0;flex:1 1 100%;}.diet-page .water-actions input {flex:1;min-width:0;}}
+
+.diet-meal-group-title {display:flex;align-items:center;gap:10px;color:var(--color-ink);font-size:.95rem;}
+.diet-meal-group-title > span {font-size:.72rem;color:var(--color-subtle);font-weight:500;padding:4px 8px;border-radius:100px;background:#f1f5f9;}
+.diet-page .diet-meal {padding:16px 18px;border-radius:14px;gap:12px;}
+.diet-meal-nutrients {display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.meal-nutrient {display:flex;gap:5px;align-items:baseline;padding:4px 8px;background:#f8fafc;border-radius:6px;border-left:2px solid var(--nutrient-ink);font-size:.68rem;color:var(--color-muted);}
+.meal-nutrient strong {font-size:.72rem;color:var(--color-ink);font-weight:600;}
+.diet-meal .meal-title h3 {font-size:1rem;}
+
+.named-libraries .library-name-search {display:flex;flex-direction:row;align-items:center;gap:8px;padding:0 12px;max-width:360px;border:1px solid var(--color-border);border-radius:10px;color:var(--color-subtle);background:#fff;}
+.library-name-search input {width:100%;min-width:0;border:0;background:transparent;padding:11px 0;}
+.library-name-search:focus-within {outline:2px solid var(--color-primary);outline-offset:2px;}
+
+/* Small water widget with a one-shot jug fill animation. */
+.diet-page .water-jug-card {width:100%;max-width:340px;align-self:flex-start;padding:16px;box-shadow:none;border:1px solid #dce6ef;border-radius:16px;background:#fff;}
+.water-jug-overview {display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.water-jug-copy {min-width:0;}
+.water-jug-copy h2 {margin:0 0 5px;font-size:.9rem;font-weight:600;color:var(--color-ink);}
+.water-jug-copy .water-intake-total {font-size:1.2rem;}
+.water-jug-copy p {margin:5px 0 0;font-size:.7rem;color:var(--color-subtle);}
+.water-jug {position:relative;width:62px;height:74px;flex-shrink:0;}
+.water-jug-handle {position:absolute;right:0;top:15px;width:24px;height:39px;border:4px solid #b7ccdf;border-radius:0 13px 13px 0;}
+.water-jug-vessel {position:absolute;left:0;bottom:0;width:46px;height:70px;border:2px solid #8fadc7;border-top:4px solid #8fadc7;border-radius:5px 5px 14px 14px;overflow:hidden;background:#f5f9fc;}
+.water-jug-fill {position:absolute;left:0;bottom:0;width:100%;background:linear-gradient(180deg,#79b4e0,#4385ba);transform-origin:bottom;animation:water-jug-rise .65s ease-out both;transition:height .4s ease;}
+.water-jug-fill::before {content:'';position:absolute;left:-10%;top:-3px;width:120%;height:7px;border-radius:50%;background:#9bc8e9;}
+.water-jug-card .water-actions > button {flex:1;justify-content:center;min-height:44px;font-size:.78rem;}
+.water-jug-card .water-custom {flex:1 1 100%;font-size:.72rem;color:var(--color-muted);}
+.water-jug-card .water-custom summary,.water-jug-card .water-history summary {cursor:pointer;padding:6px 0;}
+.water-jug-card .water-custom form {margin:6px 0 0;display:flex;width:100%;}
+.water-jug-card .water-custom input {flex:1;min-width:0;width:100%;}
+.water-jug-card .water-history {margin-top:8px;border-top:1px solid var(--color-border);padding-top:4px;font-size:.72rem;color:var(--color-muted);}
+.water-jug-card .water-history .water-entries {margin:4px 0 0;padding-top:0;border-top:0;}
+.water-jug-card summary:focus-visible {outline:2px solid var(--color-primary);outline-offset:3px;border-radius:4px;}
+@keyframes water-jug-rise {from{transform:scaleY(.85);opacity:.7;}to{transform:scaleY(1);opacity:1;}}
+@media(prefers-reduced-motion:reduce){.water-jug-fill {animation:none;transition:none;}}
+
+/* Daily intake cards form one responsive overview. */
+.diet-intake-overview {display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start;}
+.diet-intake-overview.is-shared {grid-template-columns:1fr;}
+.diet-intake-overview .water-jug-card {max-width:none;margin:0;}
+.diet-intake-overview .nutrition-dashboard {min-width:0;}
+@media(max-width:1150px){.diet-intake-overview {grid-template-columns:1fr;}.diet-intake-overview .water-jug-card {max-width:340px;}}
+
+.diet-page .diet-log-strip {justify-content:flex-start;padding:12px 16px;margin:18px 0;background:#fff;border:1px solid var(--color-border);border-radius:12px;gap:10px;}
+.diet-log-strip-copy {display:flex;flex-direction:column;gap:3px;margin-right:auto;}
+.diet-log-strip-copy strong {font-size:.85rem;color:var(--color-ink);}
+.diet-log-strip-copy span {font-size:.72rem;color:var(--color-subtle);}
+.diet-log-strip button {min-height:44px;}
+@media(max-width:550px){.diet-log-strip-copy {flex:1 1 100%;}.diet-log-strip button {flex:1;}}
+
+.diet-page .diet-meal-marker {display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:12px;background:#f1f5f9;color:#58728a;}
+.diet-page .diet-meal-content {flex:1 1 240px;min-width:0;}
+.diet-meal-content > p {font-size:.75rem;color:var(--color-subtle);margin:5px 0;}
+.diet-meal-content .meal-title {display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.diet-meal-content .meal-title h3 {margin:0;overflow-wrap:anywhere;}
+.daily-meals .diet-meal > .diet-toolbar {gap:6px;}
+@media(max-width:550px){.daily-meals .diet-meal > .diet-toolbar {margin-left:52px;}.diet-page .diet-meal-content {flex-basis:calc(100% - 52px);}}
+
+.library-create-panel {background:#f8fafc;box-shadow:none;}
+.library-create-steps {display:flex;flex-wrap:wrap;gap:16px;list-style:none;padding:0;margin:12px 0 20px;color:var(--color-muted);font-size:.75rem;}
+.library-create-steps li {display:flex;gap:6px;align-items:center;}
+.library-create-steps li > span {display:grid;place-items:center;width:22px;height:22px;background:#e2e8f0;border-radius:50%;font-size:.68rem;font-weight:700;}
+.csv-upload-field {padding:12px;border:1px dashed #b4c3d3;border-radius:10px;background:#fff;}
+.csv-upload-field small {font-size:.7rem;color:var(--color-subtle);font-weight:400;}
+.library-create-panel .csv-preview-button {align-self:center;justify-self:start;}
+.library-create-panel .csv-preview {border:1px solid var(--color-border);border-radius:12px;padding:14px;background:#fff;}
+.library-create-panel .csv-preview section:first-child h4 {color:var(--color-success);}
+.library-create-panel .csv-preview section:nth-child(2) h4,.library-create-panel .csv-preview section:nth-child(2) p {color:var(--color-danger);}
+
+/* Final Diet usability polish: visible focus and readable mobile forms. */
+.diet-page :where(button,input,select,textarea,summary):focus-visible {outline:2px solid var(--color-primary);outline-offset:3px;}
+.diet-page .diet-form-grid {gap:14px;}
+.diet-page .library-editor h3,.diet-page .diet-editor h2 {margin-top:0;}
+.diet-page .diet-form-grid label {font-size:.78rem;color:var(--color-muted);}
+.diet-page .diet-form-grid input,.diet-page .diet-form-grid select,.diet-page .diet-form-grid textarea {margin-top:5px;}
+.diet-page .nutrition-value {font-variant-numeric:tabular-nums;}
+@media(max-width:600px){.diet-page .diet-form-grid {grid-template-columns:1fr;}.diet-page .diet-form-grid .wide-field {grid-column:1;}.diet-page .diet-form-grid input,.diet-page .diet-form-grid select,.diet-page .diet-form-grid textarea {font-size:16px;}.diet-page .library-editor,.diet-page .diet-editor {padding:16px;}}
+
+/* Water and meals share one bounded, keyboard-scrollable intake panel. */
+.diet-intake-overview {grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);align-items:start;}
+.diet-intake-overview.is-shared {grid-template-columns:minmax(0,1.1fr) minmax(360px,.9fr);}
+.diet-intake-panel {height:460px;max-height:70svh;min-height:220px;overflow:auto;scrollbar-gutter:stable;padding:16px;border:1px solid var(--color-border);border-radius:18px;background:#fff;min-width:0;overscroll-behavior:contain;}
+.diet-intake-panel:focus-visible {outline:2px solid var(--color-primary);outline-offset:3px;}
+.diet-intake-panel .water-jug-card {width:100%;max-width:none;border:0;border-bottom:1px solid var(--color-border);border-radius:0;padding:0 0 14px;margin:0 0 14px;}
+.diet-intake-panel .daily-meals > .section-header {margin:0 0 10px;}
+.diet-intake-panel .diet-meal-group {margin-top:16px;}
+.diet-intake-panel .diet-meal-group-title {font-size:.85rem;}
+.diet-intake-panel .diet-meal {padding:12px;margin:8px 0;gap:8px;background:#f8fafc;}
+.diet-intake-panel .diet-meal-marker {width:32px;height:32px;flex-basis:32px;border-radius:9px;}
+.diet-intake-panel .diet-meal-content {flex:1 1 220px;}
+.diet-intake-panel .diet-meal > .diet-toolbar {margin-left:40px;}
+.diet-intake-panel .diet-meal .diet-toolbar button {font-size:.72rem;min-height:40px;}
+.diet-intake-panel .meal-nutrient {padding:3px 6px;}
+@media(max-width:1150px){.diet-intake-overview,.diet-intake-overview.is-shared {grid-template-columns:1fr;}.diet-intake-panel {height:420px;max-height:65svh;}}
+@media(max-width:550px){.diet-intake-panel {padding:12px;}.diet-intake-panel .diet-meal-content {flex-basis:calc(100% - 40px);}}
+
+/* Fixed Water column; only the adjacent meal list scrolls below Nutrition. */
+.diet-intake-overview,.diet-intake-overview.is-shared {grid-template-columns:1fr;}
+.diet-intake-panel {height:auto;max-height:none;min-height:0;overflow:visible;display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;align-items:start;scrollbar-gutter:auto;}
+.diet-intake-panel .water-jug-card {position:static;border-bottom:0;border-right:1px solid var(--color-border);margin:0;padding:0 20px 0 0;}
+.diet-intake-panel .daily-meals {height:340px;max-height:65svh;min-height:180px;min-width:0;overflow:auto;scrollbar-gutter:stable;overscroll-behavior:contain;padding-right:8px;}
+.diet-intake-panel .daily-meals > .section-header {position:sticky;top:0;background:#fff;z-index:1;padding:0 0 8px;}
+.diet-intake-panel .daily-meals:focus-visible {outline:2px solid var(--color-primary);outline-offset:3px;border-radius:6px;}
+.diet-intake-overview.is-shared .diet-intake-panel {grid-template-columns:1fr;}
+@media(max-width:650px){.diet-intake-panel {grid-template-columns:1fr;gap:16px;}.diet-intake-panel .water-jug-card {border-right:0;border-bottom:1px solid var(--color-border);padding:0 0 14px;}.diet-intake-panel .daily-meals {height:300px;}}
+
+/* Target editing stays inside Daily Overview. */
+.overview-target-editor {margin-top:16px;max-width:620px;}
+.diet-page .overview-target-editor .diet-target-editor {margin:0;padding:16px;background:#f8fafc;border:1px solid var(--color-border);border-radius:12px;box-shadow:none;}
+.overview-target-editor .diet-target-editor h2 {font-size:.95rem;margin:0 0 6px;}
+.overview-target-editor .diet-target-editor > p {font-size:.72rem;color:var(--color-subtle);margin:0 0 12px;}
+.diet-page .overview-target-editor .diet-form-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.overview-target-editor .macro-form-preview,.overview-target-editor .diet-toolbar {grid-column:1/-1;}
+@media(max-width:600px){.diet-page .overview-target-editor .diet-form-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:360px){.diet-page .overview-target-editor .diet-form-grid {grid-template-columns:1fr;}}
+
+/* Target form is attached to its trigger; the pointer path has no gap. */
+.target-editor-anchor {position:relative;padding-bottom:6px;margin-bottom:-6px;z-index:20;}
+.overview-target-editor.target-editor-popup {position:absolute;right:0;top:100%;width:min(520px,calc(100vw - 48px));max-width:none;margin:0;z-index:30;max-height:70svh;overflow:auto;border-radius:14px;box-shadow:0 14px 40px #0f172a24;}
+.diet-page .target-editor-popup .diet-target-editor {background:#fff;padding:18px;border-color:#cbd5e1;}
+.target-editor-popup .diet-target-editor > p {max-width:440px;}
+@media(max-width:400px){.diet-page .target-editor-popup .diet-form-grid {grid-template-columns:1fr;}}
+
+/* Keep the target editor open within a 24px pointer buffer. */
+.target-editor-hover-area {position:absolute;right:-24px;top:calc(100% - 24px);padding:24px;width:min(568px,100vw);z-index:30;}
+.target-editor-hover-area .overview-target-editor.target-editor-popup {position:relative;right:auto;top:auto;width:100%;}
+
+/* Daily Tracker: stable hydration, a focused composer, then a bounded meal history. */
+.diet-page .diet-intake-panel {padding:22px;gap:22px;grid-template-columns:1fr;background:#fff;border:1px solid #dbe3eb;border-radius:20px;box-shadow:0 4px 20px #16345105;}
+.daily-tracker-header {grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid #edf1f5;}
+.daily-tracker-header h2 {font-size:18px;letter-spacing:-.3px;margin:0;color:var(--color-ink);}
+.daily-tracker-header p {font-size:13px;color:var(--color-muted);margin:5px 0 0;}
+.daily-tracker-date {display:flex;align-items:center;gap:7px;white-space:nowrap;font-size:12px;color:#475569;padding:8px 10px;border-radius:8px;background:#f5f7fa;}
+.diet-page .diet-intake-panel .water-jug-card {padding:18px;background:#f4f9fd;border:1px solid #dceaf5;border-radius:14px;}
+.diet-intake-panel .water-jug-overview {gap:12px;}
+.diet-intake-panel .water-jug-copy .water-intake-total {font-size:22px;line-height:1.4;}
+.diet-intake-panel .water-intake-total span {display:block;font-size:12px;}
+.diet-intake-panel .water-actions > button {background:#fff;border-color:#c6dcec;color:#245f98;padding:8px;}
+.diet-intake-panel .water-custom summary,.diet-intake-panel .water-history summary {min-height:36px;display:list-item;align-content:center;font-size:12px;}
+.daily-meal-workspace {min-width:0;}
+.quick-meal-log {padding:0 0 16px;border-bottom:1px solid #edf1f5;margin-bottom:16px;}
+.quick-meal-heading {margin:0 0 10px;font-size:15px;font-weight:600;color:var(--color-ink);}
+.quick-meal-controls {display:grid;grid-template-columns:minmax(120px,1fr) 100px auto;gap:10px;align-items:end;}
+.quick-meal-search {grid-column:1/-1;display:flex;align-items:center;gap:10px;border:1px solid #cbd8e5;border-radius:10px;padding:0 12px;background:#f8fafc;color:#64748b;}
+.diet-page .quick-meal-search input {border:0;background:transparent;width:100%;min-width:0;min-height:46px;padding:10px 0;outline-offset:0;}
+.quick-meal-search:focus-within {border-color:#3686a0;box-shadow:0 0 0 3px #3686a014;}
+.quick-meal-type,.quick-meal-quantity {display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:500;color:#475569;}
+.diet-page .quick-meal-controls select,.diet-page .quick-meal-controls input[type=number] {width:100%;margin:0;min-height:42px;border-radius:9px;}
+.quick-meal-controls > button {min-height:42px;min-width:90px;justify-content:center;}
+.quick-meal-results {list-style:none;margin:10px 0;padding:0;max-height:190px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;overscroll-behavior:contain;}
+.quick-meal-results button {display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;border:0;border-bottom:1px solid #edf1f5;background:#fff;color:#1e293b;cursor:pointer;min-height:48px;}
+.quick-meal-results button:hover,.quick-meal-results button:focus-visible {background:#eef7fa;}
+.quick-meal-results strong,.quick-meal-results small {display:block;overflow-wrap:anywhere;}
+.quick-meal-results strong {font-size:14px;}
+.quick-meal-results small {margin-top:4px;color:#64748b;font-size:12px;}
+.quick-meal-results button > span:last-child {white-space:nowrap;font-size:12px;color:#475569;}
+.quick-meal-selection {margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#edf7f5;color:#285c50;font-size:12px;}
+.quick-meal-links {display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:8px;}
+.quick-meal-links button {font-size:12px;min-height:36px;}
+.quick-meal-feedback {margin:10px 0 0;font-size:13px;color:#26705b;}
+.daily-meal-history-heading {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.daily-meal-history-heading h3 {margin:0;font-size:14px;color:var(--color-ink);}
+.daily-meal-history-heading > span {font-size:12px;color:#64748b;}
+.diet-page .diet-intake-panel .daily-meals {height:260px;max-height:55svh;min-height:140px;padding:0 6px 0 0;}
+.diet-page .diet-intake-panel .diet-meal-group {margin:0 0 18px;}
+.diet-intake-panel .diet-meal-group-title {margin:0 0 8px;font-size:12px;font-weight:600;color:#64748b;}
+.diet-page .diet-intake-panel .diet-meal {background:#fff;border:1px solid #e6ebf1;border-radius:12px;display:flex;align-items:flex-start;flex-wrap:nowrap;padding:12px;margin:8px 0;gap:10px;box-shadow:none;}
+.diet-page .diet-intake-panel .diet-meal-content {flex:1;min-width:0;}
+.diet-intake-panel .diet-meal .meal-title h3 {font-size:14px;line-height:1.4;}
+.diet-page .diet-intake-panel .diet-meal > .diet-toolbar {margin:0;display:flex;flex-direction:column;gap:2px;flex-shrink:0;}
+.diet-page .diet-intake-panel .diet-meal .diet-toolbar button {min-width:36px;min-height:36px;width:36px;height:36px;padding:8px;}
+.diet-intake-panel .meal-nutrient {background:#f8fafc;font-size:10px;padding:3px 5px;}
+.diet-intake-panel .meal-nutrient strong {font-size:11px;}
+@media(max-width:760px){.diet-page .diet-intake-panel {grid-template-columns:1fr;padding:16px;gap:18px;}.diet-page .diet-intake-panel .water-jug-card {max-width:none;padding:14px;}.diet-intake-panel .water-intake-total span {display:inline;}.diet-intake-panel .water-jug-overview {margin-bottom:10px;}.diet-intake-panel .water-actions > button {flex:0 1 120px;}.diet-intake-panel .water-custom {flex:1 1 100%;}}
+@media(max-width:400px){.quick-meal-controls {grid-template-columns:minmax(0,1fr) 90px;}.quick-meal-controls > button {grid-column:1/-1;}.daily-tracker-header p {max-width:190px;}.diet-intake-panel .diet-meal-marker {display:none;}.diet-page .quick-meal-controls input,.diet-page .quick-meal-controls select {font-size:16px;}}
+
+/* Tracker dashboard: two entry cards and a natural-height, full-width timeline. */
+.tracker-entry-grid {display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr);gap:18px;align-items:stretch;min-width:0;}
+.diet-page .diet-intake-panel .water-jug-card {height:100%;align-self:stretch;padding:22px;background:linear-gradient(145deg,#f2f8fd,#f8fbfe);border:1px solid #dce9f4;}
+.tracker-entry-grid .water-jug-overview {margin-bottom:20px;gap:18px;}
+.tracker-entry-grid .water-jug {width:68px;height:84px;}
+.tracker-entry-grid .water-jug-vessel {height:80px;width:50px;}
+.tracker-entry-grid .water-jug-handle {top:20px;height:42px;}
+.tracker-entry-grid .water-jug-copy h2 {font-size:15px;margin-bottom:8px;}
+.tracker-entry-grid .water-jug-copy .water-intake-total {font-size:26px;letter-spacing:-.5px;}
+.tracker-entry-grid .water-jug-copy p {font-size:12px;line-height:1.5;}
+.quick-meal-log {border:1px solid #e1e7ee;border-radius:14px;padding:20px;margin:0;background:#fff;min-width:0;}
+.quick-meal-header {display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.quick-meal-header-icon {display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#edf5f4;color:#27796c;flex-shrink:0;}
+.quick-meal-header .quick-meal-heading {margin:0 0 4px;font-size:15px;}
+.quick-meal-header p {margin:0;font-size:12px;line-height:1.5;color:#64748b;}
+.quick-meal-controls {grid-template-columns:minmax(0,1fr) 90px auto;gap:12px;}
+.quick-meal-search-area {position:relative;grid-column:1/-1;min-width:0;}
+.quick-meal-search {grid-column:auto;background:#f8fafc;}
+.quick-meal-results {position:absolute;top:100%;left:0;right:0;z-index:10;margin:6px 0 0;background:#fff;box-shadow:0 12px 32px #1834481f;max-height:260px;}
+.quick-meal-controls > button {min-width:112px;}
+.quick-meal-links {border-top:1px solid #edf1f5;margin-top:16px;padding-top:10px;}
+.daily-meal-workspace {grid-column:1/-1;}
+.daily-meal-history-heading {margin:4px 0 18px;}
+.daily-meal-history-heading h3 {font-size:15px;}
+.diet-page .diet-intake-panel .daily-meals {height:auto;max-height:none;min-height:0;overflow:visible;padding:0;scrollbar-gutter:auto;}
+.diet-page .diet-intake-panel .diet-meal-group {position:relative;margin:0 0 24px;padding:0 0 0 28px;border-left:1px solid #dfe7ed;}
+.diet-intake-panel .diet-meal-group-title {position:relative;font-size:13px;display:flex;align-items:center;margin:0 0 10px;color:#334155;gap:8px;}
+.diet-intake-panel .diet-meal-group-title::before {content:'';position:absolute;left:-34px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #8ca9b4;box-shadow:0 0 0 4px #fff;}
+.diet-intake-panel .diet-meal-group-title > span {margin-left:auto;background:transparent;padding:0;font-size:12px;font-weight:500;}
+.diet-page .diet-intake-panel .diet-meal {padding:16px;border-radius:12px;align-items:center;gap:14px;transition:border-color .15s ease,box-shadow .15s ease;}
+.diet-page .diet-intake-panel .diet-meal:hover {border-color:#b8ccd1;box-shadow:0 3px 12px #21435c06;}
+.diet-page .diet-intake-panel .diet-meal > .diet-toolbar {flex-direction:row;}
+.diet-intake-panel .diet-meal-marker {background:#f2f5f8;color:#718699;}
+.diet-intake-panel .diet-meal-nutrients {gap:12px;margin-top:8px;}
+.diet-intake-panel .meal-nutrient {background:transparent;border-left:0;padding:0;font-size:11px;gap:5px;}
+.diet-intake-panel .meal-nutrient strong {font-size:12px;}
+@media(max-width:850px){.tracker-entry-grid {grid-template-columns:1fr;}.diet-page .diet-intake-panel .water-jug-card {padding:18px;}.tracker-entry-grid .water-jug-overview {margin-bottom:12px;}.tracker-entry-grid .water-intake-total span {display:inline;}.tracker-entry-grid .water-actions > button {flex:1;}.tracker-entry-grid .water-custom {flex-basis:100%;}}
+@media(max-width:500px){.quick-meal-log {padding:16px;}.quick-meal-controls {grid-template-columns:minmax(0,1fr) 90px;}.quick-meal-controls > button {grid-column:1/-1;}.diet-page .diet-intake-panel .diet-meal-group {padding-left:16px;}.diet-intake-panel .diet-meal-group-title::before {left:-22px;}.diet-page .diet-intake-panel .diet-meal {flex-wrap:wrap;padding:12px;}.diet-page .diet-intake-panel .diet-meal > .diet-toolbar {margin-left:auto;}.diet-intake-panel .diet-meal-content {flex-basis:calc(100% - 46px);}.quick-meal-controls select,.quick-meal-controls input {font-size:16px;}}
+@media(prefers-reduced-motion:reduce){.diet-page .diet-intake-panel .diet-meal {transition:none;}}
+
+.overview-view-actions {display:flex;align-items:center;gap:8px;}
+.diet-history {padding-top:6px;}
+.history-toolbar,.history-navigation {display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.history-toolbar strong {display:block;font-size:14px;color:var(--color-ink);}
+.history-toolbar span {display:block;margin-top:5px;font-size:12px;color:var(--color-muted);}
+.history-legend {display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 8px;}
+.history-legend button {display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #e1e8ef;background:#fff;border-radius:100px;font-size:12px;color:#475569;cursor:pointer;}
+.history-legend button[aria-pressed=true] {background:#f3f7fa;border-color:#b7c8d5;color:#253b50;}
+.history-legend button[aria-pressed=false] {opacity:.55;}
+.history-legend button:disabled {opacity:.45;cursor:default;}
+.history-legend i,.history-day-detail i {display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.intake-history-chart {width:100%;height:auto;display:block;margin:10px 0;background:linear-gradient(#fff,#fbfcfe);border-radius:10px;}
+.history-days {display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 16px;}
+.history-days button {flex:1 1 50px;min-height:36px;font-size:11px;border:1px solid #e5ebf1;border-radius:7px;color:#64748b;background:#fff;cursor:pointer;}
+.history-days button[aria-pressed=true] {background:#eaf4f4;border-color:#72aaa8;color:#236f68;}
+.history-day-detail {padding:14px 16px;background:#f6f8fb;border:1px solid #e5ebf1;border-radius:12px;}
+.history-day-detail > strong {font-size:13px;}
+.history-day-detail > div {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;margin-top:12px;}
+.history-detail-values > span {display:grid;grid-template-columns:8px 1fr;gap:5px;align-items:center;color:#64748b;font-size:11px;}
+.history-detail-values b {grid-column:2;font-size:15px;color:#273b50;white-space:nowrap;}
+.history-day-detail small {font-size:11px;font-weight:400;}
+.history-day-detail p,.history-note {font-size:11px;color:#64748b;line-height:1.6;margin:12px 0 0;}
+@media(max-width:650px){.history-day-detail > div {grid-template-columns:repeat(3,minmax(0,1fr));}.history-toolbar {align-items:flex-start;flex-wrap:wrap;}.history-legend {gap:5px;}.history-legend button {font-size:11px;padding:7px 8px;}}
+
+/* Both overview faces share their natural maximum height, keeping the tracker stable. */
+.overview-flip-stage {perspective:1400px;}
+.overview-flip-card {display:grid;grid-template-columns:minmax(0,1fr);transform-style:preserve-3d;transition:transform .48s cubic-bezier(.22,.7,.25,1);}
+.overview-flip-card.is-flipped {transform:rotateY(180deg);}
+.overview-face {grid-area:1 / 1;min-width:0;min-height:420px;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+.overview-face-daily {display:flex;flex-direction:column;justify-content:center;transform:rotateY(0deg);}
+.overview-face-history {transform:rotateY(180deg);}
+.overview-face-daily .nutrition-vertical-summary {margin:18px 0 22px;}
+.overview-face-daily .nutrition-bar-track {height:130px;}
+.overview-face-daily .macro-disclosure {width:100%;}
+.diet-history {padding:10px 0 0;}
+.history-legend {margin:14px 0 4px;gap:6px;}
+.history-legend button {border-radius:8px;min-height:34px;padding:7px 10px;font-weight:500;opacity:1;}
+.history-legend button[aria-pressed=false] {color:#778696;background:#fff;border-style:dashed;}
+.history-legend button[aria-pressed=false] i {opacity:.4;}
+.intake-history-chart {height:186px;width:100%;margin:8px 0 0;background:#fff;overflow:visible;}
+.history-days {display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin:0 0 12px;padding-left:7.7%;padding-right:4.3%;}
+.history-days button {min-width:0;border:0;border-radius:7px;min-height:38px;padding:4px 0;background:transparent;line-height:1.3;}
+.history-days button > span {display:block;font-size:9px;font-weight:400;color:#718399;}
+.history-days button > strong {display:block;font-size:12px;color:#34495d;}
+.history-days button[aria-pressed=true] {background:#eaf3f6;color:#175876;box-shadow:inset 0 0 0 1px #c9dde7;}
+.history-day-detail {padding:12px 14px;background:#f7f9fc;}
+.history-day-detail > .history-detail-header {display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;color:#53677c;font-size:11px;}
+.history-detail-header strong {font-size:12px;color:#263c51;}
+.history-day-detail > .history-detail-values {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:10px;}
+.history-note {margin-top:10px;font-size:11px;}
+@media(max-width:650px){.overview-face {min-height:490px;}.intake-history-chart {height:180px;}.history-day-detail > .history-detail-values {grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.history-toolbar strong {font-size:13px;}.history-legend {margin-top:10px;}.history-legend button {font-size:10px;padding:6px 7px;}.history-days {gap:1px;}.history-days button > span {font-size:8px;}.history-days button > strong {font-size:11px;}.overview-face-daily .nutrition-bar-track {height:120px;}}
+@media(prefers-reduced-motion:reduce){.overview-flip-card {transition:none;}.overview-face .nutrition-bar-fill {animation:none;transition:none;}}
+
+.history-detail-header > span {display:inline;white-space:nowrap;font-size:11px;color:#64748b;}
+.history-day-detail > .history-detail-header {grid-template-columns:none;}
+.history-day-detail > .history-detail-values > span {min-width:0;}
+.history-day-detail > .history-detail-values b {white-space:normal;overflow-wrap:anywhere;}
+.intake-history-chart {height:212px;}
+@media(max-width:650px){.intake-history-chart {height:212px;}.history-detail-header {flex-wrap:wrap;}.history-day-detail > .history-detail-values {gap:12px;}}
+
+@media(max-width:650px){
+ .history-toolbar {flex-wrap:nowrap;align-items:center;gap:6px;}
+ .history-toolbar span {font-size:10px;}
+ .history-toolbar strong {font-size:12px;}
+ .history-navigation {gap:3px;}
+ .history-navigation button {padding:8px;min-width:34px;min-height:36px;}
+ .history-day-detail {padding:10px;}
+ .history-day-detail > .history-detail-values {gap:8px;margin-top:8px;}
+ .history-detail-values b {font-size:14px;}
+ .history-note {font-size:10px;}
+}
+
+/* Nutrition defines the card height; history fits inside it without enlarging either face. */
+.overview-flip-card {position:relative;display:block;}
+.overview-face-daily {min-height:320px;}
+.overview-face-history {position:absolute;inset:0;min-height:0;}
+.overview-face-daily .nutrition-bar-track {height:86px;}
+.overview-face-daily .nutrition-vertical-summary {margin:16px 0 12px;}
+.overview-face-history .diet-history {height:100%;min-height:0;padding:0;display:grid;grid-template-rows:auto auto minmax(60px,1fr) 28px auto auto;gap:4px;}
+.overview-face-history .history-toolbar {min-height:34px;}
+.overview-face-history .history-toolbar span {display:none;}
+.overview-face-history .history-legend {margin:4px 0;gap:5px;}
+.overview-face-history .history-legend button {min-height:28px;padding:4px 8px;font-size:11px;}
+.overview-face-history .intake-history-chart {width:100%;height:100%;min-height:0;margin:0;}
+.overview-face-history .history-days {margin:0;gap:2px;}
+.overview-face-history .history-days button {min-height:28px;padding:0;}
+.overview-face-history .history-days button > span {display:none;}
+.overview-face-history .history-day-detail {padding:7px 10px;}
+.overview-face-history .history-detail-header {font-size:10px;}
+.overview-face-history .history-detail-header strong {font-size:11px;}
+.overview-face-history .history-detail-header > span {font-size:10px;}
+.overview-face-history .history-detail-values {margin-top:5px;gap:6px;}
+.overview-face-history .history-detail-values > span {display:flex;flex-wrap:wrap;gap:4px;font-size:10px;}
+.overview-face-history .history-detail-values b {font-size:12px;}
+.overview-face-history .history-note {margin:0;font-size:10px;line-height:1.4;}
+@media(max-width:650px){.overview-face-daily {min-height:320px;}.overview-face-history {min-height:0;}.overview-face-history .history-legend {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;}.overview-face-history .history-legend button {justify-content:center;padding:3px;min-height:25px;font-size:10px;}.overview-face-history .history-detail-values {grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}.overview-face-daily .nutrition-bar-track {height:76px;}}
+
+.csv-ai-links {display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+.csv-ai-links a {display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 12px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-surface,#fff);color:var(--color-ink);text-decoration:none;font-size:13px;font-weight:500;}
+.csv-ai-links a:hover {background:#edf5f7;border-color:#9abec8;}
+.csv-ai-links a:focus-visible {outline:2px solid var(--color-primary);outline-offset:3px;}
+.csv-ai-help pre {max-height:320px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;border:1px solid var(--color-border);border-radius:10px;background:#f8fafc;font-size:12px;line-height:1.6;}
+
+/* Library-aware meal browser: filter, collapsible groups, then serving selection. */
+.quick-meal-search .meal-browse-toggle {display:grid;place-items:center;flex-shrink:0;width:34px;min-height:36px;padding:6px;border:0;border-radius:7px;background:transparent;color:#64748b;cursor:pointer;}
+.quick-meal-search .meal-browse-toggle:hover {background:#e7eff3;color:#215d69;}
+.meal-browser {position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:15;background:#fff;border:1px solid #d6e2ea;border-radius:13px;box-shadow:0 14px 36px #153b5526;overflow:hidden;}
+.meal-browser-header {display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:#f5f9fb;border-bottom:1px solid #e4edf2;}
+.meal-browser-header label {display:flex;align-items:center;gap:8px;min-width:0;flex:1;color:#4d7187;}
+.diet-page .meal-browser-header select {width:100%;min-width:0;max-width:none;min-height:36px;padding:6px 8px;font-size:12px;border:1px solid #d7e3eb;background:#fff;}
+.meal-browser-close {display:grid;place-items:center;width:32px;min-height:36px;flex-shrink:0;padding:6px;border:0;border-radius:7px;background:transparent;color:#64748b;cursor:pointer;}
+.meal-browser-caption {display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:10px;color:#64748b;border-bottom:1px solid #edf2f5;}
+.meal-browser-caption > span {margin-right:auto;}
+.meal-browser-caption button {padding:4px 0;border:0;background:transparent;color:#387087;font-size:10px;cursor:pointer;min-height:28px;}
+.meal-browser-list {max-height:min(340px,50svh);overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;}
+.meal-browser-group {margin:0;}
+.meal-browser-group-heading {display:flex;align-items:center;gap:7px;width:100%;min-height:40px;padding:10px 12px;border:0;border-bottom:1px solid #edf2f5;background:#f8fafc;color:#446379;text-align:left;cursor:pointer;}
+.meal-browser-group-heading strong {flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;color:#2b465b;}
+.meal-browser-group-heading > span {font-size:10px;min-width:22px;padding:2px 5px;border-radius:5px;background:#e8eff4;text-align:center;}
+.meal-browser-group ul {list-style:none;padding:0;margin:0;}
+.meal-browser-group ul[hidden] {display:none;}
+.meal-browser-group li > button {display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:10px 12px 10px 34px;min-height:48px;background:#fff;color:#273e50;border:0;border-bottom:1px solid #f0f4f7;cursor:pointer;text-align:left;}
+.meal-browser-group li > button:hover,.meal-browser-group li > button:focus-visible,.meal-browser-group li > button.is-selected {background:#edf7f6;}
+.meal-browser-group li > button > span:first-child {min-width:0;}
+.meal-browser-group li strong {display:block;font-size:13px;overflow-wrap:anywhere;}
+.meal-browser-group li small {display:block;margin-top:3px;font-size:11px;color:#718291;}
+.meal-browser-group li > button > span:last-child {white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums;}
+.meal-browser-group li > button > span:last-child small {display:inline;}
+.meal-browser-empty {padding:14px;margin:0;font-size:12px;color:#718291;line-height:1.5;}
+@media(max-width:450px){.meal-browser-caption {gap:6px;flex-wrap:wrap;}.meal-browser-caption > span {flex:1 1 100%;}.meal-browser-list {max-height:45svh;}.diet-page .meal-browser-header select {font-size:16px;}}
