@@ -41,12 +41,14 @@ Calculation reference: [original Mifflin–St Jeor study](https://pubmed.ncbi.nl
 - Applying a target requires confirmation and updates the Diet overview.
 - Body data is scoped to the authorized Diet owner and managed claiming preserves it.
 
-Owner-requested layout refinement: Daily Record / Overview / Trends / Body & Goals use a directional flip on click or keyboard selection. Panels stay mounted; initial load does not flip; reduced-motion preferences disable animation.
+Owner-requested layout refinement: Daily Record / Trends / Body & Goals use a directional flip on click or keyboard selection. Panels stay mounted; initial load does not flip; reduced-motion preferences disable animation.
 
 ## Local verification
 Passed: `node --test server/test/body-goals.test.js server/test/diet.test.js server/test/diet-history.test.js` (22 service/Diet checks; plus 5 focused web API/units checks); F038 integration test against a disposable replica-set fixture (persistence, authentication/feature denial, preview without writes, revision conflicts, target application, owner isolation, managed authorization and claiming transfer; standalone weights, same-date corrections, historical dates and goal completion); `npm --prefix web run build`; `git diff --check`. Existing bundle-size warning remains. API response tests cover HTML/malformed responses; missing API routes return JSON, and the Body & Goals form waits for a successful load before allowing preview/save. No browser surface was available for visual verification.
 
-Owner local review: record or update an optional weight in Daily Record, switch to Trends → Weight & prediction, verify updated predictions and historical entries; open Diet → Body & Goals; preview/save height and weight; add optional answers; compare lose/maintain/gain and pace/date scenarios; switch units; reload to confirm persistence; apply a saved estimate with confirmation and check Overview. Daily nutrition targets must exist before application. New weights preserve the saved planned path for comparison; changing goal settings resets the path. No commit, push or deployment.
+Owner local review: record or update an optional weight in Daily Record, switch to Trends → Weight & prediction, verify updated predictions and historical entries; open Diet → Body & Goals; preview/save height and weight; add optional answers; compare lose/maintain/gain and pace/date scenarios; switch units; reload to confirm persistence; apply a saved estimate with confirmation and check Daily Summary. Daily nutrition targets must exist before application. New weights preserve the saved planned path for comparison; changing goal settings resets the path. No commit, push or deployment.
 
 ## Open questions
 None for this implementation. Estimates remain approximate and owner-reviewable.
+
+Owner-approved compact summary refinement: Daily Record combines the smaller water jug, quick water entry and compact calorie/macro progress into one Daily Summary card beside meal logging. Macro details and water history expand on demand. Overview is removed from the personal tab list; shared read-only nutrition remains authorized and visible. Trends and Body & Goals retain the directional flip. Mobile stacks the summary above meal entry. No server/API changes.

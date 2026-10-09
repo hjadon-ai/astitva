@@ -1486,3 +1486,41 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
 /* Let each Diet face fit its own content instead of forcing empty mobile height. */
 .diet-dashboard-panels > .dashboard-panel,.diet-dashboard-panels > #diet-panel-body-goals {min-height:0;}
 .diet-dashboard-panels > .dashboard-panel:not(.is-active) {overflow:clip;}
+
+/* Compact Daily Summary combines hydration and nutrition alongside meal entry. */
+.diet-workspace-card .tracker-entry-grid {grid-template-columns:minmax(360px,1.1fr) minmax(0,1fr);min-height:0;align-items:start;}
+.daily-summary-card {padding:16px;border:1px solid #dce9ee;border-radius:14px;background:#f8fbfc;min-width:0;}
+.daily-summary-card > h3 {margin:0 0 16px;font-size:15px;color:var(--color-ink);}
+.daily-summary-content {display:grid;grid-template-columns:minmax(125px,.8fr) minmax(150px,1.2fr);gap:16px;align-items:start;}
+.diet-page .diet-workspace-card .daily-summary-content .water-jug-card {padding:0;background:transparent;border:0;border-radius:0;height:auto;}
+.daily-summary-content .water-jug-overview {flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:12px;}
+.daily-summary-content .water-jug {width:54px;height:65px;}
+.daily-summary-content .water-jug-vessel {width:40px;height:62px;}
+.daily-summary-content .water-jug-handle {top:15px;height:33px;}
+.daily-summary-content .water-jug-copy h2 {font-size:12px;margin:0 0 5px;}
+.daily-summary-content .water-jug-copy .water-intake-total {font-size:21px;}
+.daily-summary-content .water-intake-total span {display:block;font-size:11px;}
+.daily-summary-content .water-jug-copy p {font-size:11px;margin:5px 0 0;}
+.diet-workspace-card .daily-summary-content .water-actions {flex-wrap:wrap;gap:6px;}
+.daily-summary-content .water-actions > .button {flex:1;padding:6px;font-size:11px;min-height:34px;gap:3px;}
+.daily-summary-content .water-actions > .button svg {display:none;}
+.daily-summary-content .water-custom {flex-basis:100%;font-size:11px;}
+.daily-summary-content .water-custom form {display:flex;flex-wrap:wrap;gap:6px;}
+.daily-summary-content .water-custom input {width:100%;min-width:0;}
+.daily-summary-content .water-history {font-size:11px;}
+.compact-nutrition-summary {display:grid;gap:10px;min-width:0;}
+.compact-nutrient-heading {display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:3px 8px;font-size:12px;}
+.compact-nutrient-heading strong {font-size:13px;}
+.compact-nutrient-heading small {font-size:10px;font-weight:400;color:var(--color-muted);}
+.compact-nutrient.nutrition-calories .compact-nutrient-heading {display:block;}
+.compact-nutrient.nutrition-calories strong {display:block;margin-top:3px;font-size:23px;}
+.compact-nutrient-track {height:5px;border-radius:8px;background:#e6edf2;margin-top:5px;overflow:hidden;}
+.compact-nutrient-track > span {display:block;height:100%;background:var(--nutrient-ink,#398c91);border-radius:inherit;}
+.compact-nutrient-status {display:block;margin-top:3px;font-size:10px;color:var(--color-muted);}
+.compact-nutrient.over-target .compact-nutrient-status {color:#a15b21;}
+.daily-summary-card .macro-summary {margin:14px 0 0;padding:10px;font-size:11px;background:transparent;}
+.daily-summary-card .macro-disclosure-hint {display:none;}
+.daily-summary-card .macro-disclosure summary {flex-wrap:wrap;gap:6px;}
+@media(max-width:1000px){.diet-workspace-card .tracker-entry-grid {grid-template-columns:1fr;}}
+@media(max-width:650px){.diet-workspace-tabs {display:flex;}.daily-summary-card {padding:14px;}.daily-summary-content {gap:14px;}.daily-summary-content .water-jug-overview {flex-direction:column;}.daily-summary-content .water-jug-copy .water-intake-total {font-size:20px;}}
+@media(max-width:360px){.daily-summary-content {grid-template-columns:1fr;}.daily-summary-content .water-jug-overview {flex-direction:row;}}

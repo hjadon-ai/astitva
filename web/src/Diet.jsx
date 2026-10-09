@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import BodyGoals from './BodyGoals';
 import DailyWeight from './DailyWeight';
 import WeightTrends from './WeightTrends';
@@ -65,7 +66,7 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
   const [waterError,setWaterError] = useState('');
   const [editor, setEditor] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [view,setView]=useState(readOnly?'overview':'track');
+  const [view,setView]=useState('track');
   const [historyVisited,setHistoryVisited]=useState(false);
   const [bodyGoalsVisited, setBodyGoalsVisited] = useState(false);
   const [bodyVersion, setBodyVersion] = useState(0);
@@ -75,7 +76,7 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
   const [workspaceFlip, setWorkspaceFlip] = useState(null);
   function selectWorkspace(nextView) {
     if (nextView !== view) {
-      const order = ['track', 'overview', 'trends', 'body-goals'];
+      const order = ['track', 'trends', 'body-goals'];
       setWorkspaceFlip(order.indexOf(nextView) > order.indexOf(view) ? 'forward' : 'backward');
       setView(nextView);
     }
@@ -147,40 +148,19 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
     {!data && !error && <LoadingState>Loading diet record…</LoadingState>}
     {data && <>
       <section className="diet-intake-panel nutrition-dashboard diet-workspace-card" aria-label="Daily Diet workspace">
-        <SectionHeader eyebrow={readOnly?"Shared day":"Your day"} title="Daily workspace" description="Track your intake, review nutrition or explore trends." action={!readOnly&&<div className="overview-view-actions"><Button icon={Library} disabled={busy} onClick={openLibraries}>Libraries</Button><div className="target-editor-anchor" onPointerDown={()=>{targetKeyboard.current=false;}} onKeyDown={event=>{targetKeyboard.current=true;if(event.key==='Escape'&&!busy){setEditor(null);targetTrigger.current?.focus();}}} onPointerLeave={event=>{if(event.pointerType==='mouse'&&!busy&&!targetKeyboard.current)setEditor(current=>current?.kind==='targets'?null:current);}} onBlur={event=>{if(!busy&&!event.currentTarget.contains(event.relatedTarget))setEditor(current=>current?.kind==='targets'?null:current);}}>
+        <SectionHeader eyebrow={readOnly?"Shared day":"Your day"} title="Daily workspace" description="Record your intake, see today’s progress, or explore trends." action={!readOnly&&<div className="overview-view-actions"><Button icon={Library} disabled={busy} onClick={openLibraries}>Libraries</Button><div className="target-editor-anchor" onPointerDown={()=>{targetKeyboard.current=false;}} onKeyDown={event=>{targetKeyboard.current=true;if(event.key==='Escape'&&!busy){setEditor(null);targetTrigger.current?.focus();}}} onPointerLeave={event=>{if(event.pointerType==='mouse'&&!busy&&!targetKeyboard.current)setEditor(current=>current?.kind==='targets'?null:current);}} onBlur={event=>{if(!busy&&!event.currentTarget.contains(event.relatedTarget))setEditor(current=>current?.kind==='targets'?null:current);}}>
           <IconButton ref={targetTrigger} icon={Target} label="Edit targets" disabled={busy} aria-expanded={editor?.kind==='targets'} aria-controls="diet-target-popup" onClick={()=>editor?.kind==='targets'?setEditor(null):startTargets()} />
           {editor?.kind==='targets'&&<div className="target-editor-hover-area"><div id="diet-target-popup" className="overview-target-editor target-editor-popup"><DietForm key="overview-targets" initial={editor} busy={busy} onCancel={()=>setEditor(null)} onSave={(values)=>mutate('/api/diet/targets','PUT',values,'Daily targets saved.')} /></div></div>}
         </div></div>}/>
-        {!readOnly&&<div className="diet-workspace-tabs" role="tablist" aria-label="Diet workspace view">{[['track','Daily Record',Utensils],['overview','Overview',Target],['trends','Trends',ChartNoAxesCombined],['body-goals','Body & Goals',Scale]].map(([id,name,Icon],index,all)=><button type="button" role="tab" key={id} id={'diet-tab-'+id} aria-selected={view===id} aria-controls={'diet-panel-'+id} tabIndex={view===id?0:-1} onClick={()=>selectWorkspace(id)} onKeyDown={event=>{const next=event.key==='ArrowRight'?(index+1)%all.length:event.key==='ArrowLeft'?(index+all.length-1)%all.length:event.key==='Home'?0:event.key==='End'?all.length-1:null;if(next===null)return;event.preventDefault();const nextId=all[next][0];selectWorkspace(nextId);event.currentTarget.parentElement.children[next].focus();}}><Icon size={17} aria-hidden="true"/>{name}</button>)}</div>}
+        {!readOnly&&<div className="diet-workspace-tabs" role="tablist" aria-label="Diet workspace view">{[['track','Daily Record',Utensils],['trends','Trends',ChartNoAxesCombined],['body-goals','Body & Goals',Scale]].map(([id,name,Icon],index,all)=><button type="button" role="tab" key={id} id={'diet-tab-'+id} aria-selected={view===id} aria-controls={'diet-panel-'+id} tabIndex={view===id?0:-1} onClick={()=>selectWorkspace(id)} onKeyDown={event=>{const next=event.key==='ArrowRight'?(index+1)%all.length:event.key==='ArrowLeft'?(index+all.length-1)%all.length:event.key==='Home'?0:event.key==='End'?all.length-1:null;if(next===null)return;event.preventDefault();const nextId=all[next][0];selectWorkspace(nextId);event.currentTarget.parentElement.children[next].focus();}}><Icon size={17} aria-hidden="true"/>{name}</button>)}</div>}
         <div className={`diet-dashboard-panels${workspaceFlip ? ' has-flipped' : ''}`} data-flip-direction={workspaceFlip}>
           {!readOnly&&<div className={`dashboard-panel ${view==='track'?'is-active':''}`} id="diet-panel-track" role="tabpanel" aria-labelledby="diet-tab-track" aria-hidden={view!=='track'} inert={view!=='track'}>
-      {!readOnly && <div className="tracker-entry-grid"><WaterTracker water={data.water} date={date} busy={busy||waterBusy} error={waterError} onAdd={(amountMilliliters) => mutateWater('/api/diet/water-entries', 'POST', { date, amountMilliliters })} onDelete={(id) => mutateWater(`/api/diet/water-entries/${id}`, 'DELETE', null, id)} />
+      {!readOnly && <div className="tracker-entry-grid"><section className="daily-summary-card" aria-label="Daily Summary"><h3>Daily Summary</h3><div className="daily-summary-content"><WaterTracker water={data.water} date={date} busy={busy||waterBusy} error={waterError} onAdd={(amountMilliliters) => mutateWater('/api/diet/water-entries', 'POST', { date, amountMilliliters })} onDelete={(id) => mutateWater(`/api/diet/water-entries/${id}`, 'DELETE', null, id)} /><NutritionSummary data={data}/></div>{data.macroCalories && <MacroSummary macro={data.macroCalories}/>}</section>
         <QuickMealLog apiRequest={apiRequest} date={date} libraryOpen={libraryOpen} onManual={startMeal} onLibraries={openLibraries} onAdded={async()=>{const fresh=requireCurrentDietResponse(await apiRequest(`/api/diet/days/${date}`));setData(current=>({...fresh,water:current.water}));}} /></div>}
 
             <DailyWeight apiRequest={apiRequest} date={date} refreshVersion={bodyVersion} onSaved={bodySaved}/>
           </div>}
-          <div className={`dashboard-panel ${view==='overview'?'is-active':''}`} id="diet-panel-overview" role={readOnly?'region':'tabpanel'} aria-label={readOnly?'Shared nutrition':undefined} aria-labelledby={readOnly?undefined:'diet-tab-overview'} aria-hidden={view!=='overview'} inert={view!=='overview'}>
-        <div className="diet-summary nutrition-vertical-summary">{nutrients.map(([key, nutrientLabel, unit]) => {
-          const target = data.targets?.[key];
-          const hasTarget = Number.isFinite(target) && target > 0;
-          const consumed = data.totals[key];
-          const percent = hasTarget ? Math.min(100, Math.max(0, consumed / target * 100)) : 0;
-          return <article key={key} className={`nutrition-card nutrition-${key}${data.overTarget?.[key] > 0 ? ' over-target' : ''}`}>
-            <strong className="nutrition-value">{consumed}<span className="nutrition-value-target">{hasTarget ? ` / ${target}` : ''}</span> <small>{unit}</small></strong>
-            <div className="nutrition-bar-track" role={hasTarget ? 'progressbar' : undefined}
-              aria-label={hasTarget ? `${nutrientLabel} toward target` : undefined}
-              aria-valuemin={hasTarget ? 0 : undefined} aria-valuemax={hasTarget ? target : undefined}
-              aria-valuenow={hasTarget ? Math.min(consumed, target) : undefined}
-              aria-valuetext={hasTarget ? `${consumed} of ${target} ${unit} consumed` : undefined}>
-              <div className="nutrition-bar-fill" style={{height:`${percent}%`}} />
-            </div>
-            <p className="nutrition-label">{nutrientLabel}</p>
-            <p className="nutrition-target">{hasTarget ? `${Math.round(consumed / target * 100)}% of target` : 'No target set'}</p>
-            {hasTarget && <span className={consumed > target ? 'nutrition-exceeded' : 'nutrition-remaining'}>{Math.round(Math.abs(target-consumed)*10)/10} {unit} {consumed > target ? 'over' : 'remaining'}</span>}
-          </article>;
-        })}</div>
-        {!readOnly && (data.macroCalories ? <MacroSummary macro={data.macroCalories} /> : <StatusBanner>Set your daily targets to compare macros, calories, and water.</StatusBanner>)}
-          </div>
+          {readOnly && <div className="dashboard-panel is-active" role="region" aria-label="Shared nutrition"><NutritionSummary data={data}/></div>}
           {!readOnly&&<div className={`dashboard-panel overview-face-history ${view==='trends'?'is-active':''}`} id="diet-panel-trends" role="tabpanel" aria-labelledby="diet-tab-trends" aria-hidden={view!=='trends'} inert={view!=='trends'}>{historyVisited && <><div className="diet-trend-switch" role="group" aria-label="Trend type"><button type="button" aria-pressed={trendView === 'nutrition'} onClick={() => setTrendView('nutrition')}>Nutrition</button><button type="button" aria-pressed={trendView === 'weight'} onClick={() => setTrendView('weight')}>Weight & prediction</button></div><div hidden={trendView !== 'nutrition'}><DietHistory apiRequest={apiRequest}/></div><div hidden={trendView !== 'weight'}><WeightTrends apiRequest={apiRequest} refreshVersion={bodyVersion} onSetup={() => selectWorkspace('body-goals')}/></div></>}</div>}
           {!readOnly && <div className={`dashboard-panel ${view === 'body-goals' ? 'is-active' : ''}`} id="diet-panel-body-goals" role="tabpanel" aria-labelledby="diet-tab-body-goals" aria-hidden={view !== 'body-goals'} inert={view !== 'body-goals'}>
             {bodyGoalsVisited && <BodyGoals apiRequest={apiRequest} refreshVersion={bodyVersion} onSaved={bodySaved} onShowTrends={showWeightTrends} onLogWeight={() => selectWorkspace('track')} onTargetApplied={async () => {
@@ -226,6 +206,21 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
   </section>;
 }
 
+function NutritionSummary({ data }) {
+  return <div className="compact-nutrition-summary" aria-label="Daily nutrition progress">{nutrients.map(([key, name, unit]) => {
+    const consumed = data.totals[key];
+    const target = data.targets?.[key];
+    const hasTarget = Number.isFinite(target) && target > 0;
+    const percent = hasTarget ? Math.min(100, Math.max(0, consumed / target * 100)) : 0;
+    const exceeded = hasTarget && consumed > target;
+    return <article key={key} className={`compact-nutrient nutrition-${key}${exceeded ? ' over-target' : ''}`}>
+      <div className="compact-nutrient-heading"><span>{name}</span><strong>{consumed} <small>{hasTarget ? `/ ${target} ` : ''}{unit}</small></strong></div>
+      <div className="compact-nutrient-track" role={hasTarget ? 'progressbar' : undefined} aria-label={`${name} toward target`} aria-valuemin={hasTarget ? 0 : undefined} aria-valuemax={hasTarget ? target : undefined} aria-valuenow={hasTarget ? Math.min(consumed, target) : undefined} aria-valuetext={hasTarget ? `${consumed} of ${target} ${unit}${exceeded ? ', over target' : ''}` : undefined}><span style={{width:`${percent}%`}}/></div>
+      <small className="compact-nutrient-status">{!hasTarget ? 'No target set' : `${rounded(Math.abs(target - consumed))} ${unit} ${exceeded ? 'over target' : 'remaining'}`}</small>
+    </article>;
+  })}</div>;
+}
+
 function MacroSummary({ macro }) {
   const difference = macro.differenceFromCalorieTarget;
   return <details className="macro-summary macro-disclosure"><summary><span>Macro target</span><strong>{macro.total} kcal</strong><span className="macro-disclosure-hint">How it is calculated</span></summary><div className="macro-disclosure-content">
@@ -265,7 +260,7 @@ function WaterTracker({ water, date, busy, error, onAdd, onDelete }) {
       <details className="water-custom"><summary>Custom amount</summary><form onSubmit={submitCustom}><input aria-label="Custom water amount in milliliters" type="number" min="1" max="5000" step="1" value={custom} onChange={(event) => setCustom(event.target.value)} placeholder="Custom ml" /><Button type="submit" disabled={busy || !custom}>Add</Button></form></details>
     </div>
     {water.entries.length > 0 && <details className="water-history"><summary>Entries ({water.entries.length})</summary><div className="water-entries" aria-label={`Water entries for ${date}`}>{water.entries.map((entry) => <span key={entry.id}><Droplets size={14} aria-hidden="true" /> {entry.amountMilliliters} ml <button type="button" aria-label={`Delete ${entry.amountMilliliters} ml water entry`} title="Delete water entry" onClick={() => setDeleting(entry)}><Trash2 size={14} aria-hidden="true" /></button></span>)}</div></details>}
-    <ConfirmDialog open={Boolean(deleting)} title="Delete water entry?" description={deleting ? `${deleting.amountMilliliters} ml will be removed from this day.` : ''} confirmLabel="Delete entry" busy={busy} onCancel={() => setDeleting(null)} onConfirm={async () => { const entry = deleting; setDeleting(null); await onDelete(entry.id); }} />
+    {deleting && createPortal(<ConfirmDialog open title="Delete water entry?" description={deleting ? `${deleting.amountMilliliters} ml will be removed from this day.` : ''} confirmLabel="Delete entry" busy={busy} onCancel={() => setDeleting(null)} onConfirm={async () => { const entry = deleting; setDeleting(null); await onDelete(entry.id); }} />, document.body)}
   </Surface>;
 }
 
