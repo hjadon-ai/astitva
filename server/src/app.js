@@ -53,6 +53,8 @@ function createApp() {
   app.use('/api/notifications', require('./routes/notifications'));
   app.use('/api/chat', require('./routes/chat'));
 
+  app.use('/api', (request, response) => response.status(404).json({ error: 'API endpoint not found. Check that the web and server versions match.' }));
+
   app.use((error, request, response, next) => {
     if (error.type === 'entity.too.large') {
       return response.status(413).json({ error: 'The request body is too large.' });

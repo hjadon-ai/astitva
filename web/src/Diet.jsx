@@ -1,3 +1,7 @@
+import BodyGoals from './BodyGoals';
+import DailyWeight from './DailyWeight';
+import WeightTrends from './WeightTrends';
+import MealLibraryDrawer from './MealLibraryDrawer';
 import DietHistory from './DietHistory';
 import QuickMealLog from './QuickMealLog';
 import {updateWaterIntake} from './waterIntake';
@@ -5,7 +9,7 @@ import NamedMealLibraries from './NamedMealLibraries';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   CalendarDays, Check, ChevronLeft, ChevronRight, Droplets, Library, Pencil,
-  Plus, RotateCw, Save, Search, Target, ChartNoAxesCombined, Trash2, Upload, Utensils, Sunrise, Sun, Moon, Coffee
+  Plus, RotateCw, Save, Search, Scale, Target, ChartNoAxesCombined, Trash2, Upload, Utensils, Sunrise, Sun, Moon, Coffee
 } from 'lucide-react';
 import {
   Badge, Button, IconButton, ConfirmDialog, EmptyState, LoadingState, PageHeader,
@@ -61,9 +65,28 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
   const [waterError,setWaterError] = useState('');
   const [editor, setEditor] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [historyOpen,setHistoryOpen]=useState(false);
+  const [view,setView]=useState(readOnly?'overview':'track');
   const [historyVisited,setHistoryVisited]=useState(false);
+  const [bodyGoalsVisited, setBodyGoalsVisited] = useState(false);
+  const [bodyVersion, setBodyVersion] = useState(0);
+  const [trendView, setTrendView] = useState('nutrition');
+  const bodySaved = () => setBodyVersion(n => n + 1);
+  const showWeightTrends = () => { setTrendView('weight'); selectWorkspace('trends'); };
+  const [workspaceFlip, setWorkspaceFlip] = useState(null);
+  function selectWorkspace(nextView) {
+    if (nextView !== view) {
+      const order = ['track', 'overview', 'trends', 'body-goals'];
+      setWorkspaceFlip(order.indexOf(nextView) > order.indexOf(view) ? 'forward' : 'backward');
+      setView(nextView);
+    }
+    if (nextView === 'trends') setHistoryVisited(true);
+    if (nextView === 'body-goals') setBodyGoalsVisited(true);
+    document.getElementById('diet-tab-' + nextView)?.focus();
+    setEditor(current => current?.kind === 'targets' ? null : current);
+  }
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryVisited,setLibraryVisited]=useState(false);
+  const openLibraries=()=>{setLibraryVisited(true);setLibraryOpen(true)};
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -123,13 +146,20 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
     {message && <StatusBanner tone="success" role="status">{message}</StatusBanner>}
     {!data && !error && <LoadingState>Loading diet record…</LoadingState>}
     {data && <>
-      <div className={`diet-intake-overview${readOnly ? ' is-shared' : ''}`}><section className="diet-target-section nutrition-dashboard">
-        <SectionHeader eyebrow="Daily overview" title={historyOpen?"Intake trends":"Nutrition"} description={historyOpen?"Daily intake against your current targets.":"Each bar shows intake against its own daily target."} action={!readOnly && <div className="overview-view-actions"><IconButton icon={historyOpen?Utensils:ChartNoAxesCombined} label={historyOpen?"Show daily overview":"Show intake history"} aria-pressed={historyOpen} onClick={()=>{setHistoryVisited(true);setHistoryOpen(v=>!v);setEditor(null);}} /><div className="target-editor-anchor" onPointerDown={()=>{targetKeyboard.current=false;}} onKeyDown={event=>{targetKeyboard.current=true;if(event.key==='Escape'&&!busy){setEditor(null);targetTrigger.current?.focus();}}} onPointerLeave={event=>{if(event.pointerType==='mouse'&&!busy&&!targetKeyboard.current)setEditor(current=>current?.kind==='targets'?null:current);}} onBlur={event=>{if(!busy&&!event.currentTarget.contains(event.relatedTarget))setEditor(current=>current?.kind==='targets'?null:current);}}>
+      <section className="diet-intake-panel nutrition-dashboard diet-workspace-card" aria-label="Daily Diet workspace">
+        <SectionHeader eyebrow={readOnly?"Shared day":"Your day"} title="Daily workspace" description="Track your intake, review nutrition or explore trends." action={!readOnly&&<div className="overview-view-actions"><Button icon={Library} disabled={busy} onClick={openLibraries}>Libraries</Button><div className="target-editor-anchor" onPointerDown={()=>{targetKeyboard.current=false;}} onKeyDown={event=>{targetKeyboard.current=true;if(event.key==='Escape'&&!busy){setEditor(null);targetTrigger.current?.focus();}}} onPointerLeave={event=>{if(event.pointerType==='mouse'&&!busy&&!targetKeyboard.current)setEditor(current=>current?.kind==='targets'?null:current);}} onBlur={event=>{if(!busy&&!event.currentTarget.contains(event.relatedTarget))setEditor(current=>current?.kind==='targets'?null:current);}}>
           <IconButton ref={targetTrigger} icon={Target} label="Edit targets" disabled={busy} aria-expanded={editor?.kind==='targets'} aria-controls="diet-target-popup" onClick={()=>editor?.kind==='targets'?setEditor(null):startTargets()} />
           {editor?.kind==='targets'&&<div className="target-editor-hover-area"><div id="diet-target-popup" className="overview-target-editor target-editor-popup"><DietForm key="overview-targets" initial={editor} busy={busy} onCancel={()=>setEditor(null)} onSave={(values)=>mutate('/api/diet/targets','PUT',values,'Daily targets saved.')} /></div></div>}
-        </div></div>} />
-        <div className="overview-flip-stage"><div className={`overview-flip-card${historyOpen&&!readOnly?' is-flipped':''}`}>
-        <div className="overview-face overview-face-daily" aria-hidden={historyOpen&&!readOnly} inert={historyOpen&&!readOnly}>
+        </div></div>}/>
+        {!readOnly&&<div className="diet-workspace-tabs" role="tablist" aria-label="Diet workspace view">{[['track','Daily Record',Utensils],['overview','Overview',Target],['trends','Trends',ChartNoAxesCombined],['body-goals','Body & Goals',Scale]].map(([id,name,Icon],index,all)=><button type="button" role="tab" key={id} id={'diet-tab-'+id} aria-selected={view===id} aria-controls={'diet-panel-'+id} tabIndex={view===id?0:-1} onClick={()=>selectWorkspace(id)} onKeyDown={event=>{const next=event.key==='ArrowRight'?(index+1)%all.length:event.key==='ArrowLeft'?(index+all.length-1)%all.length:event.key==='Home'?0:event.key==='End'?all.length-1:null;if(next===null)return;event.preventDefault();const nextId=all[next][0];selectWorkspace(nextId);event.currentTarget.parentElement.children[next].focus();}}><Icon size={17} aria-hidden="true"/>{name}</button>)}</div>}
+        <div className={`diet-dashboard-panels${workspaceFlip ? ' has-flipped' : ''}`} data-flip-direction={workspaceFlip}>
+          {!readOnly&&<div className={`dashboard-panel ${view==='track'?'is-active':''}`} id="diet-panel-track" role="tabpanel" aria-labelledby="diet-tab-track" aria-hidden={view!=='track'} inert={view!=='track'}>
+      {!readOnly && <div className="tracker-entry-grid"><WaterTracker water={data.water} date={date} busy={busy||waterBusy} error={waterError} onAdd={(amountMilliliters) => mutateWater('/api/diet/water-entries', 'POST', { date, amountMilliliters })} onDelete={(id) => mutateWater(`/api/diet/water-entries/${id}`, 'DELETE', null, id)} />
+        <QuickMealLog apiRequest={apiRequest} date={date} libraryOpen={libraryOpen} onManual={startMeal} onLibraries={openLibraries} onAdded={async()=>{const fresh=requireCurrentDietResponse(await apiRequest(`/api/diet/days/${date}`));setData(current=>({...fresh,water:current.water}));}} /></div>}
+
+            <DailyWeight apiRequest={apiRequest} date={date} refreshVersion={bodyVersion} onSaved={bodySaved}/>
+          </div>}
+          <div className={`dashboard-panel ${view==='overview'?'is-active':''}`} id="diet-panel-overview" role={readOnly?'region':'tabpanel'} aria-label={readOnly?'Shared nutrition':undefined} aria-labelledby={readOnly?undefined:'diet-tab-overview'} aria-hidden={view!=='overview'} inert={view!=='overview'}>
         <div className="diet-summary nutrition-vertical-summary">{nutrients.map(([key, nutrientLabel, unit]) => {
           const target = data.targets?.[key];
           const hasTarget = Number.isFinite(target) && target > 0;
@@ -150,17 +180,22 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
           </article>;
         })}</div>
         {!readOnly && (data.macroCalories ? <MacroSummary macro={data.macroCalories} /> : <StatusBanner>Set your daily targets to compare macros, calories, and water.</StatusBanner>)}
+          </div>
+          {!readOnly&&<div className={`dashboard-panel overview-face-history ${view==='trends'?'is-active':''}`} id="diet-panel-trends" role="tabpanel" aria-labelledby="diet-tab-trends" aria-hidden={view!=='trends'} inert={view!=='trends'}>{historyVisited && <><div className="diet-trend-switch" role="group" aria-label="Trend type"><button type="button" aria-pressed={trendView === 'nutrition'} onClick={() => setTrendView('nutrition')}>Nutrition</button><button type="button" aria-pressed={trendView === 'weight'} onClick={() => setTrendView('weight')}>Weight & prediction</button></div><div hidden={trendView !== 'nutrition'}><DietHistory apiRequest={apiRequest}/></div><div hidden={trendView !== 'weight'}><WeightTrends apiRequest={apiRequest} refreshVersion={bodyVersion} onSetup={() => selectWorkspace('body-goals')}/></div></>}</div>}
+          {!readOnly && <div className={`dashboard-panel ${view === 'body-goals' ? 'is-active' : ''}`} id="diet-panel-body-goals" role="tabpanel" aria-labelledby="diet-tab-body-goals" aria-hidden={view !== 'body-goals'} inert={view !== 'body-goals'}>
+            {bodyGoalsVisited && <BodyGoals apiRequest={apiRequest} refreshVersion={bodyVersion} onSaved={bodySaved} onShowTrends={showWeightTrends} onLogWeight={() => selectWorkspace('track')} onTargetApplied={async () => {
+        const fresh = requireCurrentDietResponse(await apiRequest(`/api/diet/days/${date}`));
+        setData(current => ({ ...fresh, water: { ...fresh.water, entries: current.water.entries,
+          consumedMilliliters: current.water.consumedMilliliters,
+          remainingMilliliters: fresh.water.targetMilliliters === null ? null : Math.max(0, fresh.water.targetMilliliters - current.water.consumedMilliliters),
+          overTargetMilliliters: fresh.water.targetMilliliters === null ? null : Math.max(0, current.water.consumedMilliliters - fresh.water.targetMilliliters) } }));
+      }} />}
+          </div>}
         </div>
-        {!readOnly&&<div className="overview-face overview-face-history" aria-hidden={!historyOpen} inert={!historyOpen}>{historyVisited&&<DietHistory apiRequest={apiRequest}/>}</div>}
-        </div></div>
       </section>
-
-      <section className="diet-intake-panel" role="region" aria-label={readOnly ? 'Shared daily meals' : 'Daily water and meals'}>
-      <header className="daily-tracker-header"><div><h2>Daily tracker</h2><p>Water and meals, together for the day.</p></div><span className="daily-tracker-date"><CalendarDays size={15} aria-hidden="true" /><time dateTime={date}>{new Date(`${date}T12:00:00`).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</time></span></header>
-      {!readOnly && <div className="tracker-entry-grid"><WaterTracker water={data.water} date={date} busy={busy||waterBusy} error={waterError} onAdd={(amountMilliliters) => mutateWater('/api/diet/water-entries', 'POST', { date, amountMilliliters })} onDelete={(id) => mutateWater(`/api/diet/water-entries/${id}`, 'DELETE', null, id)} />
-        <QuickMealLog apiRequest={apiRequest} date={date} libraryOpen={libraryOpen} onManual={startMeal} onLibraries={()=>setLibraryOpen(open=>!open)} onAdded={async()=>{const fresh=requireCurrentDietResponse(await apiRequest(`/api/diet/days/${date}`));setData(current=>({...fresh,water:current.water}));}} /></div>}
+      <section className="diet-intake-panel diet-timeline-card" aria-label="Meal timeline">
       <div className="daily-meal-workspace">
-        <div className="daily-meal-history-heading"><h3>Meal timeline</h3><span>{data.meals.length} {data.meals.length===1?'entry':'entries'}</span></div>
+        <div className="daily-meal-history-heading"><h2>Meal timeline</h2><span>{data.meals.length} {data.meals.length===1?'entry':'entries'}</span></div>
         <section className="daily-meals" aria-label="Meals for selected day">
         {!data.meals.length && <EmptyState icon={Utensils} title="No meals yet" description={readOnly ? "No shared meals for this date." : "Search above to log your first meal, or enter one manually."} />}
         {types.map((type) => {
@@ -178,12 +213,7 @@ function DietDay({ date, setDate, apiRequest, readOnly, loadDay }) {
         </section>
       </div>
       </section>
-      </div>
-
-      {libraryOpen && !readOnly && <div id="diet-meal-library"><NamedMealLibraries apiRequest={apiRequest} selectedDate={date} onAdded={(addedDate) => {
-        setMessage(`Library meal added to ${addedDate}.`);
-        if (addedDate === date) setVersion((value) => value + 1);
-      }} /></div>}
+      {!readOnly&&<MealLibraryDrawer open={libraryOpen} onClose={()=>setLibraryOpen(false)}>{libraryVisited&&<NamedMealLibraries apiRequest={apiRequest} selectedDate={date} onAdded={async addedDate=>{setMessage(`Library meal added to ${addedDate}.`);if(addedDate===date){const fresh=requireCurrentDietResponse(await apiRequest(`/api/diet/days/${date}`));setData(current=>({...fresh,water:current.water}));}}}/>}</MealLibraryDrawer>}
 
 
     </>}

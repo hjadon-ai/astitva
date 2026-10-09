@@ -144,6 +144,7 @@ router.use(async (request, response, next) => {
 });
 router.use(requireFeature('diet'));
 router.use('/libraries', require('./mealLibraries'));
+router.use('/body-goals', require('./bodyGoals'));
 
 router.get('/history', async (request,response) => {
   const range=historyRange(request.query.end,request.query.timezone);

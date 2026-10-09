@@ -51,6 +51,8 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F037 | [Named shared meal libraries](diet/F037-shared-meal-libraries.md) | Review | `feature/F037-shared-meal-libraries` | Not created |
 
+| F038 | [Body & Goals](diet/F038-body-goals.md) | Review | `feature/F038-body-goals` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.

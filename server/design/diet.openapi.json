@@ -1594,6 +1594,330 @@
           }
         }
       }
+    },
+    "/api/diet/body-goals": {
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Read the authorized owner’s body measurements and goal estimate",
+        "responses": {
+          "200": {
+            "description": "Body & Goals result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyGoalsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported estimate"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Diet access or managed ownership denied"
+          },
+          "409": {
+            "description": "Stale revision or existing daily targets required"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Save body measurements and goal with optimistic revision protection",
+        "responses": {
+          "200": {
+            "description": "Body & Goals result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyGoalsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported estimate"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Diet access or managed ownership denied"
+          },
+          "409": {
+            "description": "Stale revision or existing daily targets required"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/BodyGoalsInput"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "expectedRevision"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/body-goals/preview": {
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Preview BMI, adult calories and a goal without saving",
+        "responses": {
+          "200": {
+            "description": "Body & Goals result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyGoalsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported estimate"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Diet access or managed ownership denied"
+          },
+          "409": {
+            "description": "Stale revision or existing daily targets required"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BodyGoalsInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/body-goals/apply-target": {
+      "post": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Explicitly apply a saved estimate, preserving macro proportions and existing water/fiber",
+        "responses": {
+          "200": {
+            "description": "Body & Goals result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyGoalsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported estimate"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Diet access or managed ownership denied"
+          },
+          "409": {
+            "description": "Stale revision or existing daily targets required"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "expectedRevision"
+                ],
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/diet/body-goals/weights/{date}": {
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Read optional weight for a date and current body/goal records",
+        "responses": {
+          "200": {
+            "description": "Body & Goals result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyGoalsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported estimate"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Diet access or managed ownership denied"
+          },
+          "409": {
+            "description": "Stale revision or existing daily targets required"
+          }
+        },
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Diet"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Record or update optional daily weight without requiring BMI setup",
+        "responses": {
+          "200": {
+            "description": "Body & Goals result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BodyGoalsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or unsupported estimate"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Diet access or managed ownership denied"
+          },
+          "409": {
+            "description": "Stale revision or existing daily targets required"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "weightKg",
+                  "units",
+                  "expectedRevision"
+                ],
+                "properties": {
+                  "weightKg": {
+                    "type": "number",
+                    "minimum": 25,
+                    "maximum": 350
+                  },
+                  "units": {
+                    "type": "string",
+                    "enum": [
+                      "metric",
+                      "imperial"
+                    ]
+                  },
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2401,6 +2725,169 @@
                 }
               }
             }
+          }
+        }
+      },
+      "BodyGoalsInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "heightCm",
+          "weightKg",
+          "measuredOn",
+          "units",
+          "eligible",
+          "goal",
+          "planMode"
+        ],
+        "properties": {
+          "heightCm": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 250
+          },
+          "weightKg": {
+            "type": "number",
+            "minimum": 25,
+            "maximum": 350
+          },
+          "measuredOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "units": {
+            "type": "string",
+            "enum": [
+              "metric",
+              "imperial"
+            ]
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "nullable": true
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "female",
+              "male"
+            ],
+            "nullable": true
+          },
+          "activity": {
+            "type": "string",
+            "enum": [
+              "sedentary",
+              "light",
+              "moderate",
+              "active"
+            ],
+            "nullable": true
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "goal": {
+            "type": "string",
+            "enum": [
+              "maintain",
+              "lose",
+              "gain"
+            ]
+          },
+          "targetWeightKg": {
+            "type": "number",
+            "minimum": 25,
+            "maximum": 350,
+            "nullable": true
+          },
+          "planMode": {
+            "type": "string",
+            "enum": [
+              "pace",
+              "date"
+            ]
+          },
+          "paceKgWeek": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 0.5,
+            "nullable": true
+          },
+          "targetDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "BodyGoalsResult": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "object",
+            "nullable": true,
+            "description": "Complete BMI/goal profile or null when only optional daily weights have been recorded."
+          },
+          "estimate": {
+            "type": "object",
+            "nullable": true,
+            "description": "BMI, optional adult calorie needs, original planned path and a refreshed pace-based prediction anchored to the latest weight."
+          },
+          "appliedCalories": {
+            "type": "integer",
+            "description": "Present after applying the saved calorie estimate."
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "weights": {
+            "type": "array",
+            "maxItems": 180,
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "weightKg": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "latestWeight": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "weightKg": {
+                "type": "number"
+              },
+              "units": {
+                "type": "string",
+                "enum": [
+                  "metric",
+                  "imperial"
+                ]
+              }
+            }
+          },
+          "entry": {
+            "type": "object",
+            "nullable": true,
+            "description": "The weight record for the requested date, returned by weight routes."
           }
         }
       }

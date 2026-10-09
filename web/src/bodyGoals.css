@@ -1,0 +1,83 @@
+.body-goals-card {min-width:0;}
+.body-goals-card > .section-header {margin-bottom:20px;}
+.body-goals-card > .section-header h2 {font-size:18px;}
+.body-goals-card > .section-header p {max-width:620px;font-size:13px;line-height:1.6;}
+.body-goals-icon {display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:#eaf5f3;color:#266e76;flex-shrink:0;}
+.body-goals-layout {display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.8fr);gap:24px;align-items:start;}
+.body-goals-form {min-width:0;}
+.body-goals-form fieldset {border:0;padding:0 0 20px;margin:0 0 20px;min-width:0;border-bottom:1px solid var(--color-border);}
+.body-goals-form legend {display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:0;font-size:14px;font-weight:600;color:var(--color-ink);}
+.body-goals-form legend span {display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#edf4f7;color:#526d80;font-size:12px;}
+.body-goals-form legend small {font-size:11px;font-weight:400;color:var(--color-muted);}
+.body-goals-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;}
+.body-goals-fields input,.body-goals-fields select {width:100%;min-width:0;min-height:42px;}
+.body-goals-fields .form-field {gap:6px;font-size:12px;}
+.body-goals-fields .form-field small {font-size:11px;line-height:1.5;}
+.body-goals-optional .form-field:last-child {grid-column:1/-1;}
+.body-goals-eligibility {display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.6;margin-top:16px;color:var(--color-muted);}
+.body-goals-eligibility input {margin:4px 0 0;flex-shrink:0;width:16px;height:16px;}
+.body-goals-choices,.diet-trend-switch {display:flex;gap:4px;padding:4px;border-radius:10px;background:#f4f7fa;margin-bottom:16px;}
+.body-goals-choices button,.diet-trend-switch button {flex:1;border:0;background:transparent;border-radius:7px;min-height:38px;padding:7px 10px;font-size:12px;color:var(--color-muted);cursor:pointer;}
+.body-goals-choices button[aria-pressed=true],.diet-trend-switch button[aria-pressed=true] {background:#fff;color:#266e76;box-shadow:0 2px 6px #16364b12;font-weight:600;}
+.body-goals-choices button:focus-visible,.diet-trend-switch button:focus-visible,.body-goals-card summary:focus-visible {outline:2px solid var(--color-primary);outline-offset:3px;}
+.body-goals-actions {display:flex;gap:10px;flex-wrap:wrap;}
+.body-goals-results {padding:18px;border:1px solid #e2ebef;border-radius:14px;background:#f8fbfc;min-width:0;}
+.body-goals-result-heading {display:flex;align-items:center;gap:8px;color:#266e76;margin-bottom:14px;}
+.body-goals-result-heading h3 {font-size:14px;margin:0;}
+.body-goals-stats {display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0;}
+.body-goals-stats .stat-card {padding:12px 14px;box-shadow:none;min-width:0;}
+.body-goals-stats .stat-card strong {font-size:22px;overflow-wrap:anywhere;}
+.body-goals-stats .stat-card small {font-size:11px;line-height:1.5;}
+.body-goals-placeholder {padding:20px 4px;color:var(--color-muted);font-size:13px;line-height:1.7;}
+.body-goals-placeholder svg {color:#709d9e;}
+.body-goals-placeholder h3 {font-size:14px;color:var(--color-ink);}
+.body-goals-note,.body-goals-assumptions p {font-size:12px;color:var(--color-muted);line-height:1.7;}
+.body-goals-assumptions {margin-top:18px;border-top:1px solid var(--color-border);padding-top:12px;}
+.body-goals-assumptions summary,.body-goals-projection summary {cursor:pointer;font-size:12px;font-weight:600;color:var(--color-ink);}
+.body-goals-plan-summary {padding:14px 0;margin:10px 0;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);}
+.body-goals-plan-summary h3 {font-size:14px;margin:0 0 6px;}
+.body-goals-plan-summary p,.body-goals-plan-summary small {font-size:12px;color:var(--color-muted);line-height:1.6;}
+.body-goals-plan-summary small {display:block;margin-top:8px;}
+.body-goals-plan-summary .button,.body-goals-results > .button {width:100%;font-size:12px;white-space:normal;}
+.body-goals-projection {padding:16px 0;margin-bottom:10px;}
+.body-goals-projection h3 {font-size:14px;margin:0 0 6px;}
+.body-goals-projection > p {font-size:12px;color:var(--color-muted);line-height:1.6;}
+.body-goals-projection svg {display:block;width:100%;max-height:340px;height:auto;}
+.body-goals-projection svg text {font-size:11px;fill:var(--color-muted);}
+.body-goals-gridline {stroke:#e2eaf0;stroke-width:1;}
+.body-goals-band {fill:#67b4b52b;}
+.body-goals-plan-line {fill:none;stroke:#398c91;stroke-width:2.5;}
+.body-goals-actual-line {fill:none;stroke:#9c713d;stroke-width:2;stroke-dasharray:4 3;}
+.body-goals-actual-dot {fill:#9c713d;stroke:#fff;stroke-width:1.5;}
+.body-goals-chart-key {display:flex;flex-wrap:wrap;gap:8px 14px;font-size:11px;color:var(--color-muted);margin-bottom:14px;}
+.body-goals-chart-key span:first-child {color:#398c91;}.body-goals-chart-key span:nth-child(2) {color:#9c713d;}
+.body-goals-table-scroll {overflow-x:auto;margin-top:12px;max-height:340px;}
+.body-goals-table-scroll table {width:100%;font-size:12px;border-collapse:collapse;text-align:left;margin-bottom:16px;}
+.body-goals-table-scroll caption {text-align:left;font-weight:600;margin-bottom:8px;}
+.body-goals-table-scroll td,.body-goals-table-scroll th {padding:7px;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+.body-goals-card > .status-banner {margin:12px 0;}
+.diet-trend-switch {width:fit-content;max-width:100%;}
+.diet-trend-switch button {flex:0 1 auto;}
+.daily-weight-record {display:grid;grid-template-columns:minmax(180px,1fr) minmax(280px,1.3fr);gap:12px 20px;align-items:center;margin-top:16px;padding:16px 18px;border:1px solid var(--color-border);border-radius:12px;background:#f8fafc;}
+.daily-weight-heading {display:flex;align-items:center;gap:12px;}
+.daily-weight-heading h3 {font-size:14px;margin:0 0 5px;}
+.daily-weight-heading h3 small {font-size:11px;font-weight:400;color:var(--color-muted);margin-left:7px;}
+.daily-weight-heading p {font-size:12px;color:var(--color-muted);margin:0;line-height:1.5;}
+.daily-weight-form fieldset {display:grid;grid-template-columns:minmax(90px,1fr) 70px auto;align-items:end;gap:10px;border:0;padding:0;margin:0;min-width:0;}
+.daily-weight-form .form-field {font-size:12px;gap:5px;}
+.daily-weight-form input,.daily-weight-form select {width:100%;min-width:0;min-height:40px;}
+.daily-weight-form .button {min-height:40px;font-size:12px;}
+.daily-weight-record > .status-banner,.daily-weight-record > .body-goals-note {grid-column:1/-1;margin:0;}
+.weight-trends {padding:16px 18px;background:#f8fbfc;border:1px solid var(--color-border);border-radius:14px;}
+.weight-trends-header {display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.weight-trends-header h3 {font-size:16px;margin:0 0 5px;}
+.weight-trends-header p {font-size:12px;color:var(--color-muted);margin:0;line-height:1.5;}
+.weight-chart-units select {min-height:38px;padding:7px 12px;}
+.weight-trends-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px 0;border-bottom:1px solid var(--color-border);}
+.weight-trends-summary > div {display:flex;flex-direction:column;gap:5px;}
+.weight-trends-summary span,.weight-trends-summary small {font-size:11px;color:var(--color-muted);}
+.weight-trends-summary strong {font-size:19px;overflow-wrap:anywhere;}
+#diet-panel-body-goals > .body-goals-card {padding:0;border:0;border-radius:0;background:transparent;margin:0;}
+@media(max-width:1050px){.body-goals-layout {grid-template-columns:1fr;gap:20px;}.body-goals-stats {grid-template-columns:repeat(3,minmax(0,1fr));}.body-goals-results .body-goals-stats .stat-card strong {font-size:20px;}.daily-weight-record {grid-template-columns:1fr;}}
+@media(max-width:650px){.body-goals-results {padding:14px;}.body-goals-stats {grid-template-columns:1fr;}.daily-weight-record {padding:14px;}.daily-weight-form fieldset {grid-template-columns:minmax(0,1fr) 70px;}.daily-weight-form .button {grid-column:1/-1;}.weight-trends-summary {grid-template-columns:1fr;gap:10px;}.weight-trends-summary > div {display:grid;grid-template-columns:1fr 1fr;align-items:center;}.weight-trends-summary > div > small {grid-column:1/-1;}.weight-trends {padding:14px;}.body-goals-fields input,.body-goals-fields select,.daily-weight-form input,.daily-weight-form select {font-size:16px;}.body-goals-actions .button {flex:1;}}
+@media(max-width:420px){.body-goals-fields {grid-template-columns:1fr;}.body-goals-choices {flex-wrap:wrap;}.body-goals-actions .button {flex-basis:100%;}}
