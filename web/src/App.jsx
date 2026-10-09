@@ -1,3 +1,4 @@
+import { readApiJson } from './apiResponse';
 import { useSharedWorkspace } from './SharedWorkspace.jsx';
 import SignedInHome, { PublicHomeIntro, PublicHomeSections } from './HomeContent';
 import { disableWebNotifications, setWebNotificationsAllowed } from './webNotifications';
@@ -40,7 +41,7 @@ async function apiRequest(path, options = {}) {
 
   if (response.status === 204) return null;
   if (response.ok && options.responseType === 'blob') return response.blob();
-  const body = await response.json();
+  const body = await readApiJson(response, path);
   if (!response.ok) {
     const details = body.error;
     const error = new Error(typeof details === 'string' ? details : details?.message || 'Something went wrong.');

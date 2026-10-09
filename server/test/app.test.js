@@ -52,6 +52,11 @@ test('Production health, origin, invitation, and disabled Finance behavior are e
       }
     });
 
+    const missingEndpoint = await fetch(`${baseUrl}/api/missing-endpoint`);
+    assert.equal(missingEndpoint.status, 404);
+    assert.match(missingEndpoint.headers.get('content-type'), /application\/json/);
+    assert.match((await missingEndpoint.json()).error, /web and server versions match/);
+
     const blockedOrigin = await fetch(`${baseUrl}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Origin: 'https://malicious.example' },

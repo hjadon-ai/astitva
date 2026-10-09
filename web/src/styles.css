@@ -1387,3 +1387,102 @@ input:focus, select:focus, textarea:focus { border-color: var(--color-primary); 
 .meal-browser-group li > button > span:last-child small {display:inline;}
 .meal-browser-empty {padding:14px;margin:0;font-size:12px;color:#718291;line-height:1.5;}
 @media(max-width:450px){.meal-browser-caption {gap:6px;flex-wrap:wrap;}.meal-browser-caption > span {flex:1 1 100%;}.meal-browser-list {max-height:45svh;}.diet-page .meal-browser-header select {font-size:16px;}}
+
+/* One Diet workspace with persistent panels; the timeline remains independent. */
+.diet-page .diet-workspace-card {display:block;padding:22px;background:#fff;}
+.diet-workspace-tabs {display:inline-flex;gap:4px;padding:4px;margin:8px 0 18px;border:1px solid #e2eaf0;border-radius:12px;background:#f4f7fa;}
+.diet-workspace-tabs button {display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;min-width:110px;padding:8px 14px;border:0;border-radius:8px;background:transparent;color:#65798b;font-size:13px;font-weight:600;cursor:pointer;}
+.diet-workspace-tabs button[aria-selected=true] {background:#fff;color:#266e76;box-shadow:0 2px 6px #16364b12;}
+.diet-dashboard-panels {position:relative;display:grid;grid-template-columns:minmax(0,1fr);perspective:1400px;--diet-flip-angle:90deg;}
+.diet-dashboard-panels[data-flip-direction=backward] {--diet-flip-angle:-90deg;}
+.diet-dashboard-panels > .dashboard-panel {grid-area:1/1;min-width:0;min-height:320px;opacity:0;visibility:hidden;pointer-events:none;transform:rotateY(var(--diet-flip-angle));transform-origin:center;backface-visibility:hidden;transition:opacity .18s ease,transform .18s ease,visibility .18s;}
+.diet-dashboard-panels > .dashboard-panel.is-active {opacity:1;visibility:visible;pointer-events:auto;transform:none;}
+.diet-dashboard-panels.has-flipped > .dashboard-panel.is-active {animation:diet-workspace-flip-in .36s ease both;}
+@keyframes diet-workspace-flip-in {
+  0%,49% {opacity:0;transform:rotateY(calc(-1 * var(--diet-flip-angle)));}
+  100% {opacity:1;transform:none;}
+}
+.diet-dashboard-panels > .overview-face-history {position:absolute;inset:0;min-height:0;}
+.diet-dashboard-panels > #diet-panel-overview {display:flex;flex-direction:column;justify-content:center;}
+.diet-dashboard-panels .tracker-entry-grid {min-height:300px;}
+.diet-dashboard-panels .quick-meal-log {align-self:stretch;}
+.diet-page .diet-timeline-card {display:block;margin-top:18px;background:#fff;}
+.diet-timeline-card .daily-meal-history-heading h2 {font-size:17px;margin:0;color:var(--color-ink);}
+.diet-timeline-card .daily-meal-workspace {width:100%;}
+
+/* Native modal drawer preserves drafts and supplies browser-managed focus containment. */
+.meal-library-drawer {position:fixed;inset:0 0 0 auto;width:min(900px,94vw);height:100dvh;max-width:none;max-height:none;padding:0;margin:0;border:0;border-left:1px solid #dce5ec;background:#fff;color:var(--color-ink);box-shadow:-16px 0 50px #14314620;}
+.meal-library-drawer::backdrop {background:#13293d66;}
+.meal-library-drawer[open] {display:flex;flex-direction:column;animation:library-drawer-in .22s ease-out;}
+.meal-library-drawer-header {flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:1px solid #e5ecf2;background:#fff;}
+.meal-library-drawer-header > div {display:flex;align-items:center;gap:12px;color:#377082;}
+.meal-library-drawer-header h2 {margin:0;font-size:19px;color:var(--color-ink);}
+.meal-library-drawer-header p {margin:4px 0 0;font-size:12px;color:#6b7f90;}
+.meal-library-drawer-body {flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:24px;}
+.meal-library-drawer .named-libraries {padding:0;border:0;box-shadow:none;}
+.meal-library-drawer .named-library-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0;}
+.meal-library-drawer .named-library-card {padding:14px;border-radius:12px;gap:6px;min-width:0;}
+.meal-library-drawer .named-library-card strong {font-size:15px;overflow-wrap:anywhere;}
+.meal-library-drawer .library-card-icon {width:32px;height:32px;}
+.meal-library-drawer .library-access-badge {font-size:10px;}
+.meal-library-drawer .named-library-details {border:0;padding:0;}
+.meal-library-drawer .named-library-details > p {font-size:12px;color:#6b7f90;}
+.meal-library-drawer .library-list {gap:0;margin-top:14px;}
+.meal-library-drawer .library-meal {padding:14px 0;background:#fff;border:0;border-bottom:1px solid #e7edf2;border-radius:0;box-shadow:none;}
+.meal-library-drawer .library-meal h3 {font-size:14px;margin:0;}
+.meal-library-drawer .library-meal p {font-size:12px;color:#64748b;line-height:1.5;}
+.meal-library-drawer .library-meal-heading {gap:12px;}
+.meal-library-drawer .library-meal-heading > strong {font-size:13px;white-space:nowrap;}
+.meal-library-drawer .library-meal .diet-toolbar button {min-height:34px;font-size:11px;padding:6px 10px;}
+.library-actions-menu {position:relative;margin-left:auto;}
+.library-actions-menu summary {display:flex;align-items:center;gap:7px;cursor:pointer;padding:10px 12px;border:1px solid #dce5ec;border-radius:9px;color:#4d6477;font-size:12px;min-height:40px;list-style:none;}
+.library-actions-menu summary::-webkit-details-marker {display:none;}
+.library-actions-menu > div {position:absolute;right:0;top:calc(100% + 6px);z-index:3;min-width:210px;padding:5px;background:#fff;border:1px solid #dce5ec;border-radius:10px;box-shadow:0 10px 26px #18384e20;}
+.library-actions-menu button {display:flex;align-items:center;gap:9px;min-height:40px;width:100%;border:0;background:#fff;border-radius:7px;padding:10px;text-align:left;color:#426076;font-size:12px;cursor:pointer;}
+.library-actions-menu button:hover {background:#f0f6f8;}
+.library-actions-menu button.is-danger {color:#b44451;}
+.library-actions-menu button:disabled {opacity:.45;cursor:default;}
+.library-item-search {display:block;margin-top:16px;font-size:12px;color:#64748b;}
+.library-item-search input {display:block;width:100%;margin-top:6px;}
+.library-share-form {padding:14px;background:#f6f9fb;border:1px solid #e0eaf1;border-radius:10px;}
+.library-create-steps .is-current {color:#256b73;font-weight:600;}
+.library-create-steps .is-current > span {background:#deefee;color:#236960;}
+.library-create-steps .is-complete > span {background:#eff6f4;color:#408476;}
+.library-save-summary {padding:14px;border:1px solid #dde8ee;border-radius:12px;background:#f5f9fb;}
+.library-save-summary h3 {font-size:16px;margin:0 0 8px;}
+.library-save-summary p,.library-step-hint {font-size:12px;color:#64748b;line-height:1.6;}
+.library-wizard-actions {padding-top:12px;border-top:1px solid #e3eaf0;}
+.meal-library-drawer .csv-preview {max-height:360px;overflow:auto;}
+@keyframes library-drawer-in {from{transform:translateX(30px);opacity:.5;}to{transform:none;opacity:1;}}
+@media(max-width:650px){.diet-page .diet-workspace-card {padding:16px;}.diet-workspace-tabs {display:flex;width:100%;}.diet-workspace-tabs button {min-width:0;flex:1;padding:8px;font-size:12px;}.diet-workspace-card .overview-view-actions {width:100%;}.diet-dashboard-panels > .dashboard-panel {min-height:560px;}.diet-dashboard-panels > .overview-face-history {min-height:0;}.meal-library-drawer {width:100vw;}.meal-library-drawer-header {padding:16px;}.meal-library-drawer-body {padding:16px;}.meal-library-drawer .named-library-grid {grid-template-columns:1fr;}.meal-library-drawer .diet-form-grid {grid-template-columns:1fr;}.meal-library-drawer .wide-field {grid-column:1;}.meal-library-drawer .section-header {flex-wrap:wrap;}.meal-library-drawer .library-create-steps {gap:8px;font-size:11px;}}
+@media(prefers-reduced-motion:reduce){.diet-dashboard-panels > .dashboard-panel,.diet-dashboard-panels.has-flipped > .dashboard-panel.is-active {animation:none;transition:none;transform:none;}.meal-library-drawer[open] {animation:none;}}
+
+/* Keep mobile Track compact without inheriting the old column-only water controls. */
+.diet-workspace-card .water-actions {flex-direction:row;align-items:stretch;width:100%;}
+@media(max-width:650px){
+ .diet-workspace-card > .section-header {flex-direction:row;align-items:center;gap:8px;}
+ .diet-workspace-card > .section-header > div:first-child {min-width:0;flex:1;}
+ .diet-workspace-card > .section-header h2 {font-size:17px;}
+ .diet-workspace-card > .section-header p:not(.eyebrow) {display:none;}
+ .diet-workspace-card .overview-view-actions {width:auto;gap:5px;}
+ .diet-workspace-card .overview-view-actions > .button {font-size:11px;padding:8px;min-height:36px;gap:5px;}
+ .diet-workspace-card .overview-view-actions > .button svg {width:15px;}
+ .diet-workspace-card .tracker-entry-grid .water-jug-card {padding:14px;}
+ .diet-workspace-card .quick-meal-header {margin-bottom:12px;}
+ .diet-workspace-card .quick-meal-header p {display:none;}
+ .diet-workspace-card .quick-meal-controls {grid-template-columns:minmax(0,1fr) 64px auto;gap:8px;}
+ .diet-workspace-card .quick-meal-controls > button {grid-column:auto;min-width:80px;padding:8px;font-size:12px;gap:4px;}
+ .diet-workspace-card .quick-meal-links {margin-top:8px;padding-top:8px;}
+ .diet-workspace-card .quick-meal-links button {padding:6px 8px;font-size:11px;}
+}
+
+/* Only the selected flip face contributes height; hidden faces retain their drafts. */
+.diet-dashboard-panels > .dashboard-panel:not(.is-active) {position:absolute;inset:0;}
+.diet-dashboard-panels > .overview-face-history.is-active {position:relative;inset:auto;}
+.diet-dashboard-panels > #diet-panel-body-goals {min-height:320px;}
+.diet-workspace-tabs {max-width:100%;flex-wrap:wrap;}
+@media(max-width:650px){.diet-workspace-tabs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}.diet-workspace-tabs button {width:100%;}}
+
+/* Let each Diet face fit its own content instead of forcing empty mobile height. */
+.diet-dashboard-panels > .dashboard-panel,.diet-dashboard-panels > #diet-panel-body-goals {min-height:0;}
+.diet-dashboard-panels > .dashboard-panel:not(.is-active) {overflow:clip;}

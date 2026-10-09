@@ -9,7 +9,7 @@
 Create named meal libraries through CSV preview or manual items, use one database entity for multiple users, and allow Admin-reviewed public publication.
 
 ## User flow and wireframe
-Diet → Meal Library → My libraries / Public libraries → library cards → selected library items and Add to day. Create panel: name, nutrition source, description, tags, optional CSV → preview rows/errors → select rows → accept. Include format-only AI prompt and sample download. Owner actions: edit items, share with verified account by exact email, revoke, submit, delete/archive. Recipient: remove reference. Admin Panel → Meal libraries → inspect submitted metadata/items → publish or return with feedback; unpublish available.
+Diet → one Daily workspace with Daily Record / Overview / Trends, default Daily Record. Water and quick meal logging stay mounted across view changes, while Meal Timeline remains in a separate section below. Libraries opens a wide modal drawer with My libraries / Discover → compact collection cards → searchable item rows. Create library follows Details → optional CSV and AI prompt → preview/selection → accept and save. Closing/reopening the drawer retains local drafts. Owner menu includes edit details, share, submit and delete/archive; recipients can remove an added reference; public discovery can save a reference. Admin review APIs and authorization remain unchanged.
 
 ## In scope
 Independent libraries; user references; immutable public snapshots pending review; one-serving validated items; same CSV format as F008 (1 MB/500 rows); owner-only editing; immediate read-only private sharing; existing personal meals lazily converted to one private library without losing source records; daily nutrition snapshots unchanged. Archive disables future selection for everyone. Never-shared/unpublished private library may be hard deleted; ever-shared/public/submitted libraries soft delete. Managed NON_USER libraries belong to the person, with no external sharing/submission authority, and transfer on claiming.
@@ -109,3 +109,12 @@ Sizing correction: Nutrition now determines the flip card height. The chart face
 CSV prompt refinement: the owner-supplied prompt now asks an external AI to confirm the CSV format, ask 3–5 adaptive multiple-choice questions, summarize, then generate the ten-column CSV. Icon links open ChatGPT, Claude and Gemini in a new tab. Links send no prompt or application data; users copy and paste manually. CSV preview and validation remain unchanged.
 
 Meal browser refinement: clicking/focusing meal search opens all available items grouped under their added libraries. Library groups support independent collapse/expand and global controls. An All libraries selector narrows search to one library; text searches names, serving descriptions and library names. Selection closes the popup and retains the quantity/type add flow. Escape, outside click and leaving focus close the popup; Arrow Down moves from search to the library filter. Existing API limits and server authorization remain unchanged.
+
+### Consolidated Diet layout — owner-approved local update
+
+- Three labelled views use a short fade/slide, equal panel space, accessible tabs and Arrow Left/Right/Home/End navigation. Hidden panels are inert; reduced motion disables animation. Shared read-only Diet exposes only its authorized Overview and timeline.
+- The independent Meal Timeline stays visible below all three views.
+- Libraries is a native modal drawer with close button, outside/backdrop click, Escape, browser-managed focus containment/return and body scroll locking. Search, serving quantity, chart window/series and drawer creation drafts survive view/drawer changes within the selected day. Changing the selected day retains the existing day-component reset behavior.
+- Collection maintenance is separate from daily entry: My libraries / Discover, compact cards, searchable item rows, an owner-only actions menu and conditional sharing form.
+- Creation is a real three-step flow: validated details, optional CSV preview/AI prompt, then selected-row review and explicit save. No final creation occurs during preview. Existing CSV limits, exact prompt and manual copy/paste links remain unchanged.
+- No new server endpoints, dependencies, sharing grants, publication, commits or deployment are part of this layout update.
