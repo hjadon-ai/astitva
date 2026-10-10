@@ -125,3 +125,14 @@ test('calorie targets derive from macros, not supplied calories or fiber',()=>{
  assert.equal(validateTargets({...input,proteinGrams:100.1}).value.calories,1945);
  assert.ok(validateTargets({...input,fatGrams:-1}).fields);
 });
+
+test('recent meals deduplicate identical portions but preserve different nutrition and servings', () => {
+  const {recentMeals}=require('../src/services/diet');
+  const first={name:' Rice ',mealType:'lunch',servingDescription:'1 bowl',...nutrition};
+  const duplicate={...first,name:'rice'};
+  const differentNutrition={...first,calories:500};
+  const differentPortion={...first,servingDescription:'2 bowls'};
+  assert.deepEqual(recentMeals([first,duplicate,differentNutrition,differentPortion]),[first,differentNutrition,differentPortion]);
+  assert.deepEqual(recentMeals([first,differentNutrition],1),[first]);
+  assert.deepEqual(recentMeals([]),[]);
+});

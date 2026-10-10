@@ -215,7 +215,19 @@ function scaleNutrition(meal, quantity) {
     : Math.round(meal[key] * quantity * 10) / 10]));
 }
 
+// Input is ordered newest first; keep nutrition/portion variants distinct.
+function recentMeals(meals, limit = 8) {
+  const seen = new Set();
+  return meals.filter(meal => {
+    const key = JSON.stringify([normalizeName(meal.name), meal.mealType, meal.servingDescription || '', ...fields.map(field => meal[field])]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, limit);
+}
+
 module.exports = {
+  recentMeals,
   csvHeaders,
   macroCalories,
   normalizeName,

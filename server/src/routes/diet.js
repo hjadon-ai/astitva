@@ -9,6 +9,7 @@ const { sessionToken } = require('../middleware/sessionToken');
 const { requireFeature } = require('../middleware/featureAccess');
 const { LibraryMeal, Meal, Targets, WaterEntry, categories, fields } = require('../models/Diet');
 const {
+  recentMeals,
   macroCalories,
   nutritionValues,
   previewCsv,
@@ -185,6 +186,12 @@ router.get('/days/:date', async (request, response) => {
     },
     meals: meals.map(publicMeal)
   });
+});
+
+// Uses the same authenticated/managed Diet owner as day records.
+router.get('/meals/recent', async (request, response) => {
+  const meals = await Meal.find({ userId: request.dietUserId }).sort({ consumedOn: -1, createdAt: -1, _id: -1 }).limit(100).lean();
+  response.json({ meals: recentMeals(meals).map(publicMeal) });
 });
 
 router.post('/meals', async (request, response) => {
