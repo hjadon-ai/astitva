@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { ListChecks, Home, LogOut, Menu, MessageCircle, Shield, UsersRound, Utensils, WalletCards, X } from 'lucide-react';
+import { Flower2, ListChecks, Home, LogOut, Menu, MessageCircle, Shield, UsersRound, Utensils, WalletCards, X } from 'lucide-react';
+import { AppearanceControl, useAppearanceScope } from './Appearance';
 
 const classes = (...values) => values.filter(Boolean).join(' ');
 
@@ -162,11 +163,14 @@ const navigation = [
 ];
 
 export function AppShell({ page, user, runtime, onLogout, children, sharedModules, workspaceControls }) {
+  const appearance = useAppearanceScope();
+  const immersive = appearance.layout === 'immersive';
   const visibleNavigation = navigation.filter((item) => sharedModules ? sharedModules.includes(item.id) : item.admin ? user.isAdmin :
     !item.feature || (user.features || { family: true })[item.feature]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef(null);
   const closeRef = useRef(null);
+  const drawerRef = useRef(null);
   const closeDrawer = () => {
     setDrawerOpen(false);
     requestAnimationFrame(() => menuRef.current?.focus());
@@ -175,10 +179,25 @@ export function AppShell({ page, user, runtime, onLogout, children, sharedModule
   useEffect(() => {
     if (!drawerOpen) return undefined;
     closeRef.current?.focus();
-    const close = (event) => { if (event.key === 'Escape') closeDrawer(); };
+    const close = (event) => {
+      if (document.querySelector('dialog[open]')) return;
+      if (event.key === 'Escape') closeDrawer();
+      if (immersive && event.key === 'Tab') {
+        const controls = [...drawerRef.current.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), [tabindex="0"]')].filter(element => element.getClientRects().length);
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    const previousOverflow = document.body.style.overflow;
+    if (immersive) document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', close);
-    return () => window.removeEventListener('keydown', close);
-  }, [drawerOpen]);
+    return () => {
+      window.removeEventListener('keydown', close);
+      if (immersive) document.body.style.overflow = previousOverflow;
+    };
+  }, [drawerOpen, immersive]);
 
   const nav = (
     <>
@@ -196,14 +215,15 @@ export function AppShell({ page, user, runtime, onLogout, children, sharedModule
   return (
     <div className="app-frame">
       <EnvironmentBanner runtime={runtime} />
-      <header className="mobile-header">
+      <header className="mobile-header" inert={drawerOpen && immersive ? true : undefined}>
         <a className="brand" href="/#profile">Astitva<span>.</span></a>
         <span>{visibleNavigation.find((item) => item.id === page)?.label}</span>
-        <IconButton ref={menuRef} label="Open navigation" icon={Menu} onClick={() => setDrawerOpen(true)} aria-expanded={drawerOpen} />
+        <IconButton ref={menuRef} data-appearance-return label="Open navigation" icon={Menu} onClick={() => setDrawerOpen(true)} aria-expanded={drawerOpen} />
       </header>
       <aside className="app-sidebar">
-        <a className="brand" href="#profile">Astitva<span>.</span></a>
+        <a className="brand" href="#profile"><span className="immersive-brand-mark" aria-hidden="true"><Flower2 size={26} /></span>Astitva<span>.</span></a>
         {nav}
+        <AppearanceControl />
         <div className="sidebar-account">
           <span className="avatar avatar-small" aria-hidden="true">{user.name.charAt(0).toUpperCase()}</span>
           <div><strong>{user.name}</strong><small>Local account</small></div>
@@ -211,14 +231,22 @@ export function AppShell({ page, user, runtime, onLogout, children, sharedModule
         <Button variant="quiet" icon={LogOut} className="sidebar-logout" type="button" onClick={onLogout}>Log out</Button>
       </aside>
       {drawerOpen && <div className="drawer-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDrawer(); }}>
-        <aside className="mobile-drawer" aria-label="Mobile navigation">
-          <div className="drawer-header"><a className="brand" href="#profile" onClick={closeDrawer}>Astitva<span>.</span></a><IconButton ref={closeRef} label="Close navigation" icon={X} onClick={closeDrawer} /></div>
+        <aside ref={drawerRef} className="mobile-drawer" aria-label="Mobile navigation" role={immersive ? 'dialog' : undefined} aria-modal={immersive ? true : undefined}>
+          <div className="drawer-header"><a className="brand" href="#profile" onClick={closeDrawer}><span className="immersive-brand-mark" aria-hidden="true"><Flower2 size={26} /></span>Astitva<span>.</span></a><IconButton ref={closeRef} label="Close navigation" icon={X} onClick={closeDrawer} /></div>
           {nav}
+          <AppearanceControl />
           <div className="sidebar-account"><span className="avatar avatar-small" aria-hidden="true">{user.name.charAt(0).toUpperCase()}</span><div><strong>{user.name}</strong><small>Local account</small></div></div>
           <Button variant="quiet" icon={LogOut} className="sidebar-logout" type="button" onClick={onLogout}>Log out</Button>
         </aside>
       </div>}
-      <main className="app-main">{workspaceControls && <header className="workspace-header">{workspaceControls}</header>}{children}</main>
+      <main className="app-main" inert={drawerOpen && immersive ? true : undefined}>
+        <header className="immersive-shell-header">
+          <div><span className="immersive-shell-eyebrow">My life. My people. My space.</span><strong>{visibleNavigation.find(item => item.id === page)?.label || 'Workspace'}</strong></div>
+          <AppearanceControl compact />
+        </header>
+        {workspaceControls && <header className="workspace-header">{workspaceControls}</header>}
+        <div className="feature-compatibility" data-page={page}>{children}</div>
+      </main>
     </div>
   );
 }

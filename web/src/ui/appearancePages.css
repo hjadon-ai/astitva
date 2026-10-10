@@ -1,0 +1,184 @@
+/* Shared Immersive presentation; authenticated scope is removed on logout. */
+:root[data-appearance="immersive"] {
+  --color-ink: var(--appearance-text); --color-muted: var(--appearance-muted); --color-subtle: var(--appearance-muted);
+  --color-page: var(--appearance-canvas); --color-surface: var(--appearance-surface); --color-surface-muted: var(--appearance-hover);
+  --color-border: var(--appearance-border); --color-primary: var(--appearance-primary); --color-primary-hover: var(--appearance-primary);
+  --color-primary-500: var(--appearance-primary); --color-primary-50: var(--appearance-hover); --color-primary-100: var(--appearance-border);
+  --color-purple: #7052ba; --color-purple-strong: #6240a0; --color-pink: #ad397a; --color-pink-strong: #982968;
+  --color-danger: #991b1b; --color-danger-hover: #7f1d1d; --color-danger-soft: #fff1f2;
+  --color-success: #14633c; --color-success-soft: #e8f7ef; --color-warning: #75500d; --color-warning-soft: #fff5d9;
+  --surface: var(--appearance-surface); --surface-muted: var(--appearance-hover); --text: var(--appearance-text);
+  --muted: var(--appearance-muted); --border: var(--appearance-border); --bg: var(--appearance-canvas); --primary: var(--appearance-primary);
+  --chart-grid: #a9b9d2; --chart-plan: #006b80; --chart-actual: #925b12; --chart-label: var(--appearance-muted);
+  --metric-calories: #925b12; --metric-proteinGrams: #a72c54; --metric-carbohydrateGrams: #2162a4;
+  --metric-fatGrams: #206440; --metric-fiberGrams: #694199; --metric-waterMilliliters: #006b80;
+}
+:root[data-appearance="immersive"][data-immersive-theme="night"] {
+  --color-purple: #d2b1ff; --color-purple-strong: #d2b1ff; --color-pink: #ffa6c1; --color-pink-strong: #ffa6c1;
+  --color-danger: #ffb3bd; --color-danger-hover: #ffc7ce; --color-danger-soft: #401f2a;
+  --color-success: #9de0b5; --color-success-soft: #17382c; --color-warning: #f4ca80; --color-warning-soft: #382d1b;
+  --chart-grid: #627394; --chart-plan: #8dddec; --chart-actual: #f4ca80;
+  --metric-calories: #f4ca80; --metric-proteinGrams: #ffa6c1; --metric-carbohydrateGrams: #9acbff;
+  --metric-fatGrams: #9de0b5; --metric-fiberGrams: #d2b1ff; --metric-waterMilliliters: #8dddec;
+}
+:root[data-appearance="immersive"] .feature-compatibility { background: transparent; border: 0; box-shadow: none; color: var(--appearance-text); }
+:root[data-appearance="immersive"] :is(.profile-content, .chat-page, .admin-page) { width: 100%; padding: 0 0 24px; }
+:root[data-appearance="immersive"] .page-header {
+  min-height: 132px; align-items: center; padding: 28px; border: 1px solid var(--appearance-border); border-top: 3px solid var(--appearance-primary); border-radius: 20px;
+  background: var(--appearance-glass); box-shadow: var(--appearance-shadow);
+}
+:root[data-appearance="immersive"] :is(.surface, .finance-section) {
+  background: var(--appearance-glass); border-color: var(--appearance-border); border-radius: 20px; box-shadow: var(--appearance-shadow);
+}
+:root[data-appearance="immersive"] :is(input, select, textarea) { background: var(--appearance-surface); color: var(--appearance-text); border-color: var(--appearance-border); color-scheme: light; }
+:root[data-appearance="immersive"][data-immersive-theme="night"] :is(input, select, textarea) { color-scheme: dark; }
+:root[data-appearance="immersive"] :is(input, textarea)::placeholder { color: var(--appearance-muted); opacity: 1; }
+:root[data-appearance="immersive"] :is(.form-field, .reset-form label, .diet-form-grid label) { color: var(--appearance-text); }
+:root[data-appearance="immersive"] :is(.button, .icon-button) { min-height: 44px; border-radius: 12px; }
+:root[data-appearance="immersive"] :is(.button, .icon-button):hover:not(:disabled) { background: var(--appearance-hover); color: var(--appearance-text); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] :is(.button-primary, .button.primary, .feature-compatibility .button-primary, .feature-compatibility .button.primary) {
+  background: var(--appearance-primary); color: var(--appearance-on-primary); border-color: var(--appearance-primary);
+}
+:root[data-appearance="immersive"] :is(.button-primary, .button.primary, .feature-compatibility .button-primary, .feature-compatibility .button.primary):hover:not(:disabled) {
+  background: var(--appearance-primary); color: var(--appearance-on-primary); border-color: var(--appearance-primary); filter: brightness(.95);
+}
+:root[data-appearance="immersive"] :is(.button-danger, .button.danger) { color: var(--color-danger); background: var(--color-danger-soft); border-color: var(--color-danger); }
+:root[data-appearance="immersive"] :is(.button-danger, .button.danger):hover:not(:disabled) { color: var(--color-danger); background: var(--color-danger-soft); border-color: var(--color-danger); filter: brightness(.95); }
+:root[data-appearance="immersive"] :focus-visible { outline: 3px solid var(--appearance-focus); outline-offset: 3px; box-shadow: none; }
+:root[data-appearance="immersive"] .form-field.has-error small { color: var(--color-danger); }
+:root[data-appearance="immersive"] :is(.empty-state, .badge, .library-meal, .library-details, .csv-import, .csv-picker input) { background: var(--appearance-surface); color: var(--appearance-text); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] .badge-success { color: var(--color-success); background: var(--color-success-soft); }
+:root[data-appearance="immersive"] .status-banner { color: var(--appearance-text); background: var(--appearance-hover); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] .status-error { color: var(--color-danger); background: var(--color-danger-soft); border-color: var(--color-danger); }
+:root[data-appearance="immersive"] .status-success { color: var(--color-success); background: var(--color-success-soft); border-color: var(--color-success); }
+:root[data-appearance="immersive"] .status-warning { color: var(--color-warning); background: var(--color-warning-soft); border-color: var(--color-warning); }
+:root[data-appearance="immersive"] :is(.accent-purple .stat-icon, .accent-pink .stat-icon) { background: var(--appearance-hover); }
+:root[data-appearance="immersive"] .water-entries span { color: var(--metric-waterMilliliters); }
+
+/* Profile/Home and Finance: calm surfaces, tabular data and clear emphasis. */
+:root[data-appearance="immersive"] :is(.home-illustration, .home-feature, .home-feature-card, .finance-detail-grid article, .finance-categories article) {
+  color: var(--appearance-text); background: var(--appearance-surface); border-color: var(--appearance-border);
+}
+:root[data-appearance="immersive"] .profile-card { border-left: 4px solid var(--appearance-primary); }
+:root[data-appearance="immersive"] .profile-card > span { color: var(--color-success); }
+:root[data-appearance="immersive"] .home-page { display: grid; gap: 24px; }
+:root[data-appearance="immersive"] .home-page > .page-header { margin: 0; }
+:root[data-appearance="immersive"] .home-page > .surface { padding: 24px; }
+:root[data-appearance="immersive"] .home-with-family { grid-template-columns: minmax(0, 1fr) 260px; }
+:root[data-appearance="immersive"] .home-with-family > .page-header { grid-column: 1 / -1; }
+:root[data-appearance="immersive"] .home-with-family > .profile-card { grid-column: 2; grid-row: 2; align-self: start; display: grid; gap: 20px; }
+:root[data-appearance="immersive"] .home-with-family > .home-family-card { grid-column: 1; grid-row: 2; grid-template-columns: minmax(0, 1fr); }
+:root[data-appearance="immersive"] .home-page .home-family-card h2 { font-size: clamp(1.4rem, 2.3vw, 2rem); line-height: 1.2; margin-top: 0; }
+:root[data-appearance="immersive"] .home-page .home-illustration { background: transparent; border: 0; padding: 0; box-shadow: none; }
+:root[data-appearance="immersive"] .home-page .home-illustration .home-art { max-height: 200px; object-fit: contain; }
+:root[data-appearance="immersive"] .home-tools-section { grid-column: 1 / -1; padding: 24px; border: 1px solid var(--appearance-border); border-radius: 20px; background: var(--appearance-glass); }
+:root[data-appearance="immersive"] .home-tools-section > h2 { margin: 0 0 20px; font-size: 1.3rem; }
+:root[data-appearance="immersive"] .home-tools > .surface { display: flex; flex-direction: column; align-items: flex-start; background: var(--appearance-surface); box-shadow: none; border-radius: 16px; }
+:root[data-appearance="immersive"] .home-tools { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+:root[data-appearance="immersive"] .home-tools > .surface > .button { margin-top: auto; }
+:root[data-appearance="immersive"] .finance-spending-total { color: var(--appearance-primary); }
+:root[data-appearance="immersive"] .finance-section { background: var(--appearance-surface); }
+:root[data-appearance="immersive"] .finance-table { overflow-x: auto; }
+:root[data-appearance="immersive"] .finance-transactions article { gap: 12px; }
+:root[data-appearance="immersive"] .finance-detail-grid strong { color: var(--appearance-text); }
+
+/* Priorities, Chat and Admin retain their existing forms, state and permissions. */
+:root[data-appearance="immersive"] .priority-editor { padding: 20px; border: 1px solid var(--appearance-border); border-radius: 16px; background: var(--appearance-surface); }
+:root[data-appearance="immersive"] :is(.chat-list button, .chat-messages .chat-message-received) { background: var(--appearance-surface); color: var(--appearance-text); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] :is(.chat-list button.active, .chat-messages .chat-message-sent) { background: var(--appearance-hover); color: var(--appearance-text); border-color: var(--appearance-primary); }
+:root[data-appearance="immersive"] .chat-connection { color: var(--appearance-muted); }
+:root[data-appearance="immersive"] .chat-connection-live { color: var(--color-success); }
+:root[data-appearance="immersive"] .chat-connection-disconnected { color: var(--color-warning); }
+:root[data-appearance="immersive"] .admin-tabs [aria-pressed="true"] { color: var(--appearance-on-primary); background: var(--appearance-primary); border-color: var(--appearance-primary); }
+:root[data-appearance="immersive"] .admin-results li { gap: 16px; }
+
+/* Diet panels and portal drawers: opaque working surfaces over the scenic shell. */
+:root[data-appearance="immersive"] :is(.diet-page .diet-workspace-card, .diet-page .diet-timeline-card, .diet-page .diet-intake-panel, .diet-page .diet-intake-panel .diet-meal, .diet-page .overview-target-editor .diet-target-editor, .diet-page .target-editor-popup .diet-target-editor,
+  .daily-summary-card, .quick-meal-log, .quick-meal-results, .meal-browser, .body-goals-results, .daily-weight-record, .weight-trends,
+  .meal-library-drawer, .meal-library-drawer-header, .meal-library-drawer .library-meal, .library-actions-menu > div, .library-actions-menu button,
+  .library-create-panel, .csv-upload-field, .library-create-panel .csv-preview, .csv-preview section, .library-share-form, .library-save-summary, .named-library-card,
+  .named-libraries .library-name-search, .intake-history-chart) {
+  color: var(--appearance-text); background: var(--appearance-surface); border-color: var(--appearance-border);
+}
+:root[data-appearance="immersive"] :is(.diet-page .water-jug-card, .diet-page .diet-intake-panel .water-jug-card) { background: var(--appearance-surface); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] .diet-page .diet-workspace-card .daily-summary-content .water-jug-card { background: transparent; border: 0; }
+:root[data-appearance="immersive"] :is(.diet-page .water-card, .diet-page .diet-log-strip, .diet-intake-panel .daily-meals > .section-header) { color: var(--appearance-text); background: var(--appearance-surface); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] .diet-intake-panel .diet-meal-group-title::before { background: var(--appearance-surface); }
+:root[data-appearance="immersive"] .quick-meal-search .meal-browse-toggle { color: var(--appearance-muted); }
+:root[data-appearance="immersive"] .quick-meal-search .meal-browse-toggle:hover { color: var(--appearance-text); background: var(--appearance-hover); }
+:root[data-appearance="immersive"] .quick-meal-search:focus-within { border-color: var(--appearance-focus); outline: 2px solid var(--appearance-focus); outline-offset: 2px; }
+:root[data-appearance="immersive"] :is(.diet-date-navigation, .diet-workspace-tabs, .body-goals-choices, .diet-trend-switch, .library-view-switch,
+  .history-day-detail, .meal-browser-header, .meal-browser-group-heading, .meal-browser-group-heading > span, .macro-summary, .nutrition-dashboard .macro-summary,
+  .diet-intake-panel .meal-nutrient, .meal-nutrient, .library-owner-actions, .named-libraries pre, .csv-ai-help pre, .library-create-steps li > span,
+  .diet-page .diet-meal-marker, .daily-tracker-date, .diet-meal-group-title > span, .library-review-badge) {
+  color: var(--appearance-text); background: var(--appearance-hover); border-color: var(--appearance-border);
+}
+:root[data-appearance="immersive"] :is(.diet-date-navigation .diet-date, .diet-date-navigation .diet-day-arrow, .diet-date-navigation .diet-today-button,
+  .diet-page .water-actions > button, .diet-intake-panel .water-actions > button, .quick-meal-results button, .history-legend button, .history-days button,
+  .meal-browser-group li > button, .diet-page .meal-browser-header select, .csv-ai-links a) {
+  background: var(--appearance-surface); color: var(--appearance-text); border-color: var(--appearance-border);
+}
+:root[data-appearance="immersive"] .diet-page .diet-meal-marker { color: var(--appearance-primary); background: var(--appearance-hover); }
+:root[data-appearance="immersive"] :is(.quick-meal-results button:hover, .history-legend button[aria-pressed="true"], .history-days button[aria-pressed="true"],
+  .meal-browser-group li > button:hover, .meal-browser-group li > button:focus-visible, .meal-browser-group li > button.is-selected,
+  .library-actions-menu button:hover, .named-library-card:hover, .named-library-card.is-selected, .csv-ai-links a:hover) {
+  color: var(--appearance-text); background: var(--appearance-hover); border-color: var(--appearance-primary);
+}
+:root[data-appearance="immersive"] :is(.diet-workspace-tabs button, .body-goals-choices button, .diet-trend-switch button, .library-view-switch button) { color: var(--appearance-muted); }
+:root[data-appearance="immersive"] :is(.diet-workspace-tabs button[aria-selected="true"], .body-goals-choices button[aria-pressed="true"], .diet-trend-switch button[aria-pressed="true"], .library-view-switch button[aria-pressed="true"]) {
+  background: var(--appearance-primary); color: var(--appearance-on-primary); box-shadow: none;
+}
+:root[data-appearance="immersive"] :is(.quick-meal-search, .meal-browser-caption, .quick-meal-type, .quick-meal-quantity, .quick-meal-header p,
+  .quick-meal-results small, .quick-meal-results button > span:last-child, .meal-browser-header label, .meal-browser-close, .meal-browser-caption button,
+  .meal-browser-group li small, .meal-browser-empty, .daily-meal-history-heading > span, .diet-intake-panel .diet-meal-group-title,
+  .history-days button > span, .history-day-detail p, .history-note, .history-detail-values > span, .history-detail-header > span,
+  .meal-library-drawer-header p, .meal-library-drawer .named-library-details > p, .meal-library-drawer .library-meal p, .library-item-search,
+  .library-actions-menu summary, .library-save-summary p, .library-step-hint) { color: var(--appearance-muted); }
+:root[data-appearance="immersive"] .quick-meal-search { background: var(--appearance-hover); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] :is(.history-days button > strong, .history-detail-values b, .history-detail-header strong, .history-day-detail > .history-detail-header, .meal-browser-group-heading strong) { color: var(--appearance-text); }
+:root[data-appearance="immersive"] :is(.quick-meal-header-icon, .body-goals-icon, .body-goals-form legend span) { background: var(--appearance-hover); color: var(--appearance-primary); }
+:root[data-appearance="immersive"] :is(.quick-meal-selection, .quick-meal-feedback) { background: var(--color-success-soft); color: var(--color-success); }
+:root[data-appearance="immersive"] :is(.body-goals-result-heading, .body-goals-placeholder svg, .meal-library-drawer-header > div, .library-create-steps .is-current) { color: var(--appearance-primary); }
+:root[data-appearance="immersive"] :is(.library-create-steps .is-current > span, .library-create-steps .is-complete > span) { color: var(--color-success); background: var(--color-success-soft); }
+:root[data-appearance="immersive"] .library-actions-menu button.is-danger { color: var(--color-danger); }
+:root[data-appearance="immersive"] .library-review-submitted { background: var(--color-warning-soft); color: var(--color-warning); }
+:root[data-appearance="immersive"] .library-review-published { background: var(--color-success-soft); color: var(--color-success); }
+:root[data-appearance="immersive"] .library-review-returned { background: var(--color-danger-soft); color: var(--color-danger); }
+:root[data-appearance="immersive"] :is(.library-access-owned, .library-access-shared, .library-access-public) { --library-accent: var(--appearance-primary); --library-tint: var(--appearance-hover); }
+:root[data-appearance="immersive"] :is(.nutrition-bar-track, .compact-nutrient-track) { background: var(--appearance-hover); }
+:root[data-appearance="immersive"] .nutrition-calories { --nutrient-ink: var(--metric-calories); }
+:root[data-appearance="immersive"] .nutrition-proteinGrams { --nutrient-ink: var(--metric-proteinGrams); }
+:root[data-appearance="immersive"] .nutrition-carbohydrateGrams { --nutrient-ink: var(--metric-carbohydrateGrams); }
+:root[data-appearance="immersive"] .nutrition-fatGrams { --nutrient-ink: var(--metric-fatGrams); }
+:root[data-appearance="immersive"] .nutrition-fiberGrams { --nutrient-ink: var(--metric-fiberGrams); }
+:root[data-appearance="immersive"] .water-intake-total { color: var(--metric-waterMilliliters); }
+:root[data-appearance="immersive"] .diet-workspace-card .tracker-entry-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
+:root[data-appearance="immersive"] .compact-nutrient.over-target .compact-nutrient-status { color: var(--color-warning); }
+:root[data-appearance="immersive"] .body-goals-gridline { stroke: var(--chart-grid); }
+:root[data-appearance="immersive"] .body-goals-plan-line { stroke: var(--chart-plan); }
+:root[data-appearance="immersive"] .body-goals-actual-line { stroke: var(--chart-actual); }
+:root[data-appearance="immersive"] .body-goals-actual-dot { fill: var(--chart-actual); stroke: var(--appearance-surface); }
+:root[data-appearance="immersive"] .body-goals-chart-key span:first-child { color: var(--chart-plan); }
+:root[data-appearance="immersive"] .body-goals-chart-key span:nth-child(2) { color: var(--chart-actual); }
+
+/* Shared-workspace picker menus also inherit document scope, including portals. */
+:root[data-appearance="immersive"] :is(.family-member-selector-popup, .family-member-selector-option) { color: var(--appearance-text); background: var(--appearance-surface); border-color: var(--appearance-border); }
+:root[data-appearance="immersive"] .family-member-selector-option :is(strong, small) { color: var(--appearance-text); }
+:root[data-appearance="immersive"] :is(.family-member-selector-option:hover, .family-member-selector-option[aria-selected="true"]) { background: var(--appearance-hover); border-color: var(--appearance-primary); }
+:root[data-appearance="immersive"] .family-member-selector-heading { color: var(--appearance-muted); }
+@media (min-width: 1500px) {
+  :root[data-appearance="immersive"] .home-with-family > .home-family-card { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); }
+}
+@media (max-width: 1100px) {
+  :root[data-appearance="immersive"] .home-with-family { grid-template-columns: minmax(0, 1fr); }
+  :root[data-appearance="immersive"] .home-with-family > .profile-card { grid-column: 1; grid-row: auto; }
+  :root[data-appearance="immersive"] .home-with-family > .home-family-card { grid-row: 2; }
+}
+@media (max-width: 650px) {
+  :root[data-appearance="immersive"] .page-header { min-height: 0; align-items: flex-start; padding: 22px 18px; }
+  :root[data-appearance="immersive"] :is(.home-page > .surface, .home-tools-section) { padding: 20px 16px; }
+  :root[data-appearance="immersive"] .finance-transactions article { grid-template-columns: 58px minmax(0,1fr); }
+  :root[data-appearance="immersive"] .finance-transactions article > strong { grid-column: 2; }
+  :root[data-appearance="immersive"] .finance-table article { gap: 12px; }
+  :root[data-appearance="immersive"] .tracker-entry-grid { grid-template-columns: minmax(0,1fr); }
+}

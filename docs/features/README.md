@@ -53,6 +53,8 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F038 | [Body & Goals](diet/F038-body-goals.md) | Review | `feature/F038-body-goals` | Not created |
 
+| F039 | [Optional Immersive appearance](ui/F039-immersive-appearance.md) | Review | `feature/F039-immersive-appearance` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.
