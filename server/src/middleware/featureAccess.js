@@ -1,7 +1,7 @@
 const InvitedEmail = require('../models/InvitedEmail');
 
 const defaultFeatures = Object.freeze({
-  priorities: false, diet: false, finance: false, family: true, chat: false
+  priorities: false, diet: false, finance: false, family: true, chat: false, mcp: false
 });
 
 async function featuresForEmail(email) {

@@ -1,9 +1,9 @@
 # F041: Diet MCP server
 
-- **Status:** Approved
-- **Branch:** Not created
+- **Status:** Review
+- **Branch:** `feature/F041-diet-mcp-server`
 - **Pull request:** Not created
-- **Approval:** Owner approved the initial read-only scope and decisions below in chat on October 10, 2026. Implementation and deployment are not authorized.
+- **Approval:** Owner approved the initial read-only scope and decisions below in chat on October 10, 2026. That initial approval did not authorize implementation or deployment; implementation was subsequently authorized.
 
 ## Goal
 
@@ -87,9 +87,9 @@ Owner-approved initial decisions, subject to the compatibility prerequisite belo
 
 ### Prerequisite and authorization boundary
 
-Verify current Codex/MCP transport and OAuth compatibility before implementation. Record the supported flow and any required authorization endpoints, grant storage, or deployment changes. Raise any required scope or infrastructure changes for owner review. This verification has not yet been performed; approval does not establish compatibility.
+Verify current Codex/MCP transport and OAuth compatibility before implementation. Record the supported flow and any required authorization endpoints, grant storage, or deployment changes. Raise any required scope or infrastructure changes for owner review. Compatibility was checked against official documentation and the installed Codex CLI: OAuth metadata discovery, dynamic registration, and a PKCE authorization URL succeeded against the disposable local server. Automated tests complete the PKCE exchange and tool flow. A full Codex browser-login session remains an owner review check.
 
-Feature approval does not authorize implementation or deployment. Wait for a separate owner instruction to start implementation, and retain separate authorization for deployment.
+Owner subsequently authorized implementation and an application version increase in chat. Deployment remains unauthorized.
 
 ## Acceptance criteria
 
@@ -106,11 +106,36 @@ Feature approval does not authorize implementation or deployment. Wait for a sep
 
 ## Local verification
 
-Approved specification only; no implementation, compatibility verification, or runtime tests performed.
+Completed locally on October 10, 2026:
 
-Implementation verification should cover tool discovery/invocation, authenticated MongoDB-backed comparisons with REST, ownership/feature-access denials, revocation, invalid inputs, limits, and read-only guarantees. Verify the selected client locally, then smoke-test an authorized Render deployment. Record actual commands and results here during implementation.
+- `ASTITVA_TEST_MCP=1 npm test` in `server/`: 72 passed, 12 unrelated opt-in integration tests skipped. F041 ran against a disposable MongoDB instance on port 27141; no application database was used.
+- `npm test` in `web/`: 25 passed. `npm run build`: passed with the existing large-bundle warning.
+- Deployment version checks passed for server and web 1.1.0; `git diff --check` passed.
+- Installed Codex CLI discovered OAuth metadata and dynamically registered a public client, producing a resource-bound S256 authorization URL. Cancelled before saving fixture credentials.
+- Desktop browser review verified login, Settings navigation, empty connections and consent account/client/callback/scope display. Corrected same-page hash changes so a new consent request loads while Settings is already open.
+- F041 integration covers REST total parity, own-data scope, shared-library exclusion, history, recent meals, library truncation, strict tool inputs, PKCE/replay, refresh rotation, feature denial, request origin/cookie rules, per-user rate limits and revocation. Meal count and application session remain unchanged.
+- Dependency audit reports two moderate advisories in the existing gaxios/uuid chain; none attributed to the MCP SDK. No unrelated dependency fixes applied.
+
+Owner review: follow [the connection guide](mcp-connection-guide.md), complete a full Codex OAuth login, invoke all five tools, and disconnect. Mobile and appearance variants remain manual checks. Render smoke testing waits for separately authorized deployment. No commit, push or deployment performed.
+
+## Implementation decisions and review
+
+- Official SDK 1.32.1 supplies stateless Streamable HTTP and OAuth protocol routes; persistent Astitva grants use S256 PKCE, dynamic registration, one-hour access tokens, rotating refresh tokens and 30-day grants.
+- `MCP_PUBLIC_URL` explicitly enables the endpoint; unset keeps MCP disabled. Production must use the existing backend HTTPS `/mcp` URL. No Render configuration or deployment was changed.
+- Protocol requests are limited to 16 KiB; structured tool results to 256 KiB. Oversized results fail explicitly. Existing 30 calls/minute, 31-day history and 50-meal limits are implemented.
+- Personal search includes owned active named libraries and unmigrated legacy meals; shared/saved references are excluded and no migration runs during reads.
+- Web and server versions increased from 1.0.3 to 1.1.0, including lockfiles and deployment input descriptions.
+- Schema and endpoints: [MCP design](../../../server/design/diet-mcp.md), [OpenAPI](../../../server/design/diet-mcp.openapi.json). [Codex connection guide](mcp-connection-guide.md).
+- Branch starts from the existing F040 branch because fetched main still ended at the F039 merge. Preserve/reconcile that base when preparing a PR; F040 completion documentation remains preserved.
 
 ## Open questions
 
-- Confirm current Codex/MCP compatibility with the approved remote HTTP and OAuth approach before implementation.
-- Finalize authorization endpoints, grant/token metadata schema and lifetime, consent-screen details, and request-size limits during planning. Raise any required scope or infrastructure changes for owner review.
+None requiring a scope change. Owner review must complete a real Codex login and, after separate deployment authorization, a Render smoke test. Mobile and appearance variants remain manual UI checks.
+
+## Per-user MCP access
+
+Owner requested selective MCP access through Admin on October 10, 2026. Admin → Users (or Invitees) → Feature access includes **MCP access (requires Diet)**. The `mcp` flag defaults to false, including existing records where absent. Enable both Diet and MCP for selected accounts. Verification and server-level `MCP_PUBLIC_URL` are also required. Consent, code exchange, refresh and each MCP request recheck access. Disabling MCP blocks subsequent requests from existing connections without disabling ordinary Diet use. Re-enabling can restore unexpired connections; use Disconnect for permanent grant revocation. Settings is shown only with both permissions. Existing users, including the owner, must be explicitly enabled; no automatic migration grants access.
+
+Per-user access verification: focused MCP tests (4) and Admin integration (1) passed. The MCP fixture covers absent/false permission, existing-token denial, refresh denial, re-enable and unaffected ordinary Diet reads. Admin verifies default-off behavior, saving the switch and profile propagation. Web build passed with the existing large-bundle warning. No account flags, commits, pushes or deployments were changed for this follow-up.
+
+Additional regression checks: all 25 web tests passed; feature-default and cross-site bearer-session checks passed with the new default-off permission. Owner browser review of the new Admin checkbox remains pending.

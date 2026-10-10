@@ -57,7 +57,7 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F040 | [Diet plan and everyday workflow](diet/F040-diet-plan-workflow.md) | Review | `feature/F040-diet-plan-workflow` | Not created |
 
-| F041 | [Diet MCP server](diet/F041-diet-mcp-server.md) | Approved | Not created | Not created |
+| F041 | [Diet MCP server](diet/F041-diet-mcp-server.md) | Review | `feature/F041-diet-mcp-server` | Not created |
 
 ## Rules
 

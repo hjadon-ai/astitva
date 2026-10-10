@@ -50,7 +50,7 @@ test('Production bearer session opens Family when cross-site cookies are unavail
   assert.match(sessionToken, /^[a-f0-9]{64}$/);
   const account = await fetch(`${base}/api/auth/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
   assert.deepEqual((await account.json()).user.features,
-    { priorities: false, diet: false, finance: false, family: true, chat: false });
+    { priorities: false, diet: false, finance: false, family: true, chat: false, mcp: false });
   assert.equal((await fetch(`${base}/api/family`, { headers: { Origin: origin } })).status, 401);
   const family = await fetch(`${base}/api/family`, { headers: {
     Origin: origin, Authorization: `Bearer ${sessionToken}`

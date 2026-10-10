@@ -159,6 +159,7 @@ const navigation = [
   { id: 'finance', label: 'Finance', icon: WalletCards, feature: 'finance' },
   { id: 'family', label: 'Family', icon: UsersRound, feature: 'family' },
   { id: 'chat', label: 'Anonymous Chat', icon: MessageCircle, feature: 'chat' },
+  { id: 'settings', label: 'Settings', icon: Shield, feature: 'mcp' },
   { id: 'admin', label: 'Admin Panel', icon: Shield, admin: true }
 ];
 
@@ -166,6 +167,7 @@ export function AppShell({ page, user, runtime, onLogout, children, sharedModule
   const appearance = useAppearanceScope();
   const immersive = appearance.layout === 'immersive';
   const visibleNavigation = navigation.filter((item) => sharedModules ? sharedModules.includes(item.id) : item.admin ? user.isAdmin :
+    item.id === 'settings' ? user.features?.mcp && user.features?.diet :
     !item.feature || (user.features || { family: true })[item.feature]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef(null);

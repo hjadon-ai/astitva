@@ -1,6 +1,5 @@
 const crypto = require('crypto');
-const mongoose = require('mongoose');
-const {historyRange,historyDays}=require('../services/dietHistory');
+const {historyRange}=require('../services/dietHistory');
 const express = require('express');
 const multer = require('multer');
 const Session = require('../models/Session');
@@ -9,7 +8,6 @@ const { sessionToken } = require('../middleware/sessionToken');
 const { requireFeature } = require('../middleware/featureAccess');
 const { LibraryMeal, Meal, Targets, WaterEntry, categories, fields } = require('../models/Diet');
 const {
-  recentMeals,
   macroCalories,
   nutritionValues,
   previewCsv,
@@ -31,23 +29,7 @@ function errorResponse(response, status, code, message, details = {}) {
   return response.status(status).json({ error: { code, message, ...details } });
 }
 
-function publicTargets(targets) {
-  return targets ? { ...nutritionValues(targets), waterMilliliters: targets.waterMilliliters ?? null } : null;
-}
-
-function publicMeal(meal) {
-  return {
-    id: String(meal._id),
-    date: meal.consumedOn,
-    name: meal.name,
-    mealType: meal.mealType,
-    servingDescription: meal.servingDescription,
-    source: meal.source || 'manual',
-    sourceLibraryMealId: meal.sourceLibraryMealId ? String(meal.sourceLibraryMealId) : null,
-    quantity: meal.quantity || 1,
-    nutrition: nutritionValues(meal)
-  };
-}
+const { publicTargets, publicMeal, getDay, getHistory, getRecent } = require('../services/dietRead');
 
 function publicLibraryMeal(meal) {
   return {
@@ -150,48 +132,17 @@ router.use('/body-goals', require('./bodyGoals'));
 router.get('/history', async (request,response) => {
   const range=historyRange(request.query.end,request.query.timezone);
   if(range.error)return response.status(400).json({error:range.error});
-  const match={userId:new mongoose.Types.ObjectId(String(request.dietUserId)),consumedOn:{$gte:range.start,$lte:range.end}};
-  const [meals,water,targets]=await Promise.all([
-    Meal.aggregate([{$match:match},{$group:{_id:'$consumedOn',count:{$sum:1},...Object.fromEntries(fields.map(key=>[key,{$sum:'$'+key}]))}}]),
-    WaterEntry.aggregate([{$match:match},{$group:{_id:'$consumedOn',count:{$sum:1},waterMilliliters:{$sum:'$amountMilliliters'}}}]),
-    Targets.findOne({userId:request.dietUserId}).lean()
-  ]);
-  response.json({...range,targetBasis:'current',targets:publicTargets(targets),days:historyDays(range,meals,water)});
+  response.json(await getHistory(request.dietUserId, range));
 });
 
 router.get('/days/:date', async (request, response) => {
   if (!validDate(request.params.date)) return response.status(400).json({ error: 'Use a valid YYYY-MM-DD date.' });
-  const [meals, targets, waterEntries] = await Promise.all([
-    Meal.find({ userId: request.dietUserId, consumedOn: request.params.date }).sort({ createdAt: 1 }).lean(),
-    Targets.findOne({ userId: request.dietUserId }).lean(),
-    WaterEntry.find({ userId: request.dietUserId, consumedOn: request.params.date }).sort({ createdAt: 1 }).lean()
-  ]);
-  const totals = Object.fromEntries(fields.map((key) => [key,
-    meals.reduce((sum, meal) => sum + Math.round(meal[key] * 10), 0) / 10]));
-  const consumedMilliliters = waterEntries.reduce((sum, entry) => sum + entry.amountMilliliters, 0);
-  const targetMilliliters = targets?.waterMilliliters ?? null;
-  response.json({
-    date: request.params.date,
-    totals,
-    targets: publicTargets(targets),
-    macroCalories: targets ? macroCalories(targets) : null,
-    overTarget: targets ? Object.fromEntries(fields.map((key) => [key,
-      Math.max(0, Math.round((totals[key] - targets[key]) * 10) / 10)])) : null,
-    water: {
-      consumedMilliliters,
-      targetMilliliters,
-      remainingMilliliters: targetMilliliters === null ? null : Math.max(0, targetMilliliters - consumedMilliliters),
-      overTargetMilliliters: targetMilliliters === null ? null : Math.max(0, consumedMilliliters - targetMilliliters),
-      entries: waterEntries.map((entry) => ({ id: String(entry._id), amountMilliliters: entry.amountMilliliters, createdAt: entry.createdAt }))
-    },
-    meals: meals.map(publicMeal)
-  });
+  response.json(await getDay(request.dietUserId, request.params.date));
 });
 
 // Uses the same authenticated/managed Diet owner as day records.
 router.get('/meals/recent', async (request, response) => {
-  const meals = await Meal.find({ userId: request.dietUserId }).sort({ consumedOn: -1, createdAt: -1, _id: -1 }).limit(100).lean();
-  response.json({ meals: recentMeals(meals).map(publicMeal) });
+  response.json(await getRecent(request.dietUserId));
 });
 
 router.post('/meals', async (request, response) => {

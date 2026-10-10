@@ -430,6 +430,10 @@
           },
           "chat": {
             "type": "boolean"
+          },
+          "mcp": {
+            "type": "boolean",
+            "description": "Default false. Assistant access also requires verified Diet access. Disabling blocks existing MCP connections on subsequent requests."
           }
         },
         "minProperties": 1

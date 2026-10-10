@@ -1,0 +1,6 @@
+.connected-assistants { max-width: 1000px; }
+.connected-assistants > .surface { padding: 24px; margin-block: 20px; }
+.connected-assistants p { line-height: 1.6; overflow-wrap: anywhere; }
+.connected-assistants code { overflow-wrap: anywhere; }
+.connected-assistant-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+@media (max-width: 640px) { .connected-assistants > .surface { padding: 18px; } }

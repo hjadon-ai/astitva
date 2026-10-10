@@ -184,3 +184,9 @@ test('Admin email is normalized, private, optional, and validated', () => {
     assert.throws(() => validateRuntimeEnvironment({ ...config, ADMIN_EMAILS: email }), /ADMIN_EMAILS/);
   }
 });
+
+test('MCP is opt-in and rejects unsafe public resource configuration', () => {
+  assert.equal(validateRuntimeEnvironment(productionBase).mcpPublicUrl, '');
+  assert.equal(validateRuntimeEnvironment({...productionBase,MCP_PUBLIC_URL:'https://api.example.test/mcp'}).mcpPublicUrl,'https://api.example.test/mcp');
+  for (const url of ['http://api.example.test/mcp','https://user:pass@api.example.test/mcp','https://api.example.test/mcp?token=x','https://api.example.test/other']) assert.throws(()=>validateRuntimeEnvironment({...productionBase,MCP_PUBLIC_URL:url}),/MCP_PUBLIC_URL/);
+});
