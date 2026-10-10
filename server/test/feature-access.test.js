@@ -9,7 +9,7 @@ test('invite flags default to Family only and explicit false revokes access', as
     assert.equal(email, 'sample@example.invalid');
     return record;
   });
-  const defaults = { priorities: false, diet: false, finance: false, family: true, chat: false };
+  const defaults = { priorities: false, diet: false, finance: false, family: true, chat: false, mcp: false };
   assert.deepEqual(await featuresForEmail('SAMPLE@example.invalid'), defaults);
   record = { email: 'sample@example.invalid' };
   assert.deepEqual(await featuresForEmail('sample@example.invalid'), defaults);

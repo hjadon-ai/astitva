@@ -2,12 +2,12 @@ import {AdminMealLibraries} from './NamedMealLibraries';
 import { useRef, useState } from 'react';
 import { AppShell, Button, ConfirmDialog, FormField, LoadingState, PageHeader, StatusBanner, Surface } from './ui';
 
-const defaults = { priorities: false, diet: false, finance: false, family: true, chat: false };
-const labels = { priorities: 'Daily Priorities', diet: 'Diet', finance: 'Finance', family: 'Family', chat: 'Anonymous Chat' };
+const defaults = { priorities: false, diet: false, finance: false, family: true, chat: false, mcp: false };
+const labels = { priorities: 'Daily Priorities', diet: 'Diet', finance: 'Finance', family: 'Family', chat: 'Anonymous Chat', mcp: 'MCP access (requires Diet)' };
 
 function FeatureFields({ value, onChange, disabled }) {
   return <fieldset className="admin-features" disabled={disabled}><legend>Feature access</legend>
-    {Object.keys(defaults).map((key) => <label key={key}><input type="checkbox" checked={value[key]}
+    {Object.keys(defaults).map((key) => <label key={key}><input type="checkbox" checked={Boolean(value[key])}
       onChange={(event) => onChange({ ...value, [key]: event.target.checked })} />{labels[key]}</label>)}
   </fieldset>;
 }

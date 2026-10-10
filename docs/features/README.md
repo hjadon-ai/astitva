@@ -55,6 +55,10 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F039 | [Optional Immersive appearance](ui/F039-immersive-appearance.md) | Review | `feature/F039-immersive-appearance` | Not created |
 
+| F040 | [Diet plan and everyday workflow](diet/F040-diet-plan-workflow.md) | Review | `feature/F040-diet-plan-workflow` | Not created |
+
+| F041 | [Diet MCP server](diet/F041-diet-mcp-server.md) | Review | `feature/F041-diet-mcp-server` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.

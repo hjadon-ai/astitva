@@ -245,8 +245,19 @@ function validateRuntimeEnvironment(environment = process.env) {
     ? productionConfig(profile, environment)
     : localConfig(name, profile, environment);
 
+  let mcpPublicUrl = environment.MCP_PUBLIC_URL?.trim() || '';
+  if (mcpPublicUrl) {
+    let parsed;
+    try { parsed = new URL(mcpPublicUrl); } catch { throw new Error('MCP_PUBLIC_URL must be a valid URL.'); }
+    if (parsed.username || parsed.password || parsed.search || parsed.hash || parsed.pathname !== '/mcp' ||
+        !(parsed.protocol === 'https:' || name !== 'production' && parsed.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname))) {
+      throw new Error('MCP_PUBLIC_URL must be an HTTPS /mcp URL (loopback HTTP allowed locally).');
+    }
+    mcpPublicUrl = parsed.href;
+  }
   return Object.freeze({
     ...config,
+    mcpPublicUrl,
     adminEmails: Object.freeze(adminEmails),
     instanceId: crypto.createHash('sha256').update(`${name}:${config.mongoUrl}`).digest('hex').slice(0, 12)
   });

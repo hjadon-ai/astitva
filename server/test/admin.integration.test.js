@@ -101,9 +101,11 @@ test('F031 admin authorization, search, invitees, atomic edits and Chat revocati
   assert.equal((await call(`/api/admin/users/${member.id}`, { method: 'PATCH',
     body: { email: emails[4], expectedVersion: original } })).status, 400);
   let changed = await call(`/api/admin/users/${member.id}`, { method: 'PATCH',
-    body: { features: { chat: true, diet: true }, expectedVersion: loaded.expectedVersion } });
+    body: { features: { chat: true, diet: true, mcp: true }, expectedVersion: loaded.expectedVersion } });
   assert.equal(changed.status, 200);
   assert.equal(changed.body.user.features.chat, true);
+  assert.equal(loaded.features.mcp, false);
+  assert.equal(changed.body.user.features.mcp, true);
   assert.equal(changed.body.user.features.family, true);
   assert.equal((await call(`/api/admin/users/${member.id}`, { method: 'PATCH',
     body: { features: { chat: false }, expectedVersion: loaded.expectedVersion } })).status, 409);
@@ -112,6 +114,7 @@ test('F031 admin authorization, search, invitees, atomic edits and Chat revocati
   assert.equal(changed.status, 200);
   assert.ok(revoked.includes(member.id));
   assert.equal((await call('/api/auth/me', { token: tokens[1] })).body.user.features.diet, true);
+  assert.equal((await call('/api/auth/me', { token: tokens[1] })).body.user.features.mcp, true);
   assert.equal((await call('/api/chat/conversations', { token: tokens[1] })).status, 403);
 
   const made = await call('/api/admin/invitees', { method: 'POST',

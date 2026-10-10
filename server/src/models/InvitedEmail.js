@@ -6,7 +6,8 @@ const invitedEmailSchema = new mongoose.Schema({
   diet: { type: Boolean, default: false },
   finance: { type: Boolean, default: false },
   family: { type: Boolean, default: true },
-  chat: { type: Boolean, default: false }
+  chat: { type: Boolean, default: false },
+  mcp: { type: Boolean, default: false }
 }, { timestamps: true, collection: 'invitedEmails' });
 
 module.exports = mongoose.model('InvitedEmail', invitedEmailSchema);

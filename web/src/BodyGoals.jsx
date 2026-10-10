@@ -7,7 +7,9 @@ import './bodyGoals.css';
 import MeasurementInput from './MeasurementInput';
 import { defaults, today, shownDate, displayNumber, toDisplayWeight, bodyInput, editable, requireBodyGoalsResponse } from './bodyGoalValues';
 
-export default function BodyGoals({ apiRequest, onTargetApplied, onSaved, onShowTrends, onLogWeight, refreshVersion = 0 }) {
+export default function BodyGoals({ apiRequest, onTargetApplied, onSaved, onShowTrends, onLogWeight, onLoaded, refreshVersion = 0 }) {
+  const [editing, setEditing] = useState(false);
+  const [step, setStep] = useState(0);
   const [form, setForm] = useState(defaults);
   const [saved, setSaved] = useState(null);
   const [revision, setRevision] = useState(0);
@@ -43,22 +45,29 @@ export default function BodyGoals({ apiRequest, onTargetApplied, onSaved, onShow
       if (!active) return;
       const next = result.profile ? editable(result.profile) : { ...defaults(), ...(result.latestWeight ? { weightKg: result.latestWeight.weightKg, measuredOn: result.latestWeight.date, units: result.latestWeight.units } : {}) };
       setRevision(result.revision ?? result.profile?.revision ?? 0);
-      setForm(next); setSaved(result.profile); setEstimate(result.estimate); setPreviewKey(JSON.stringify(bodyInput(next))); setReady(true);
+      setForm(next); setSaved(result.profile); setEstimate(result.estimate); setPreviewKey(JSON.stringify(bodyInput(next))); setReady(true); onLoaded?.(result.profile);
     }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [apiRequest, reload, refreshVersion]);
+  }, [apiRequest, reload, refreshVersion, onLoaded]);
+  function goToStep(nextStep) {
+    setStep(nextStep);
+    requestAnimationFrame(() => formRef.current?.querySelector(`[data-plan-step="${nextStep}"] input, [data-plan-step="${nextStep}"] select`)?.focus());
+  }
   function change(key, value) { setForm(current => ({ ...current, [key]: value })); setMessage(''); setError(''); setFieldErrors({}); }
   async function calculate(save) {
-    if (!ready || !formRef.current?.reportValidity()) return;
+    if (!ready) return false;
+    const invalid = [...formRef.current.querySelectorAll('input, select')].find(element => !element.checkValidity());
+    if (invalid) { setStep(invalid.closest('[data-plan-step]')?.dataset.planStep === '0' ? 0 : 1); requestAnimationFrame(() => invalid.reportValidity()); return false; }
     setBusy(true); setError(''); setMessage(''); setFieldErrors({});
     try {
       const result = await apiRequest('/api/diet/body-goals' + (save ? '' : '/preview'), { method: save ? 'PUT' : 'POST', body: JSON.stringify({ ...input, ...(save ? { expectedRevision: revision } : {}) }) });
       if (save) requireBodyGoalsResponse(result);
       setEstimate(result.estimate); setPreviewKey(formKey);
       if (save) { setRevision(result.revision ?? result.profile.revision); setSaved(result.profile); const next = editable(result.profile); setForm(next); setPreviewKey(JSON.stringify(bodyInput(next))); }
-      if (save) onSaved?.();
-      setMessage(save ? 'Body measurements and goal saved.' : 'Preview ready. Save when this plan works for you.');
-    } catch (e) { setError(e.message); setFieldErrors(e.details?.fields || {}); }
+      if (save) { dirtyRef.current = false; setEditing(false); setStep(0); onLoaded?.(result.profile); onSaved?.(); }
+      setMessage(save ? 'Your plan is saved. Review your daily targets below, then start recording.' : 'Preview ready. Review your result before saving.');
+      return true;
+    } catch (e) { setError(e.message); setFieldErrors(e.details?.fields || {}); return false; }
     finally { setBusy(false); }
   }
   async function applyTarget() {
@@ -72,14 +81,17 @@ export default function BodyGoals({ apiRequest, onTargetApplied, onSaved, onShow
     } catch (e) { setError(e.message); setConfirm(false); }
     finally { setBusy(false); }
   }
-  return <section className="body-goals-card" aria-label="Body and Goals">
-    <SectionHeader title="Body & Goals" description="Set your starting measurements and choose a direction. Log ongoing weights in Daily Record." action={<span className="body-goals-icon"><Scale size={21} aria-hidden="true"/></span>} />
+  return <section className="body-goals-card" aria-label="Your Plan">
+    <SectionHeader title="Body and goal" description="Understand your starting point, choose a goal, then review your daily targets." />
     {loading ? <LoadingState>Loading body measurements…</LoadingState> : <>
       {error && <StatusBanner tone="error" role="alert">{error} <Button icon={RotateCw} disabled={busy} onClick={() => setReload(n => n + 1)}>Reload saved data</Button></StatusBanner>}
       {message && <StatusBanner tone="success" role="status">{message}</StatusBanner>}
-      <div className="body-goals-layout">
-        <form ref={formRef} className="body-goals-form" onSubmit={e => { e.preventDefault(); calculate(true); }}>
-          <fieldset disabled={busy || !ready}>
+      {saved && !editing && <div className="diet-plan-saved"><div><h3>{saved.goal === 'maintain' ? 'Maintain weight' : saved.goal === 'lose' ? 'Lose weight' : 'Gain weight'}</h3><p>{displayNumber(toDisplayWeight(saved.weightKg, units))} {weightUnit} · measured {shownDate(saved.measuredOn)}{saved.goal !== 'maintain' ? ` · target ${displayNumber(toDisplayWeight(saved.targetWeightKg, units))} ${weightUnit}` : ''}</p></div><Button disabled={busy || !ready} onClick={() => { setEditing(true); goToStep(0); }}>Edit plan</Button></div>}
+      {(!saved || editing) && <ol className="diet-plan-steps" aria-label="Plan setup"><li aria-current={step === 0 ? 'step' : undefined}>1. Measurements & BMI</li><li aria-current={step === 1 ? 'step' : undefined}>2. Goal & estimates</li><li>3. Daily targets below</li></ol>}
+      <div className={`body-goals-layout${saved && !editing ? ' is-summary' : ''}`}>
+
+        <form hidden={Boolean(saved && !editing)} noValidate ref={formRef} className="body-goals-form" onSubmit={e => { e.preventDefault(); calculate(true); }}>
+          <fieldset data-plan-step="0" hidden={step !== 0} disabled={busy || !ready}>
             <legend><span>1</span> Your measurements</legend>
             <div className="body-goals-fields">
               <FormField label="Units"><select value={units} onChange={e => change('units', e.target.value)}><option value="metric">Metric · cm / kg</option><option value="imperial">Imperial · in / lb</option></select></FormField>
@@ -88,16 +100,16 @@ export default function BodyGoals({ apiRequest, onTargetApplied, onSaved, onShow
               <FormField error={fieldErrors.weightKg} label={`Current weight (${weightUnit})`}><MeasurementInput required min={25} max={350} value={form.weightKg} scale={units === 'imperial' ? 0.45359237 : 1} onChange={v => change('weightKg', v)}/></FormField>
             </div>
           </fieldset>
-          <fieldset className="body-goals-optional" disabled={busy || !ready}>
-            <legend><span>2</span> Calorie estimate <small>Optional</small></legend>
+          <fieldset data-plan-step="1" hidden={step !== 1} className="body-goals-optional" disabled={busy || !ready}>
+            <legend>Calorie estimate <small>Optional</small></legend>
               <div className="body-goals-fields">
                 <FormField label="Age (years)" error={fieldErrors.age}><input type="number" min="1" max="120" step="1" value={form.age} onChange={e => change('age', e.target.value)}/></FormField>
                 <FormField error={fieldErrors.sex} label="Sex used by calculation" hint="The equation uses these two coefficients."><select value={form.sex} onChange={e => change('sex', e.target.value)}><option value="">Choose / skip</option><option value="female">Female</option><option value="male">Male</option></select></FormField>
                 <FormField error={fieldErrors.activity} label="Usual activity" hint="Include work, movement and exercise."><select value={form.activity} onChange={e => change('activity', e.target.value)}><option value="">Choose / skip</option><option value="sedentary">Mostly seated · little exercise</option><option value="light">Light · exercise 1–3 days/week</option><option value="moderate">Moderate · exercise 3–5 days/week</option><option value="active">Active · exercise 6–7 days/week</option></select></FormField>
               </div>
           </fieldset>
-          <fieldset disabled={busy || !ready}>
-            <legend><span>3</span> Your goal</legend>
+          <fieldset data-plan-step="1" hidden={step !== 1} disabled={busy || !ready}>
+            <legend><span>2</span> Your goal</legend>
             <div className="body-goals-choices" role="group" aria-label="Weight goal">{[['lose', 'Lose weight'], ['maintain', 'Maintain'], ['gain', 'Gain weight']].map(([key, title]) => <button key={key} type="button" aria-pressed={form.goal === key} onClick={() => change('goal', key)}>{title}</button>)}</div>
             {form.goal !== 'maintain' && <div className="body-goals-fields">
               <FormField error={fieldErrors.targetWeightKg} label={`Target weight (${weightUnit})`}><MeasurementInput required min={25} max={350} value={form.targetWeightKg} scale={units === 'imperial' ? 0.45359237 : 1} onChange={v => change('targetWeightKg', v)}/></FormField>
@@ -106,7 +118,7 @@ export default function BodyGoals({ apiRequest, onTargetApplied, onSaved, onShow
             </div>}
             <label className="body-goals-eligibility"><input type="checkbox" checked={form.eligible} onChange={e => change('eligible', e.target.checked)}/> <span>I am 18 or older and am not pregnant or breastfeeding. Enable adult estimates.</span></label>
           </fieldset>
-          <div className="body-goals-actions"><Button type="button" icon={Activity} disabled={busy || !ready} onClick={() => calculate(false)}>Preview</Button><Button type="submit" variant="primary" icon={Save} disabled={busy || !ready || !dirty}>{busy ? 'Saving…' : 'Save plan'}</Button></div>
+          <div className="body-goals-actions">{step === 0 ? <Button type="button" variant="primary" disabled={busy || !ready} onClick={async () => { if (await calculate(false)) goToStep(1); }}>Preview BMI & continue</Button> : <><Button type="button" disabled={busy} onClick={() => goToStep(0)}>Back</Button><Button type="button" icon={Activity} disabled={busy || !ready} onClick={() => calculate(false)}>Preview goal</Button><Button type="submit" variant="primary" icon={Save} disabled={busy || !ready || !dirty}>{busy ? 'Saving…' : 'Save plan'}</Button></>}{saved && <Button type="button" disabled={busy} onClick={() => { setForm(editable(saved)); setEstimate(null); setMessage(''); setEditing(false); setReload(n => n + 1); }}>Cancel editing</Button>}</div>
           {saved && <p className="body-goals-note">Latest weight: {displayNumber(toDisplayWeight(saved.weightKg, units))} {weightUnit} · {shownDate(saved.measuredOn)}. <button type="button" className="text-action" onClick={onLogWeight}>Record a daily weight</button></p>}
         </form>
         <div className="body-goals-results" aria-live="polite">

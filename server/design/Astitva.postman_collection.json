@@ -2979,7 +2979,7 @@
             "url": "{{baseUrl}}/api/admin/invitees",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{adminInviteEmail}}\",\n  \"features\": { \"priorities\": false, \"diet\": false, \"finance\": false, \"family\": true, \"chat\": false }\n}",
+              "raw": "{\n  \"email\": \"{{adminInviteEmail}}\",\n  \"features\": {\n    \"priorities\": false,\n    \"diet\": false,\n    \"finance\": false,\n    \"family\": true,\n    \"chat\": false,\n    \"mcp\": false\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3025,7 +3025,7 @@
             "url": "{{baseUrl}}/api/admin/invitees/{{adminInviteeId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"features\": { \"diet\": true, \"chat\": false },\n  \"expectedVersion\": \"{{adminInviteeVersion}}\"\n}",
+              "raw": "{\n  \"features\": {\n    \"diet\": true,\n    \"chat\": false,\n    \"mcp\": false\n  },\n  \"expectedVersion\": \"{{adminInviteeVersion}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4284,6 +4284,236 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Diet MCP (F041)",
+      "item": [
+        {
+          "name": "MCP discovery",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/.well-known/oauth-protected-resource/mcp",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide. Disable the Postman cookie jar for protocol requests.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "OAuth discovery",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/.well-known/oauth-authorization-server",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide. Disable the Postman cookie jar for protocol requests.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Register public client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/register",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide. Disable the Postman cookie jar for protocol requests.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_name\": \"Codex\",\n  \"redirect_uris\": [\n    \"http://127.0.0.1:45678/callback\"\n  ],\n  \"token_endpoint_auth_method\": \"none\",\n  \"grant_types\": [\n    \"authorization_code\",\n    \"refresh_token\"\n  ],\n  \"response_types\": [\n    \"code\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List tools",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mcp",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/list\",\n  \"params\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Read day",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mcp",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"diet_get_day\",\n    \"arguments\": {\n      \"date\": \"{{dietDate}}\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List connections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/mcp/connections",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide."
+          }
+        },
+        {
+          "name": "Read consent",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/mcp/consent/{{mcpConsentTicket}}",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide."
+          }
+        },
+        {
+          "name": "Decide consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/mcp/consent/{{mcpConsentTicket}}",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allow\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Disconnect",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{webUrl}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sessionToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/mcp/connections/{{mcpConnectionId}}",
+            "description": "F041. Use synthetic/local records. MCP access tokens are separate from application sessions; complete OAuth using the connection guide."
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -4321,6 +4551,18 @@
     },
     {
       "key": "mealLibraryItemId",
+      "value": ""
+    },
+    {
+      "key": "mcpAccessToken",
+      "value": ""
+    },
+    {
+      "key": "mcpConsentTicket",
+      "value": ""
+    },
+    {
+      "key": "mcpConnectionId",
       "value": ""
     }
   ]

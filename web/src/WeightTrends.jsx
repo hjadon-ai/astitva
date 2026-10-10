@@ -4,10 +4,10 @@ import { Button, EmptyState, LoadingState, StatusBanner } from './ui';
 import WeightProjection from './WeightProjection';
 import { displayNumber, toDisplayWeight, shownDate, requireBodyGoalsResponse } from './bodyGoalValues';
 
-export default function WeightTrends({ apiRequest, refreshVersion, onSetup }) {
+export default function WeightTrends({ apiRequest, refreshVersion, onSetup, onRecord }) {
   const [data, setData] = useState(null), [error, setError] = useState(''), [retry, setRetry] = useState(0), [units, setUnits] = useState('metric');
   useEffect(() => {
-    let active = true; setError('');
+    let active = true; setError(''); setData(null);
     apiRequest('/api/diet/body-goals').then(r => { requireBodyGoalsResponse(r); if (active) { setData(r); setUnits(r.latestWeight?.units || 'metric'); } }).catch(e => { if(active) setError(e.message); });
     return () => { active = false; };
   }, [apiRequest, refreshVersion, retry]);
@@ -17,10 +17,11 @@ export default function WeightTrends({ apiRequest, refreshVersion, onSetup }) {
   const weightUnit = units === 'imperial' ? 'lb' : 'kg';
   return <section className="weight-trends" aria-label="Weight trends and prediction">
     <div className="weight-trends-header"><div><h3>Weight & prediction</h3><p>Recorded progress and an estimated path from your latest weight.</p></div><label className="weight-chart-units"><span className="sr-only">Chart weight units</span><select value={units} onChange={e => setUnits(e.target.value)}><option value="metric">kg</option><option value="imperial">lb</option></select></label></div>
-    {!data.weights.length ? <EmptyState icon={Scale} title="Your weight journey starts here" description="Record an optional weight in Daily Record. Set a goal in Body & Goals to add a prediction." action={<Button onClick={onSetup}>Set up Body & Goals</Button>}/> : <>
+    {!data.weights.length ? <EmptyState icon={Scale} title="Your weight journey starts here" description="Record an optional weight in Daily Record. Set a goal in Your Plan to add a prediction." action={<div className="diet-progress-buttons"><Button variant="primary" onClick={onRecord}>Record weight</Button><Button onClick={onSetup}>Set up Your Plan</Button></div>}/> : <>
       <div className="weight-trends-summary"><div><span>Latest weight</span><strong>{displayNumber(toDisplayWeight(data.latestWeight.weightKg, units))} <small>{weightUnit}</small></strong><small>{shownDate(data.latestWeight.date)}</small></div><div><span>Goal weight</span><strong>{data.profile ? `${displayNumber(toDisplayWeight(data.profile.targetWeightKg, units))} ${weightUnit}` : '—'}</strong><small>{data.estimate?.goalReached ? 'Goal reached' : data.profile?.goal || 'Set a goal to predict'}</small></div><div><span>Estimated arrival</span><strong>{prediction && prediction.paceKgWeek > 0 ? shownDate(prediction.targetDate) : prediction ? 'Steady weight' : '—'}</strong><small>{prediction && prediction.paceKgWeek > 0 ? `About ${prediction.weeks} weeks` : 'Based on your selected pace'}</small></div></div>
+      <div className="diet-progress-actions"><p>{data.estimate?.goalReached ? 'You reached your selected goal. Review Your Plan to choose what comes next.' : 'Record optional weights over time and revisit your goal when needed.'}</p><div><Button onClick={onRecord}>Record weight</Button><Button onClick={onSetup}>Review Your Plan</Button></div></div>
       <WeightProjection projection={prediction} weights={data.weights} units={units}/>
-      {!prediction && <StatusBanner>{data.estimate?.reason || 'Set your height and weight goal, then confirm adult eligibility to add a prediction.'} <Button onClick={onSetup}>Body & Goals</Button></StatusBanner>}
+      {!prediction && <StatusBanner>{data.estimate?.reason || 'Set your height and weight goal, then confirm adult eligibility to add a prediction.'} <Button onClick={onSetup}>Your Plan</Button></StatusBanner>}
       {prediction && <p className="body-goals-note">This is a pace-based estimate, not a guarantee. The shaded range varies the selected pace by ±25%. New weight records refresh the prediction; daily calorie targets change only when you apply them.</p>}
     </>}
   </section>;

@@ -81,3 +81,51 @@
 @media(max-width:1050px){.body-goals-layout {grid-template-columns:1fr;gap:20px;}.body-goals-stats {grid-template-columns:repeat(3,minmax(0,1fr));}.body-goals-results .body-goals-stats .stat-card strong {font-size:20px;}.daily-weight-record {grid-template-columns:1fr;}}
 @media(max-width:650px){.body-goals-results {padding:14px;}.body-goals-stats {grid-template-columns:1fr;}.daily-weight-record {padding:14px;}.daily-weight-form fieldset {grid-template-columns:minmax(0,1fr) 70px;}.daily-weight-form .button {grid-column:1/-1;}.weight-trends-summary {grid-template-columns:1fr;gap:10px;}.weight-trends-summary > div {display:grid;grid-template-columns:1fr 1fr;align-items:center;}.weight-trends-summary > div > small {grid-column:1/-1;}.weight-trends {padding:14px;}.body-goals-fields input,.body-goals-fields select,.daily-weight-form input,.daily-weight-form select {font-size:16px;}.body-goals-actions .button {flex:1;}}
 @media(max-width:420px){.body-goals-fields {grid-template-columns:1fr;}.body-goals-choices {flex-wrap:wrap;}.body-goals-actions .button {flex-basis:100%;}}
+
+/* Plan setup shares the workspace's semantic surfaces in every appearance. */
+.diet-plan-entry,.diet-plan-saved {display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-surface,#fff);margin-bottom:18px;}
+.diet-plan-entry h2,.diet-plan-saved h3 {font-size:16px;margin:0 0 6px;color:var(--color-ink);}
+.diet-plan-entry p,.diet-plan-saved p {font-size:13px;line-height:1.6;color:var(--color-muted);margin:0;}
+.diet-plan-entry .button,.diet-plan-saved .button {flex-shrink:0;}
+.diet-plan-steps {display:flex;flex-wrap:wrap;gap:10px 20px;list-style:none;padding:12px 0 20px;margin:0;color:var(--color-muted);font-size:13px;}
+.diet-plan-steps [aria-current=step] {color:var(--color-primary);font-weight:600;}
+.body-goals-layout.is-summary {grid-template-columns:minmax(0,1fr);}
+.body-goals-layout.is-summary .body-goals-stats {grid-template-columns:repeat(3,minmax(0,1fr));}
+.body-goals-form[hidden],.body-goals-form fieldset[hidden] {display:none;}
+.diet-plan-targets {border-top:1px solid var(--color-border);padding-top:24px;margin-top:24px;}
+.diet-plan-target-values {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0;}
+.diet-plan-target-values > div {padding:14px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface,#fff);display:grid;gap:8px;}
+.diet-plan-target-values span,.diet-plan-target-values small {font-size:12px;color:var(--color-muted);}
+.diet-plan-target-values strong {font-size:18px;color:var(--color-ink);overflow-wrap:anywhere;}
+@media(max-width:650px){.diet-plan-entry,.diet-plan-saved {align-items:stretch;flex-direction:column;padding:16px;}.diet-plan-target-values {grid-template-columns:repeat(2,minmax(0,1fr));}.body-goals-layout.is-summary .body-goals-stats {grid-template-columns:1fr;}}
+
+.diet-page .diet-timeline-card[hidden] {display:none;}
+
+.quick-food-tabs {display:flex;gap:6px;margin:16px 0 12px;}
+.quick-food-tabs button {border:1px solid var(--color-border);background:var(--color-surface,#fff);color:var(--color-ink);border-radius:9px;padding:9px 14px;min-height:44px;cursor:pointer;}
+.quick-food-tabs button[aria-pressed=true] {border-color:var(--color-primary);color:var(--color-primary);font-weight:600;}
+.quick-recent-meals {margin-bottom:14px;}
+.quick-recent-meals > p {font-size:13px;color:var(--color-muted);line-height:1.6;}
+.quick-recent-meals ul {list-style:none;margin:0;padding:0;max-height:196px;overflow:auto;border:1px solid var(--color-border);border-radius:10px;}
+.quick-recent-meals li+li {border-top:1px solid var(--color-border);}
+.quick-recent-meals li button {display:flex;justify-content:space-between;align-items:center;text-align:left;gap:12px;width:100%;min-height:56px;padding:10px 12px;border:0;background:var(--color-surface,#fff);color:var(--color-ink);cursor:pointer;}
+.quick-recent-meals li button>span:first-child {display:grid;gap:4px;min-width:0;}
+.quick-recent-meals strong {font-size:13px;overflow-wrap:anywhere;}
+.quick-recent-meals small {font-size:11px;color:var(--color-muted);overflow-wrap:anywhere;}
+.quick-recent-meals li button>span:last-child {font-size:12px;white-space:nowrap;}
+.quick-recent-meals li button[aria-pressed=true] {box-shadow:inset 3px 0 var(--color-primary);}
+.quick-food-tabs button:focus-visible,.quick-recent-meals button:focus-visible {outline:2px solid var(--color-primary);outline-offset:-3px;}
+
+.diet-page .diet-date-navigation[hidden] {display:none;}
+.diet-progress-actions {display:flex;align-items:center;justify-content:space-between;gap:16px;margin:16px 0;}
+.diet-progress-actions p {margin:0;color:var(--color-muted);font-size:13px;line-height:1.6;max-width:560px;}
+.diet-progress-actions>div,.diet-progress-buttons {display:flex;flex-wrap:wrap;gap:8px;}
+@media(max-width:650px){.diet-progress-actions {align-items:stretch;flex-direction:column;}.diet-progress-actions>div .button {flex:1;}.weight-trends-header {flex-wrap:wrap;}.history-toolbar {flex-wrap:wrap;gap:12px;}.diet-target-editor .diet-form-grid {grid-template-columns:1fr;}}
+
+.body-goals-stats .stat-card strong {margin-top:10px;}
+
+/* Trends is a full workspace, rather than the former compact overview face. */
+.diet-page .diet-trends-panel .diet-history {display:block;height:auto;min-height:0;}
+.diet-page .diet-trends-panel .intake-history-chart {display:block;width:100%;height:320px;min-height:320px;margin:16px 0 8px;}
+.diet-page .diet-trends-panel .history-days button {min-height:44px;}
+@media(max-width:650px){.diet-page .diet-trends-panel .intake-history-chart {height:240px;min-height:240px;}}
