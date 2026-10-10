@@ -25,11 +25,11 @@ export function PublicHomeSections({ runtime }) {
 }
 export default function SignedInHome({ user, runtime }) {
   const access=homeFeatures(user.features,runtime);
-  return <section className="profile-content" id="profile">
+  return <section className={`profile-content home-page${access.family ? ' home-with-family' : ''}`} id="profile">
     <PageHeader eyebrow="Workspace / Home" title={`Welcome, ${user.name}.`} description="A place for your family and the everyday things that matter."/>
     <Surface className="profile-card"><div><p className="eyebrow">Your account</p><h2>{user.name}</h2><p>{user.email}</p></div><span>Signed in</span></Surface>
     {access.family && <Surface className="home-family-card"><div><p className="eyebrow">Your family</p><h2>Keep your family connected.</h2><p>Manage members, invitations and the information you choose to share.</p><a className="button button-primary" href="#family">Open Family <ArrowRight size={18} aria-hidden="true"/></a></div><FamilyIllustration/></Surface>}
-    {access.tools.length>0 && <section aria-labelledby="home-tools-title"><h2 id="home-tools-title">Your everyday tools</h2><div className="home-tools">{access.tools.map(tool=><Surface key={tool.id}><h3>{tool.title}</h3><p>{tool.description}</p>{tool.available?<a className="button button-secondary" href={`#${tool.id}`}>Open {tool.title}</a>:<p className="home-unavailable">{runtime?.financeProvider?.enabled===false?'Finance is unavailable in this environment.':'Finance availability could not be confirmed. Try refreshing.'}</p>}</Surface>)}</div></section>}
+    {access.tools.length>0 && <section className="home-tools-section" aria-labelledby="home-tools-title"><h2 id="home-tools-title">Your everyday tools</h2><div className="home-tools">{access.tools.map(tool=><Surface key={tool.id}><h3>{tool.title}</h3><p>{tool.description}</p>{tool.available?<a className="button button-secondary" href={`#${tool.id}`}>Open {tool.title}</a>:<p className="home-unavailable">{runtime?.financeProvider?.enabled===false?'Finance is unavailable in this environment.':'Finance availability could not be confirmed. Try refreshing.'}</p>}</Surface>)}</div></section>}
     {!access.family && access.tools.length===0 && <Surface><h2>Your account is ready.</h2><p>No Home destinations are enabled for your account. Feature access is managed by the application administrator.</p></Surface>}
   </section>;
 }
