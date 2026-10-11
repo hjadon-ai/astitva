@@ -1,3 +1,4 @@
+import { notificationStatus } from './notificationStatus';
 import { deleteToken, getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import workerUrl from './notificationWorker.js?worker&url';
 import { firebaseApp } from './firebaseClient';
@@ -5,6 +6,12 @@ import { firebaseApp } from './firebaseClient';
 const preferenceKey = 'astitva.webNotifications';
 let allowed = false;
 let worker; let messaging; let token; let unsubscribe; let lastRefresh = 0;
+const statusChanged = () => window.dispatchEvent(new Event('astitva:notification-status'));
+export async function browserNotificationStatus() {
+  const supported = Boolean('Notification' in window && 'serviceWorker' in navigator) && await isSupported().catch(() => false);
+  return notificationStatus({ allowed, wanted: notificationsWanted(), permission: window.Notification?.permission,
+    secure: window.isSecureContext, supported, configured: Boolean(firebaseApp && import.meta.env.VITE_FIREBASE_VAPID_KEY?.trim()), registered: Boolean(token) });
+}
 export const notificationsWanted = () => localStorage.getItem(preferenceKey) === 'enabled';
 async function getWorker() {
   if (!window.isSecureContext || !('serviceWorker' in navigator) || !('Notification' in window)) {
@@ -37,13 +44,14 @@ export async function refreshWebNotifications(apiRequest, force = false) {
   if (!force && Date.now() - lastRefresh < 12 * 3600000) return token ? 'background' : 'open_chat';
   const registration = await tellWorker({ type: 'notification_state', enabled: true });
   const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY?.trim();
-  if (!firebaseApp || !vapidKey || !(await isSupported())) { lastRefresh = Date.now(); return 'open_chat'; }
+  if (!firebaseApp || !vapidKey || !(await isSupported())) { lastRefresh = Date.now(); statusChanged(); return 'open_chat'; }
   messaging ||= getMessaging(firebaseApp);
-  token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
-  await apiRequest('/api/notifications/devices', { method: 'PUT', body: JSON.stringify({ token, platform: 'web' }) });
+  const nextToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration });
+  await apiRequest('/api/notifications/devices', { method: 'PUT', body: JSON.stringify({ token: nextToken, platform: 'web' }) });
+  token = nextToken;
   unsubscribe?.();
   unsubscribe = onMessage(messaging, (payload) => showWebNotification(payload.data).catch(() => {}));
-  lastRefresh = Date.now();
+  lastRefresh = Date.now(); statusChanged();
   return 'background';
 }
 export async function enableWebNotifications(apiRequest) {
@@ -53,14 +61,15 @@ export async function enableWebNotifications(apiRequest) {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Notifications are blocked. Allow them in your browser’s site settings to enable alerts.');
   localStorage.setItem(preferenceKey, 'enabled');
-  return refreshWebNotifications(apiRequest, true);
+  try { return await refreshWebNotifications(apiRequest, true); }
+  finally { statusChanged(); }
 }
 export async function showWebNotification(payload) {
   if (!allowed || !('Notification' in window) || !notificationsWanted() || Notification.permission !== 'granted') return;
   await tellWorker({ type: 'show_private_notification', payload });
 }
 export async function setWebNotificationsAllowed(value, apiRequest) {
-  allowed = value;
+  allowed = value; statusChanged();
   if (!value) await disableWebNotifications(apiRequest, false);
   else return refreshWebNotifications(apiRequest);
 }
@@ -73,7 +82,7 @@ export async function disableWebNotifications(apiRequest, forget = true) {
     const notifications = await registration?.getNotifications();
     notifications?.forEach((notification) => notification.close());
   }
-  const previous = token; token = null;
+  const previous = token; token = null; statusChanged();
   try { if (previous) await apiRequest('/api/notifications/devices', { method: 'DELETE', body: JSON.stringify({ token: previous }) }); }
   finally { if (messaging) await deleteToken(messaging).catch(() => {}); }
 }

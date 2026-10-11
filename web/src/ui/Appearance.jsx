@@ -39,7 +39,6 @@ export function AppearanceSurface({ as: Element = 'section', className = '', chi
 
 function AppearanceDialog({ onClose }) {
   const ref = useRef(null);
-  const { appearance, setAppearance } = useContext(AppearanceContext);
   useLayoutEffect(() => {
     const dialog = ref.current;
     const opener = document.activeElement;
@@ -53,7 +52,6 @@ function AppearanceDialog({ onClose }) {
       });
     };
   }, []);
-  const change = (key, value) => setAppearance(current => ({ ...current, [key]: value }));
   return createPortal(
     <dialog ref={ref} className="appearance-dialog appearance-surface" aria-labelledby="appearance-title"
       onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}
@@ -65,6 +63,24 @@ function AppearanceDialog({ onClose }) {
       <div className="appearance-heading"><h2 id="appearance-title">Appearance</h2>
         <button type="button" className="appearance-close" aria-label="Close appearance" onClick={onClose}><X size={20} aria-hidden="true" /></button>
       </div>
+      <AppearanceSettings />
+    </dialog>, document.body);
+}
+
+export function AppearanceControl({ compact = false }) {
+  const [open, setOpen] = useState(false);
+  return <>
+    <button className={`button button-quiet appearance-trigger${compact ? ' appearance-trigger-compact' : ''}`} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <Palette size={18} aria-hidden="true" /><span>Appearance</span>
+    </button>
+    {open && <AppearanceDialog onClose={() => setOpen(false)} />}
+  </>;
+}
+
+export function AppearanceSettings() {
+  const { appearance, setAppearance } = useContext(AppearanceContext);
+  const change = (key, value) => setAppearance(current => ({ ...current, [key]: value }));
+  return <div className="appearance-settings">
       <fieldset><legend>Layout</legend>
         {['original', 'immersive'].map(layout => <label key={layout}>
           <input type="radio" name="appearance-layout" value={layout} checked={appearance.layout === layout} onChange={() => change('layout', layout)} />
@@ -82,15 +98,5 @@ function AppearanceDialog({ onClose }) {
         <strong>{appearance.theme === 'day' ? 'Day' : 'Night'} palette</strong>
         <p>Your layout and theme apply immediately and are remembered in this browser.</p>
       </AppearanceSurface>}
-    </dialog>, document.body);
-}
-
-export function AppearanceControl({ compact = false }) {
-  const [open, setOpen] = useState(false);
-  return <>
-    <button className={`button button-quiet appearance-trigger${compact ? ' appearance-trigger-compact' : ''}`} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog">
-      <Palette size={18} aria-hidden="true" /><span>Appearance</span>
-    </button>
-    {open && <AppearanceDialog onClose={() => setOpen(false)} />}
-  </>;
+  </div>;
 }

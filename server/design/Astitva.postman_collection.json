@@ -2821,6 +2821,28 @@
             ],
             "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/lock"
           }
+        },
+        {
+          "name": "Mark received chat messages read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Chat-Unlock",
+                "value": "{{chatUnlock}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chat/conversations/{{chatId}}/read",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messageId\": \"{{chatReceivedMessageId}}\"\n}"
+            },
+            "description": "Use a received message ID loaded after unlocking. Does not mark newer messages or expose read receipts."
+          }
         }
       ]
     },

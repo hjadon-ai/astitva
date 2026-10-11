@@ -67,7 +67,7 @@ function NotificationSettings({ settings, run, onSaved, reload }) {
   </Surface>;
 }
 
-export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, onUserRefresh }) {
+export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, onUserRefresh, embedded = false }) {
   const [notificationSettings, setNotificationSettings] = useState(null);
   const [denied, setDenied] = useState(!user.isAdmin);
   const [tab, setTab] = useState('users');
@@ -139,15 +139,14 @@ export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, 
     if (result) { setInvitee(result.invitee); setCreating(false); setConfirmCreate(false); }
     setBusy(false);
   }
-  if (denied || !user.isAdmin) return <main className="verification-shell"><section className="verification-card">
+  if (denied || !user.isAdmin) return embedded ? <StatusBanner tone="error" role="alert">You do not have permission to access Admin.</StatusBanner> : <main className="verification-shell"><section className="verification-card">
     <h1>Admin Panel</h1><p>You do not have permission to access the Admin Panel.</p>
     <div className="verification-actions"><a className="button button-primary" href="/">Return to Home</a>
       <Button onClick={onLogout}>Sign out</Button></div>
   </section></main>;
 
-  return <AppShell page="admin" user={user} runtime={runtime} onLogout={onLogout}>
-    <section className="admin-page">
-      <PageHeader title="Admin Panel" description={`Signed in as ${user.email}`} actions={<a className="button button-secondary" href="/">Return to Home</a>} />
+  const content = <section className="admin-page">
+      {!embedded && <PageHeader title="Admin Panel" description={`Signed in as ${user.email}`} actions={<a className="button button-secondary" href="/">Return to Home</a>} />}
       <div className="admin-tabs" aria-label="Admin sections"><Button aria-pressed={tab === 'meal-libraries'} onClick={()=>setTab('meal-libraries')}>Meal libraries</Button>
         <Button aria-pressed={tab === 'users'} onClick={() => { setTab('users'); setMessage(null); }}>Users</Button>
         <Button aria-pressed={tab === 'invitees'} onClick={() => { setTab('invitees'); setMessage(null); }}>Invitees</Button>
@@ -203,6 +202,6 @@ export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, 
           <Button variant="quiet" onClick={findInvitee}>Reload record (discard drafts)</Button>
         </Surface>}
       </>}
-    </section>
-  </AppShell>;
+    </section>;
+  return embedded ? content : <AppShell page="settings" user={user} runtime={runtime} onLogout={onLogout}>{content}</AppShell>;
 }

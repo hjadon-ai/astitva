@@ -152,7 +152,7 @@
           "Anonymous Chat"
         ],
         "summary": "List conversations",
-        "description": "Requires a verified signed-in account. Message reads/writes and alias changes also require X-Chat-Unlock. Invitations are single-use and expire after 24 hours. Deletion affects both participants.",
+        "description": "Returns aliases, PIN state and participant-private unreadCount (received messages after saved read cursor); null if Firestore is not configured. No message previews. Poll at most every 30 seconds while visible.",
         "responses": {
           "200": {
             "description": "Success"
@@ -757,6 +757,67 @@
           },
           "503": {
             "description": "Firebase unavailable"
+          }
+        }
+      }
+    },
+    "/api/chat/conversations/{id}/read": {
+      "post": {
+        "summary": "Mark received messages through a loaded message as read for this participant only",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Chat-Unlock",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "messageId"
+                ],
+                "properties": {
+                  "messageId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Read position saved monotonically"
+          },
+          "400": {
+            "description": "Invalid messageId"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "PIN unlock required"
+          },
+          "404": {
+            "description": "Conversation or received message unavailable"
+          },
+          "503": {
+            "description": "Firestore unavailable"
           }
         }
       }

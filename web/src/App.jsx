@@ -5,13 +5,12 @@ import { disableWebNotifications, setWebNotificationsAllowed } from './webNotifi
 import { useEffect, useState } from 'react';
 import { ArrowLeft, LogIn, Mail, UserPlus } from 'lucide-react';
 import Diet from './Diet';
-import ConnectedAssistants from './ConnectedAssistants';
 import Priorities from './Priorities';
 import Finance from './Finance';
 import Family from './Family';
 import Chat from './Chat';
-import Admin from './Admin';
-import { AppShell, Button, EnvironmentBanner, FormField, LoadingState } from './ui';
+import Settings from './Settings';
+import { AppShell, Button, FormField, LoadingState } from './ui';
 import { version as webVersion } from '../package.json';
 
 const emptyForm = { name: '', email: '', password: '' };
@@ -239,8 +238,7 @@ function VerificationRequired({ user, onLogout, runtime }) {
   }
 
   return (<>
-    <EnvironmentBanner runtime={runtime} />
-    <main className="verification-shell verification-with-banner">
+    <main className="verification-shell">
       <section className="verification-card">
         <p className="eyebrow">Verification required</p>
         <h1>Check your email, {user.name}.</h1>
@@ -388,10 +386,10 @@ function PublicHome({ onAuthenticated, runtime }) {
   );
 }
 
-function Profile({ user, onLogout, runtime }) {
+function Profile({ user, onLogout, runtime, onExpired, onUserRefresh }) {
   const pageFromHash = () => {
     const requested = window.location.pathname === '/chat-invite' ? 'chat' : window.location.hash.slice(1).split('?')[0];
-    if (requested === 'settings') return user.features?.diet && user.features?.mcp ? 'settings' : 'profile';
+    if (['settings', 'admin', 'appearance'].includes(requested)) return 'settings';
     return (user.features || { family: true })[requested] ? requested : 'profile';
   };
   const [page, setPage] = useState(pageFromHash);
@@ -406,13 +404,19 @@ function Profile({ user, onLogout, runtime }) {
     <AppShell page={shared.page} user={user} runtime={runtime} onLogout={onLogout} sharedModules={shared.selected ? shared.modules : undefined} workspaceControls={shared.controls}>
       {shared.notice}
       {shared.selected ? shared.content : <>
-      {page === 'settings' ? <ConnectedAssistants apiRequest={apiRequest} /> : page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} webNotificationsEnabled={user.webNotificationsEnabled} /> : <SignedInHome user={user} runtime={runtime} />}
+      {page === 'settings' ? <Settings user={user} runtime={runtime} apiRequest={apiRequest} onLogout={onLogout} onExpired={onExpired} onUserRefresh={onUserRefresh} /> : page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} webNotificationsEnabled={user.webNotificationsEnabled} /> : <SignedInHome user={user} runtime={runtime} />}
       </>}
     </AppShell>
   );
 }
 
 export default function App() {
+  useEffect(() => {
+    if (window.location.pathname === '/admin') {
+      window.history.replaceState(null, '', '/#settings?section=admin');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
+  }, []);
   const [user, setUser] = useState(null);
   const [runtime, setRuntime] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -479,7 +483,5 @@ export default function App() {
   }
   if (!user) return <PublicHome onAuthenticated={setUser} runtime={runtime} />;
   if (!user.emailVerified) return <VerificationRequired user={user} onLogout={logout} runtime={runtime} />;
-  if (location.pathname === '/admin') return <Admin user={user} runtime={runtime} onLogout={logout}
-    apiRequest={apiRequest} onExpired={expireSession} onUserRefresh={refreshUser} />;
-  return <Profile user={user} onLogout={logout} runtime={runtime} />;
+  return <Profile user={user} onLogout={logout} runtime={runtime} onExpired={expireSession} onUserRefresh={refreshUser} />;
 }
