@@ -34,6 +34,7 @@ test('F032 device ownership, session eligibility, HTTP send authorization and pr
   } };
   t.mock.method(require('../src/services/firebaseAdmin'), 'firebaseFirestore', () => firestore);
   t.mock.method(require('../src/services/firebaseAdmin'), 'firebaseMessaging', () => messaging);
+  t.mock.method(console, 'warn', () => {});
   const logs = [];
   t.mock.method(console, 'error', (...values) => logs.push(values));
   let server; let conversation;

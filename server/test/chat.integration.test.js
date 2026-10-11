@@ -110,10 +110,19 @@ test('F027 Stage invitation, PIN, isolation and deletion', {
   assert.equal((await firestore.collection(`chats/${id}/messages`).get()).size, 1);
   assert.equal((await req('GET', `/conversations/${id}/messages`, undefined, 1, b.body.token)).status, 410,
     'reads stay direct Firestore');
+  assert.equal((await req('GET', '/conversations', undefined, 1)).body.conversations[0].unreadCount, 1);
+  assert.equal((await req('GET', '/conversations', undefined, 0)).body.conversations[0].unreadCount, 0);
+  assert.equal((await req('GET', '/conversations', undefined, 2)).body.conversations.length, 0);
+  assert.equal((await req('POST', `/conversations/${id}/read`, { messageId: sent.body.messageId }, 1)).status, 403);
+  assert.equal((await req('POST', `/conversations/${id}/read`, { messageId: sent.body.messageId }, 2, b.body.token)).status, 404);
+  assert.equal((await req('POST', `/conversations/${id}/read`, { messageId: sent.body.messageId }, 0, a.body.token)).status, 404);
+  assert.equal((await req('POST', `/conversations/${id}/read`, { messageId: sent.body.messageId }, 1, b.body.token)).status, 204);
+  assert.equal((await req('GET', '/conversations', undefined, 1)).body.conversations[0].unreadCount, 0);
   assert.equal((await req('POST', `/conversations/${id}/lock`, {}, 2)).status, 404);
   assert.equal((await req('POST', `/conversations/${id}/lock`, {}, 1)).status, 204);
   assert.equal((await req('POST', `/conversations/${id}/messages`, { text: 'Locked', clientMessageId: crypto.randomUUID() }, 1, b.body.token)).status, 403,
     'lock invalidates the previous token');
+  assert.equal((await req('POST', `/conversations/${id}/read`, { messageId: sent.body.messageId }, 1, b.body.token)).status, 403);
   assert.equal((await req('POST', `/conversations/${id}/messages`, { text: 'Still open', clientMessageId: crypto.randomUUID() }, 0, a.body.token)).status, 201,
     'locking one participant leaves the other unlocked');
   b = await req('POST', `/conversations/${id}/unlock`, { pin: '654321' }, 1);

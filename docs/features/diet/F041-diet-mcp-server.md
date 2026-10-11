@@ -1,8 +1,8 @@
 # F041: Diet MCP server
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F041-diet-mcp-server`
-- **Pull request:** Not created
+- **Pull request:** Merged; owner confirmed in chat on October 10, 2026 (PR number not recorded).
 - **Approval:** Owner approved the initial read-only scope and decisions below in chat on October 10, 2026. That initial approval did not authorize implementation or deployment; implementation was subsequently authorized.
 
 ## Goal
@@ -139,3 +139,5 @@ Owner requested selective MCP access through Admin on October 10, 2026. Admin â†
 Per-user access verification: focused MCP tests (4) and Admin integration (1) passed. The MCP fixture covers absent/false permission, existing-token denial, refresh denial, re-enable and unaffected ordinary Diet reads. Admin verifies default-off behavior, saving the switch and profile propagation. Web build passed with the existing large-bundle warning. No account flags, commits, pushes or deployments were changed for this follow-up.
 
 Additional regression checks: all 25 web tests passed; feature-default and cross-site bearer-session checks passed with the new default-off permission. Owner browser review of the new Admin checkbox remains pending.
+
+Owner confirmed the PR was merged and deployed on October 10, 2026. Deployment is owner-reported; no independent production verification was performed in this update.

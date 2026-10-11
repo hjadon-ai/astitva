@@ -1,8 +1,8 @@
 # F040: Diet plan and everyday workflow
 
-- **Status:** Review
+- **Status:** Done
 - **Branch:** `feature/F040-diet-plan-workflow`
-- **Pull request:** Not created
+- **Pull request:** Merged; owner confirmed in chat on October 10, 2026 (PR number not recorded).
 - **Approval:** Owner approved the discussed phased implementation in chat. Proposed → Approved → In Progress.
 
 ## Goal

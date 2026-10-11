@@ -11,6 +11,7 @@ const { requireFeature, featuresForEmail } = require('../middleware/featureAcces
 const { firebaseAuth, firebaseFirestore } = require('../services/firebaseAdmin');
 
 const { ChatSendError, validateSend, saveChatMessage } = require('../services/chatMessageSend');
+const { unreadCount, markRead } = require('../services/chatReadState');
 const router = express.Router();
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const validId = (value) => /^[a-f\d]{24}$/i.test(value || '');
@@ -158,7 +159,36 @@ router.post('/invitations/:token/decline', rate, (request, response) => claim(re
 router.get('/conversations', async (request, response) => {
   const conversations = await ChatConversation.find({ 'participants.userId': request.chatUser._id })
     .sort({ updatedAt: -1 }).select('-messages.text').lean();
-  response.json({ conversations: conversations.map((entry) => publicConversation(entry, request.chatUser._id)) });
+  const firestore = firebaseFirestore();
+  try {
+    const entries = await Promise.all(conversations.map(async (entry) => {
+      const other = entry.participants.find((p) => !same(p.userId, request.chatUser._id));
+      let count = null;
+      if (firestore) { try { count = await unreadCount(firestore, String(entry._id), request.chatUser._id, other.userId); } catch { /* Preserve chat access when counts/index are temporarily unavailable. */ } }
+      return { ...publicConversation(entry, request.chatUser._id), unreadCount: count };
+    }));
+    response.json({ conversations: entries });
+  } catch {
+    return failure(response, 503, 'Unread counts are unavailable. Try again shortly.');
+  }
+});
+router.post('/conversations/:id/read', async (request, response) => {
+  const found = await member(request, response);
+  if (!found) return;
+  if (!unlocked(request, found.participant)) return failure(response, 403, 'Unlock this conversation first.');
+  const messageId = request.body?.messageId;
+  if (typeof messageId !== 'string' || !/^[a-f\d]{24,64}$/i.test(messageId)) return failure(response, 400, 'A valid messageId is required.');
+  const firestore = firebaseFirestore();
+  if (!firestore) return failure(response, 503, 'Firestore chat is not configured.');
+  const other = found.conversation.participants.find((p) => !same(p.userId, request.chatUser._id));
+  try {
+    if (!await markRead(firestore, String(found.conversation._id), request.chatUser._id, other.userId, messageId, async () => {
+      const current = await ChatConversation.findOne({ _id: found.conversation._id, 'participants.userId': request.chatUser._id });
+      const participant = current?.participants.find((p) => same(p.userId, request.chatUser._id));
+      if (!participant || !unlocked(request, participant)) throw new ChatSendError(403, 'Unlock this conversation first.');
+    })) return missing(response);
+    return response.status(204).end();
+  } catch (error) { if (error instanceof ChatSendError) return failure(response, error.status, error.message); return failure(response, 503, 'Read position could not be saved.'); }
 });
 router.post('/conversations/:id/pin', rate, async (request, response) => {
   const found = await member(request, response);

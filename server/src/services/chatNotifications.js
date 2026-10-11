@@ -32,13 +32,27 @@ async function eligibleDevices(conversationId, senderId) {
   ]);
 }
 
+const safeCodes = new Set([
+  'messaging/registration-token-not-registered', 'messaging/invalid-registration-token',
+  'messaging/third-party-auth-error', 'messaging/authentication-error',
+  'messaging/mismatched-credential', 'messaging/invalid-argument',
+  'messaging/server-unavailable', 'messaging/internal-error',
+  'messaging/quota-exceeded', 'messaging/unknown-error', 'app/invalid-credential'
+]);
+function logSubmissionFailure(error, platform = 'unknown') {
+  console.warn('Chat notification submission failed.', {
+    code: safeCodes.has(error?.code) ? error.code : 'unclassified',
+    platform: ['web', 'ios'].includes(platform) ? platform : 'unknown'
+  });
+}
+
 async function submitChatNotification(conversationId, senderId, messageId) {
   // Errors deliberately stay generic: provider errors can include device tokens.
   try {
     const devices = (await eligibleDevices(conversationId, senderId)).sort((a, b) => a.platform.localeCompare(b.platform));
     if (!devices.length) return 'not_requested';
     const messaging = firebaseMessaging();
-    if (!messaging) return 'failed';
+    if (!messaging) { logSubmissionFailure(null); return 'failed'; }
     let failed = false;
     let submitted = false;
     for (let offset = 0; offset < devices.length; offset += 500) {
@@ -73,11 +87,12 @@ async function submitChatNotification(conversationId, senderId, messageId) {
       }
       submitted = true;
       const result = await messaging.sendEachForMulticast(payload);
-      if (!Array.isArray(result.responses) || result.responses.length !== batch.length) return 'failed';
+      if (!Array.isArray(result.responses) || result.responses.length !== batch.length) { logSubmissionFailure(null, batch[0].platform); return 'failed'; }
       for (let i = 0; i < result.responses.length; i++) {
         const outcome = result.responses[i];
         if (outcome.success) continue;
         failed = true;
+        logSubmissionFailure(outcome.error, batch[i].platform);
         if (permanentCodes.has(outcome.error?.code)) {
           const device = batch[i];
           await NotificationDevice.deleteOne({ _id: device._id, userId: device.userId,
@@ -86,8 +101,9 @@ async function submitChatNotification(conversationId, senderId, messageId) {
       }
     }
     return failed ? 'failed' : submitted ? 'submitted' : 'not_requested';
-  } catch {
+  } catch (error) {
+    logSubmissionFailure(error);
     return 'failed';
   }
 }
-module.exports = { submitChatNotification };
+module.exports = { submitChatNotification, logSubmissionFailure };

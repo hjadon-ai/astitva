@@ -182,3 +182,7 @@ F036 managed ownership: existing dietMeals, dietNutritionTargets, dietWaterEntri
 ## F037 named meal libraries
 
 `mealLibraries` embeds up to 500 validated one-serving items, ownerId, metadata, revision and immutable published snapshot; archivedAt and everDistributed preserve distribution history. `mealLibraryReferences` links libraryId/userId with owner/shared/saved kind and unique pair. OwnerId may be a managed family person; claim transfers it and references atomically. Unique sparse legacyOwnerId makes F008 migration idempotent. Legacy meals and daily nutrition snapshots remain stored.
+
+### F045 private read positions (Firestore)
+
+No MongoDB changes. `chats/{chatId}/readStates/{userId}` stores `createdAt` timestamp and `messageId`, the last received message viewed at the bottom of an unlocked visible thread. Server-only reads/writes; default-deny Firestore rules apply. Timestamp plus document ID breaks equal-time ties; transaction prevents cursor regression. Unread counts use aggregate queries, never message previews. Read state is removed with recursive conversation deletion. Deploy `firestore.indexes.json` before backend rollout.
