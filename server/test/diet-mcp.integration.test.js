@@ -25,6 +25,7 @@ test('F041 OAuth PKCE, tools, own-data scope, refresh rotation and revocation', 
  const json={'Content-Type':'application/json'},own={...json,Authorization:'Bearer '+tokens[0],Origin:runtime.webUrl};
  assert.equal((await request('/mcp')).status,401);
  assert.match((await request('/mcp')).headers.get('www-authenticate'),/resource_metadata/);
+ assert.match((await request('/mcp')).headers.get('www-authenticate'),/scope="diet:read diet:meals:create"/);
  const meta=await request('/.well-known/oauth-authorization-server');assert.equal(meta.body.code_challenge_methods_supported[0],'S256');
  const register=await request('/register',{method:'POST',headers:json,body:{client_name:'Codex fixture',redirect_uris:['http://127.0.0.1:45678/callback'],token_endpoint_auth_method:'none',grant_types:['authorization_code','refresh_token'],response_types:['code']}});
  assert.equal(register.status,201,JSON.stringify(register.body));const client=register.body.client_id;
