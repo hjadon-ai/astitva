@@ -19,7 +19,6 @@ tags:
   - name: Authentication
   - name: Diet
   - name: Finance
-  - name: Daily Priorities
   - name: Family
   - name: Family Social
   - name: Notifications
@@ -146,12 +145,6 @@ paths:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1shares~1{feature}~1{recipientId}'
   /api/family/{familyId}/shared/{ownerId}/{feature}:
     $ref: './family.openapi.json#/paths/~1api~1family~1{familyId}~1shared~1{ownerId}~1{feature}'
-  /api/priorities/days/{date}:
-    $ref: './priorities.openapi.json#/paths/~1api~1priorities~1days~1{date}'
-  /api/priorities/days/{date}/priorities:
-    $ref: './priorities.openapi.json#/paths/~1api~1priorities~1days~1{date}~1priorities'
-  /api/priorities/days/{date}/priorities/{priorityId}:
-    $ref: './priorities.openapi.json#/paths/~1api~1priorities~1days~1{date}~1priorities~1{priorityId}'
   /api/finance/summary:
     $ref: './finance.openapi.json#/paths/~1api~1finance~1summary'
   /api/finance/connections:
@@ -559,10 +552,9 @@ components:
           description: Server-computed navigation hint; admin endpoints recheck the verified session and ADMIN_EMAILS. See admin.openapi.json for F031.
         features:
           type: object
-          required: [priorities, diet, finance, family, chat]
+          required: [diet, finance, family, chat]
           description: Current invited-email feature access. Missing flags default to Family only.
           properties:
-            priorities: { type: boolean }
             diet: { type: boolean }
             finance: { type: boolean }
             family: { type: boolean }

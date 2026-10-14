@@ -5,7 +5,6 @@ import { disableWebNotifications, setWebNotificationsAllowed } from './webNotifi
 import { useEffect, useState } from 'react';
 import { ArrowLeft, LogIn, Mail, UserPlus } from 'lucide-react';
 import Diet from './Diet';
-import Priorities from './Priorities';
 import Finance from './Finance';
 import Family from './Family';
 import Chat from './Chat';
@@ -390,7 +389,7 @@ function Profile({ user, onLogout, runtime, onExpired, onUserRefresh }) {
   const pageFromHash = () => {
     const requested = window.location.pathname === '/chat-invite' ? 'chat' : window.location.hash.slice(1).split('?')[0];
     if (['settings', 'admin', 'appearance'].includes(requested)) return 'settings';
-    return (user.features || { family: true })[requested] ? requested : 'profile';
+    return ['diet', 'finance', 'family', 'chat'].includes(requested) && (user.features || { family: true })[requested] ? requested : 'profile';
   };
   const [page, setPage] = useState(pageFromHash);
   useEffect(() => {
@@ -404,7 +403,7 @@ function Profile({ user, onLogout, runtime, onExpired, onUserRefresh }) {
     <AppShell page={shared.page} user={user} runtime={runtime} onLogout={onLogout} sharedModules={shared.selected ? shared.modules : undefined} workspaceControls={shared.controls}>
       {shared.notice}
       {shared.selected ? shared.content : <>
-      {page === 'settings' ? <Settings user={user} runtime={runtime} apiRequest={apiRequest} onLogout={onLogout} onExpired={onExpired} onUserRefresh={onUserRefresh} /> : page === 'priorities' ? <Priorities apiRequest={apiRequest} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} webNotificationsEnabled={user.webNotificationsEnabled} /> : <SignedInHome user={user} runtime={runtime} />}
+      {page === 'settings' ? <Settings user={user} runtime={runtime} apiRequest={apiRequest} onLogout={onLogout} onExpired={onExpired} onUserRefresh={onUserRefresh} /> : page === 'diet' ? <Diet apiRequest={apiRequest} /> : page === 'finance' ? <Finance apiRequest={apiRequest} runtime={runtime} /> : page === 'family' ? <Family apiRequest={apiRequest} features={user.features} /> : page === 'chat' ? <Chat apiRequest={apiRequest} webNotificationsEnabled={user.webNotificationsEnabled} /> : <SignedInHome user={user} runtime={runtime} />}
       </>}
     </AppShell>
   );

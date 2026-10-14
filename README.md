@@ -83,11 +83,7 @@ F006 is ready for manual review. F007 adds the isolated local Stage profile and 
 
 F011 is ready for manual review on `feature/F011-application-visual-system`. It adds the shared light visual system, responsive application shell, Lucide icons, reusable presentation components, and consistent styling without changing API behavior.
 
-F009 Daily Priorities is ready for manual review on `feature/F009-daily-priorities`.
-The private page supports up to three priorities per day, completion progress,
-past-date navigation, inline editing and deletion, and local MongoDB persistence.
-The automated MongoDB ownership and concurrency suite and the web build pass. See
-`docs/features/priorities/F009-daily-priorities.md` for the manual browser checklist.
+Daily Priorities was retired by F047. After deploying the removal, the owner can manually delete the `dailyPriorityDays` collection. No automatic data deletion occurs.
 
 F012 adds a locally reviewable Production profile and deployment configuration for Firebase Hosting, Render, MongoDB Atlas, invite-only signup, and provider-neutral SMTP. It does not deploy anything. See `docs/infra/production.md`.
 
@@ -131,7 +127,7 @@ In your personal Family view, use Sharing to grant or revoke Diet, Finance or sc
 
 From the Astitva repository, run `./scripts/start-local.sh stage` (local Stage) or `./scripts/start-local.sh dev` (Sandbox), then open http://localhost:3000. Start only one profile on ports 3000/3001. This requires your existing local MongoDB/Mailpit and ignored profile configuration. Shared Family grants retain their original member scope; additional members need a fresh explicit grant. No deployment was performed.
 
-F036 managed NON_USER workspaces: ADMIN/EDITOR select a Non User from the family selector to manage enabled general modules (Diet, Daily Priorities, Family information). Finance, Anonymous Chat and Admin are premium and unavailable. No separate account or session is created. Category registration is explicit in server/src/services/featureCategories.js. Claiming transfers managed records atomically; conflicting existing account data/identity requires review, and automatic manager access ends. No editing-consent grant API is introduced; existing account sharing remains read-only.
+F036 managed NON_USER workspaces: ADMIN/EDITOR select a Non User from the family selector to manage enabled general modules (Diet, Family information). Finance, Anonymous Chat and Admin are premium and unavailable. No separate account or session is created. Category registration is explicit in server/src/services/featureCategories.js. Claiming transfers managed records atomically; conflicting existing account data/identity requires review, and automatic manager access ends. No editing-consent grant API is introduced; existing account sharing remains read-only.
 
 ## Named meal libraries (F037, local review)
 

@@ -3,7 +3,6 @@ import {familyAge} from './familyAge';
 import { ArrowLeft, UsersRound, ChevronDown, UserRound, Check, Sprout, Flower2, Ellipsis, Pencil } from 'lucide-react';
 import {useCallback,useEffect,useRef,useState,useId} from 'react';
 import Diet from './Diet';
-import Priorities from './Priorities';
 import {TransactionList} from './Finance';
 import {Button,IconButton,FormField,LoadingState,PageHeader,SectionHeader,StatCard,StatusBanner,Surface} from './ui';
 import {dietSharedData,memberKey,sharedPage} from './sharedWorkspace.js';
@@ -57,7 +56,6 @@ function SharedInformation({module,read}){
 function ManagedModule({module,context,apiRequest,onDenied}){
  const managedRequest=useCallback(async(path,options={})=>{try{return await apiRequest(path,{...options,headers:{...options.headers,'X-Astitva-Member':context.owner.personId,'X-Astitva-Family':context.familyId}});}catch(error){if([401,403,404].includes(error.status))onDenied(error);throw error;}},[apiRequest,context.owner.personId,context.familyId,onDenied]);
  if(module==='diet')return <Diet key={context.owner.personId} apiRequest={managedRequest}/>;
- if(module==='priorities')return <Priorities key={context.owner.personId} apiRequest={managedRequest}/>;
  return <ManagedFamily context={context} apiRequest={apiRequest}/>;
 }
 function ManagedFamily({context,apiRequest}){

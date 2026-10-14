@@ -118,7 +118,7 @@ test('F031 admin authorization, search, invitees, atomic edits and Chat revocati
   assert.equal((await call('/api/chat/conversations', { token: tokens[1] })).status, 403);
 
   const made = await call('/api/admin/invitees', { method: 'POST',
-    body: { email: ` ${emails[3].toUpperCase()} `, features: { priorities: true, chat: false } } });
+    body: { email: ` ${emails[3].toUpperCase()} `, features: { diet: true, chat: false } } });
   assert.equal(made.status, 201);
   assert.equal(made.body.invitationSent, true);
   assert.deepEqual(sent, [emails[3]]);
@@ -128,7 +128,7 @@ test('F031 admin authorization, search, invitees, atomic edits and Chat revocati
   assert.equal(await User.exists({ email: emails[3] }), null, 'invite does not create an account');
   assert.equal((await call('/api/admin/invitees', { method: 'POST',
     body: { email: emails[3], features: { chat: true } } })).status, 409);
-  for (const flags of [{ admin: true }, { diet: 'true' }, {}]) {
+  for (const flags of [{ admin: true }, { priorities: true }, { diet: 'true' }, {}]) {
     assert.equal((await call('/api/admin/invitees', { method: 'POST', body: { email: emails[4], features: flags } })).status, 400);
   }
   assert.deepEqual(sent, [emails[3]], 'duplicates do not send email');

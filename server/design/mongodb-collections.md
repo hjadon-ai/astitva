@@ -9,7 +9,7 @@ The application connects to only one database per process. It never copies or qu
 
 ## invitedEmails (F012)
 
-`invitedEmails` replaces the Production `INVITED_EMAILS` Render variable. It stores one normalized, unique email address, timestamps, and top-level Boolean feature flags: `priorities`, `diet`, `finance`, `family`, and `chat`. An absent record or absent flag defaults to Family only (`family: true`; all others `false`). The API checks the current flags for every authenticated feature request, and `/api/auth/login` and `/api/auth/me` return them for navigation. Setting a flag to `false` revokes that feature even for an existing account. A successful Family invitation upserts the address whether or not the account already exists. Production signup checks this collection before creating a User; an active matching Family invitation token remains a fallback for links sent before this change. Neither an invited-email record nor a matching account links a person to a family; verified login and explicit invitation acceptance remain required. For an initial owner signup, add that address to the collection manually in Atlas before removing the old Render variable.
+`invitedEmails` replaces the Production `INVITED_EMAILS` Render variable. It stores one normalized, unique email address, timestamps, and top-level Boolean feature flags: `diet`, `finance`, `family`, and `chat`. An absent record or absent flag defaults to Family only (`family: true`; all others `false`). The API checks the current flags for every authenticated feature request, and `/api/auth/login` and `/api/auth/me` return them for navigation. Setting a flag to `false` revokes that feature even for an existing account. A successful Family invitation upserts the address whether or not the account already exists. Production signup checks this collection before creating a User; an active matching Family invitation token remains a fallback for links sent before this change. Neither an invited-email record nor a matching account links a person to a family; verified login and explicit invitation acceptance remain required. For an initial owner signup, add that address to the collection manually in Atlas before removing the old Render variable.
 
 Local Stage includes `sample.invited@example.invalid` with `family: true` and all other flags `false` as an example. This placeholder cannot receive email and is not a usable sign-in account.
 
@@ -97,28 +97,9 @@ Stores single-use password-reset tokens. Only the SHA-256 hash is stored. Expire
 | `createdAt` | Date | Creation time |
 | `updatedAt` | Date | Last update time |
 
-## `dailyPriorityDays` (F009)
+## Retired: `dailyPriorityDays` (F009, removed by F047)
 
-One private calendar day per user, with up to three priorities in insertion order.
-`userId` is a required immutable User ObjectId derived exclusively from the session;
-`date` is a required immutable real `YYYY-MM-DD` calendar date. `priorities` defaults
-to an empty array and contains at most three embedded items, each with a generated
-ObjectId `_id`, a required trimmed single-line `title` (1–120 JavaScript string
-units), and a required boolean `completed` (default false). Day `createdAt` and
-`updatedAt` are server-managed BSON Dates. Progress is calculated, never stored.
-
-The unique `{ userId: 1, date: 1 }` index is created before the server accepts
-requests; retain the default `_id` index. Empty days remain after deletion. GET
-never initializes a day. POST first performs an owner/date-only `$setOnInsert`
-upsert (duplicate-key races reuse that same day), then a non-upsert atomic `$push`
-filtered by `'priorities.2': { $exists: false }`. A missed capacity predicate is
-409. PATCH uses positional `$set` of supplied fields only; DELETE uses `$pull`.
-Every filter includes owner/date and item mutations also match item ID. No stale
-array replacements, process locks, replica sets, or transactions are required.
-
-The browser-declared `X-Time-Zone` IANA zone determines today's server-side upper
-bound; it is a calendar preference, never authorization. Dates remain verbatim
-strings across timezone changes. No automatic carryover or day deletion exists.
+No application code reads or writes this collection. The owner may manually remove it after deploying F047. No automatic database deletion is performed. The obsolete `priorities` field in `invitedEmails` can optionally be unset; do not drop `invitedEmails`.
 
 ## Anonymous Chat collections (F027)
 
@@ -177,7 +158,7 @@ Family requests: requestedRole (READONLY default, EDITOR or ADMIN) records the i
 
 F035 Self birth date: `familyPeople.birthDate` is an optional validated YYYY-MM-DD/null field. An explicit Self birth-date edit sets this canonical value and refreshes all active unit projections in one transaction. Membership notes/preferred names remain per-unit. Absent canonical values retain existing per-unit dates until the owner saves Self.
 
-F036 managed ownership: existing dietMeals, dietNutritionTargets, dietWaterEntries, dietLibraryMeals and dailyPriorityDays userId keys may refer to an unlinked familyPeople ID. Only authorized managed-context services resolve those IDs. No pseudo User is created. Linking atomically transfers these keys to the verified account, rejecting existing recipient records. Managed writes increment the person's optimistic version and unit version inside the data transaction to serialize against linking/removal.
+F036 managed ownership: existing dietMeals, dietNutritionTargets, dietWaterEntries, dietLibraryMeals userId keys may refer to an unlinked familyPeople ID. Only authorized managed-context services resolve those IDs. No pseudo User is created. Linking atomically transfers these keys to the verified account, rejecting existing recipient records. Managed writes increment the person's optimistic version and unit version inside the data transaction to serialize against linking/removal.
 
 ## F037 named meal libraries
 

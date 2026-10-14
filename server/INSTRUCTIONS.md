@@ -16,7 +16,6 @@ This folder contains the Node.js backend for the Astitva personal workspace.
 
 ## Current step
 
-Review F009 Daily Priorities with the private per-day REST API and local MongoDB persistence.
 
 ## Run locally
 
@@ -49,7 +48,6 @@ F006 is ready for manual review: Finance uses Plaid Sandbox for connect/sync and
 
 F007 is ready for manual review: the two profiles have isolated configuration, databases, cookies, and finance-provider environments. See `../docs/features/infra/F007-local-stage-environment.md`.
 
-F009 is ready for manual review: verified users can manage up to three private priorities for today or a past date. See `../docs/features/priorities/F009-daily-priorities.md`.
 
 F012 adds a strict Production runtime for Render and MongoDB Atlas. Production secrets belong only in Render, Finance starts disabled, and unsafe writes require the exact configured web origin. See `../docs/infra/production.md`.
 
