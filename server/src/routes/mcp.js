@@ -59,7 +59,7 @@ function installMcp(app, runtime) {
     let auth;
     try { if (match) auth = await provider.verifyAccessToken(match[1]); }
     catch (error) { if (error.status === 403) return res.status(403).json({ error: error.message }); if (error.constructor.name !== 'InvalidTokenError') throw error; }
-    if (!auth) { res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/mcp", scope="${A.scope}"`); return res.status(401).json({ error: 'MCP authorization required.' }); }
+    if (!auth) { res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/mcp", scope="${A.supportedScopes.join(' ')}"`); return res.status(401).json({ error: 'MCP authorization required.' }); }
     // Stateless transport exposes only POST request/response; no resumable SSE sessions.
     if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'Use POST for stateless MCP requests.' }); }
     if (Array.isArray(req.body)) return res.status(400).json({ error: 'MCP batches are not supported.' });

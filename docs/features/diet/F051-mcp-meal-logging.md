@@ -19,3 +19,7 @@ Keep Stage running. Revoke/disconnect the old connection if replacing it, then r
 ## Verification
 
 Server suite: 67 passed, 12 opt-in tests skipped. Focused MCP unit/integration suite: 4 passed against disposable MongoDB, including write consent, read-only rejection, refresh escalation rejection, write refresh, owner-only persistence, invalid input, repeated/concurrent retry keys, conflicts and revocation. Web tests: 32 passed. Web production build passed with the existing chunk-size warning. Git whitespace check passed. Stage is running from `/private/tmp/astitva-f051`; authenticated owner review remains. No commit, push or deployment performed.
+
+## OAuth challenge follow-up
+
+The unauthenticated MCP `WWW-Authenticate` challenge now lists both `diet:read` and `diet:meals:create`, matching discovery metadata. This removes the read-only hint during new connections; clients still choose requested scopes and existing grants remain unchanged. Reconnect after deploying the server fix. A regression assertion checks the exact advertised challenge scopes; focused MCP tests pass.
