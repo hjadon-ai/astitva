@@ -6,6 +6,13 @@ const { sessionToken } = require('../middleware/sessionToken');
 const { featuresForEmail } = require('../middleware/featureAccess');
 const { AccessDeniedError, InvalidClientMetadataError, InvalidGrantError, InvalidScopeError, InvalidTargetError, InvalidTokenError } = require('@modelcontextprotocol/sdk/server/auth/errors.js');
 const scope = 'diet:read';
+const writeScope = 'diet:meals:create';
+const supportedScopes = [scope, writeScope];
+function requestedScopes(scopes) {
+  const selected = scopes?.length ? [...new Set(scopes)] : [scope];
+  if (selected.some(s => !supportedScopes.includes(s))) throw new InvalidScopeError('Unsupported Diet permission.');
+  return selected;
+}
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const random = () => crypto.randomBytes(32).toString('hex');
 const future = seconds => new Date(Date.now() + seconds * 1000);
@@ -35,17 +42,17 @@ function createProvider(runtime) {
       async getClient(id) { return (await Client.findOne({ clientId: id, ...live() }).lean())?.metadata; },
       async registerClient(input) {
         if (input.token_endpoint_auth_method !== 'none' || !Array.isArray(input.redirect_uris) || input.redirect_uris.length < 1 || input.redirect_uris.length > 5 || input.redirect_uris.some(uri => !validRedirect(uri))) throw new InvalidClientMetadataError('Use a public PKCE client and valid HTTPS or loopback callback URLs.');
-        const metadata = { client_id: random(), client_id_issued_at: Math.floor(Date.now() / 1000), client_name: String(input.client_name || 'AI assistant').slice(0, 100), redirect_uris: input.redirect_uris, token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], scope };
+        const metadata = { client_id: random(), client_id_issued_at: Math.floor(Date.now() / 1000), client_name: String(input.client_name || 'AI assistant').slice(0, 100), redirect_uris: input.redirect_uris, token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], scope: supportedScopes.join(' ') };
         await Client.create({ clientId: metadata.client_id, metadata, expiresAt: future(90 * 86400) });
         return metadata;
       }
     },
     async authorize(client, params, res) {
       checkResource(params.resource);
-      if (params.scopes?.some(s => s !== scope)) throw new InvalidScopeError('Only diet:read is supported.');
+      const grantedScope = requestedScopes(params.scopes).join(' ');
       if (!/^[A-Za-z0-9_-]{43}$/.test(params.codeChallenge) || (params.state?.length || 0) > 2048) throw new InvalidGrantError('Invalid authorization parameters.');
       const ticket = random();
-      await Authorization.create({ requestHash: hash(ticket), clientId: client.client_id, clientName: client.client_name, redirectUri: params.redirectUri, state: params.state, challenge: params.codeChallenge, resource, expiresAt: future(600) });
+      await Authorization.create({ requestHash: hash(ticket), clientId: client.client_id, clientName: client.client_name, redirectUri: params.redirectUri, state: params.state, challenge: params.codeChallenge, scope: grantedScope, resource, expiresAt: future(600) });
       const url = new URL(runtime.webUrl); url.hash = 'settings?mcp_request=' + ticket;
       res.redirect(url.href);
     },
@@ -60,25 +67,27 @@ function createProvider(runtime) {
       if (!row) throw new InvalidGrantError('Authorization code is invalid or expired.');
       await eligibleUser(row.userId);
       const access = random(), refresh = random();
-      await Grant.create({ userId: row.userId, clientId: client.client_id, clientName: row.clientName, scope, resource, accessHash: hash(access), refreshHash: hash(refresh), accessExpiresAt: future(3600), expiresAt: future(30 * 86400) });
-      return { access_token: access, refresh_token: refresh, token_type: 'Bearer', expires_in: 3600, scope };
+      await Grant.create({ userId: row.userId, clientId: client.client_id, clientName: row.clientName, scope: row.scope || scope, resource, accessHash: hash(access), refreshHash: hash(refresh), accessExpiresAt: future(3600), expiresAt: future(30 * 86400) });
+      return { access_token: access, refresh_token: refresh, token_type: 'Bearer', expires_in: 3600, scope: row.scope || scope };
     },
     async exchangeRefreshToken(client, token, scopes, requestedResource) {
       checkResource(requestedResource);
-      if (scopes?.some(s => s !== scope)) throw new InvalidScopeError('Only diet:read is supported.');
       const row = await Grant.findOne({ refreshHash: hash(token), clientId: client.client_id, revokedAt: null, ...live() }).lean();
       if (!row) throw new InvalidGrantError('Refresh token is invalid or expired.');
+      const grantedScopes = (row.scope || scope).split(' ');
+      if (scopes?.length && requestedScopes(scopes).some(s => !grantedScopes.includes(s))) throw new InvalidScopeError('Refresh cannot add permissions. Reconnect for fresh consent.');
+      const refreshedScope = scopes?.length ? requestedScopes(scopes).join(' ') : grantedScopes.join(' ');
       await eligibleUser(row.userId);
       const access = random(), refresh = random();
-      const updated = await Grant.findOneAndUpdate({ _id: row._id, refreshHash: hash(token), revokedAt: null, ...live() }, { $set: { accessHash: hash(access), refreshHash: hash(refresh), accessExpiresAt: future(3600) } });
+      const updated = await Grant.findOneAndUpdate({ _id: row._id, refreshHash: hash(token), revokedAt: null, ...live() }, { $set: { scope: refreshedScope, accessHash: hash(access), refreshHash: hash(refresh), accessExpiresAt: future(3600) } });
       if (!updated) throw new InvalidGrantError('Refresh token was already used or revoked.');
-      return { access_token: access, refresh_token: refresh, token_type: 'Bearer', expires_in: 3600, scope };
+      return { access_token: access, refresh_token: refresh, token_type: 'Bearer', expires_in: 3600, scope: refreshedScope };
     },
     async verifyAccessToken(token) {
-      const row = await Grant.findOne({ accessHash: hash(token), revokedAt: null, resource, scope, accessExpiresAt: { $gt: new Date() }, ...live() }).lean();
+      const row = await Grant.findOne({ accessHash: hash(token), revokedAt: null, resource, accessExpiresAt: { $gt: new Date() }, ...live() }).lean();
       if (!row) throw new InvalidTokenError('Access token is invalid, expired or revoked.');
       await eligibleUser(row.userId);
-      return { token, clientId: row.clientId, scopes: [scope], expiresAt: Math.floor(row.accessExpiresAt.getTime() / 1000), resource: new URL(resource), extra: { userId: String(row.userId) } };
+      return { token, clientId: row.clientId, scopes: requestedScopes((row.scope || scope).split(' ')), expiresAt: Math.floor(row.accessExpiresAt.getTime() / 1000), resource: new URL(resource), extra: { userId: String(row.userId) } };
     },
     async revokeToken(client, request) {
       await Grant.updateMany({ clientId: client.client_id, $or: [{ accessHash: hash(request.token) }, { refreshHash: hash(request.token) }], revokedAt: null }, { $set: { revokedAt: new Date() } });
@@ -94,4 +103,4 @@ async function consumeToolLimit(userId) {
   catch (error) { if (error.code !== 11000) throw error; row = await Bucket.findOneAndUpdate({ key }, { $inc: { count: 1 } }, { returnDocument: 'after' }); }
   return { allowed: row.count <= 30, retryAfter: 60 - Math.floor(Date.now() / 1000) % 60 };
 }
-module.exports = { scope, hash, random, future, live, validRedirect, eligibleUser, sessionUser, createProvider, consumeToolLimit };
+module.exports = { scope, writeScope, supportedScopes, hash, random, future, live, validRedirect, eligibleUser, sessionUser, createProvider, consumeToolLimit };

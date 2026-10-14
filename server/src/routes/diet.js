@@ -45,41 +45,7 @@ function publicLibraryMeal(meal) {
   };
 }
 
-function nutritionValid(value, targets = false, partial = false) {
-  return object(value) && Object.keys(value).every((key) => fields.includes(key)) &&
-    (partial ? Object.keys(value).length > 0 : fields.every((key) => key in value)) &&
-    Object.entries(value).every(([key, number]) => {
-      const scaled = number * (key === 'calories' ? 1 : 10);
-      return typeof number === 'number' && Number.isFinite(number) &&
-        (targets ? number > 0 : number >= 0) && Math.abs(scaled) <= Number.MAX_SAFE_INTEGER / 1000 &&
-        Math.abs(scaled - Math.round(scaled)) < 1e-8;
-    });
-}
-
-function manualMealInput(body, partial = false) {
-  if (!object(body) || !Object.keys(body).length || Object.keys(body).some((key) =>
-    !['date', 'name', 'mealType', 'servingDescription', 'nutrition'].includes(key))) return null;
-  const result = {};
-  for (const key of ['date', 'name', 'mealType', 'nutrition']) if (!partial && !(key in body)) return null;
-  if ('date' in body) { if (!validDate(body.date)) return null; result.consumedOn = body.date; }
-  if ('name' in body) {
-    if (typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 120) return null;
-    result.name = body.name.trim();
-  }
-  if ('mealType' in body) {
-    if (!categories.includes(body.mealType)) return null;
-    result.mealType = body.mealType;
-  }
-  if ('servingDescription' in body) {
-    if (typeof body.servingDescription !== 'string' || body.servingDescription.trim().length > 80) return null;
-    result.servingDescription = body.servingDescription.trim();
-  }
-  if ('nutrition' in body) {
-    if (!nutritionValid(body.nutrition, false, partial)) return null;
-    Object.assign(result, body.nutrition);
-  }
-  return result;
-}
+const { manualMealInput, createManualMeal } = require('../services/dietMealWrite');
 
 function csvUpload(request, response, next) {
   upload.single('file')(request, response, (error) => {
@@ -148,7 +114,7 @@ router.get('/meals/recent', async (request, response) => {
 router.post('/meals', async (request, response) => {
   const input = manualMealInput(request.body);
   if (!input) return response.status(400).json({ error: 'Invalid meal. Enter a date, name, meal type and all five non-negative nutrition values (whole calories; grams to one decimal).' });
-  response.status(201).json({ meal: publicMeal(await Meal.create({ ...input, userId: request.dietUserId, source: 'manual', quantity: 1 })) });
+  response.status(201).json({ meal: publicMeal(await createManualMeal(request.dietUserId, input)) });
 });
 
 router.put('/targets', async (request, response) => {
