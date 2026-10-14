@@ -14,7 +14,6 @@ This folder will hold the design documents for the Astitva backend.
 
 ## Current step
 
-Review the F009 Daily Priorities OpenAPI, Postman requests, and `dailyPriorityDays` collection design.
 
 F005 is ready for manual review: Diet is accessible from the verified profile, with meal entry, daily totals, fiber, and editable targets. See `../../docs/features/diet/F005-daily-diet-tracking.md` for manual checks.
 
@@ -24,6 +23,5 @@ F006 is ready for manual review. `finance.openapi.json` defines the Finance endp
 
 F007 is ready for manual review. Use `Astitva.dev.postman_environment.json` for Dev and `Astitva.stage.postman_environment.json` for Stage; neither contains provider credentials or access tokens.
 
-F009 is ready for manual review. `priorities.openapi.json` defines its date, timezone, ownership, validation, and three-slot capacity behavior; both Postman environments include its local variables.
 
 F008 Diet APIs are in `diet.openapi.json` and the Diet Postman folder. CSV preview accepts a UTF-8 `.csv` file in the `file` form-data field; confirmation sends selected normalized rows as JSON.

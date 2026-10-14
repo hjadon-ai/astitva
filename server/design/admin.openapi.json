@@ -416,9 +416,6 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "priorities": {
-            "type": "boolean"
-          },
           "diet": {
             "type": "boolean"
           },

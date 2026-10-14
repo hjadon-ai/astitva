@@ -36,10 +36,10 @@ async function updateDetails(actor,unitId,personId,body){return S.transaction(as
 });}
 async function resolveRequest(req,feature){
  const personId=req.get('X-Astitva-Member'),unitId=req.get('X-Astitva-Family');if(!personId&&!unitId)return;
- if(!personId||!unitId||categories[feature]!=='general'||!['diet','priorities'].includes(feature))S.fail(403,'This operation is unavailable in a managed workspace.');
+ if(!personId||!unitId||categories[feature]!=='general'||feature!=='diet')S.fail(403,'This operation is unavailable in a managed workspace.');
  if(!(await featuresForEmail(req.featureUser.email)).family)S.fail(403,'Family is not enabled.');
  await authorize(req.featureUser,unitId,personId);
- req.managedWorkspace={personId,unitId,feature};if(feature==='diet')req.dietUserId=personId;if(feature==='priorities')req.priorityOwner=personId;
+ req.managedWorkspace={personId,unitId,feature};if(feature==='diet')req.dietUserId=personId;
 }
 function wrap(router){
  mongoose.set('transactionAsyncLocalStorage',true);
@@ -52,9 +52,9 @@ function wrap(router){
  if(body===undefined)return res.status(code).end();return res.status(code).json(body);
  }catch(error){if(error.status)return res.status(error.status).json({error:error.message});next(error);}};}
 }
-async function hasData(personId,session){if(await mongoose.connection.db.collection('mealLibraries').findOne({ownerId:personId},{session,projection:{_id:1}}))return true;for(const name of ['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dietBodyGoals','dailyPriorityDays'])if(await mongoose.connection.db.collection(name).findOne({userId:personId},{session,projection:{_id:1}}))return true;return false;}
+async function hasData(personId,session){if(await mongoose.connection.db.collection('mealLibraries').findOne({ownerId:personId},{session,projection:{_id:1}}))return true;for(const name of ['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dietBodyGoals'])if(await mongoose.connection.db.collection(name).findOne({userId:personId},{session,projection:{_id:1}}))return true;return false;}
 async function transfer(personId,userId,session){
- const names=['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dietBodyGoals','dailyPriorityDays'];
+ const names=['dietMeals','dietNutritionTargets','dietWaterEntries','dietLibraryMeals','dietBodyGoals'];
  for(const name of names){const collection=mongoose.connection.db.collection(name);if(await collection.findOne({userId:personId},{session})&&await collection.findOne({userId},{session}))S.fail(409,'Existing account data requires an explicit transfer review before linking.');}
  for(const name of names)await mongoose.connection.db.collection(name).updateMany({userId:personId},{$set:{userId}},{session});
  await mongoose.connection.db.collection('mealLibraries').updateMany({ownerId:personId},{$set:{ownerId:userId},$unset:{legacyOwnerId:''}},{session});

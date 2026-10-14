@@ -50,7 +50,7 @@ test('Production bearer session opens Family when cross-site cookies are unavail
   assert.match(sessionToken, /^[a-f0-9]{64}$/);
   const account = await fetch(`${base}/api/auth/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
   assert.deepEqual((await account.json()).user.features,
-    { priorities: false, diet: false, finance: false, family: true, chat: false, mcp: false });
+    { diet: false, finance: false, family: true, chat: false, mcp: false });
   assert.equal((await fetch(`${base}/api/family`, { headers: { Origin: origin } })).status, 401);
   const family = await fetch(`${base}/api/family`, { headers: {
     Origin: origin, Authorization: `Bearer ${sessionToken}`
@@ -62,13 +62,14 @@ test('Production bearer session opens Family when cross-site cookies are unavail
   } });
   assert.equal(deniedChat.status, 403);
   assert.equal((await deniedChat.json()).code, 'FEATURE_NOT_ENABLED');
-  for (const path of ['/api/diet/days/2026-10-02', '/api/priorities/days/2026-10-02']) {
+  for (const path of ['/api/diet/days/2026-10-02']) {
     const denied = await fetch(`${base}${path}`, { headers: {
       Origin: origin, Authorization: `Bearer ${sessionToken}`
     } });
     assert.equal(denied.status, 403);
     assert.equal((await denied.json()).code, 'FEATURE_NOT_ENABLED');
   }
+  assert.equal((await fetch(`${base}/api/priorities/days/2026-10-02`, { headers: { Authorization: `Bearer ${sessionToken}` } })).status, 404);
   enabledFeatures = { family: false, chat: false };
   assert.equal((await fetch(`${base}/api/family`, { headers: {
     Origin: origin, Authorization: `Bearer ${sessionToken}`

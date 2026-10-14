@@ -82,8 +82,7 @@
 :root[data-appearance="immersive"] .finance-transactions article { gap: 12px; }
 :root[data-appearance="immersive"] .finance-detail-grid strong { color: var(--appearance-text); }
 
-/* Priorities, Chat and Admin retain their existing forms, state and permissions. */
-:root[data-appearance="immersive"] .priority-editor { padding: 20px; border: 1px solid var(--appearance-border); border-radius: 16px; background: var(--appearance-surface); }
+/* Chat and Admin retain their existing forms, state and permissions. */
 :root[data-appearance="immersive"] :is(.chat-list button, .chat-messages .chat-message-received) { background: var(--appearance-surface); color: var(--appearance-text); border-color: var(--appearance-border); }
 :root[data-appearance="immersive"] :is(.chat-list button.active, .chat-messages .chat-message-sent) { background: var(--appearance-hover); color: var(--appearance-text); border-color: var(--appearance-primary); }
 :root[data-appearance="immersive"] .chat-connection { color: var(--appearance-muted); }

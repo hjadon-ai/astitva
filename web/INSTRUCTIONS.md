@@ -14,7 +14,6 @@ This folder contains the single-page frontend for the Astitva personal workspace
 
 ## Current step
 
-Review F009 Daily Priorities in the authenticated application shell.
 
 ## Run locally
 
@@ -33,7 +32,6 @@ F007 is ready for manual review: authenticated pages show the active profile, an
 
 F011 is ready for manual review: the React application uses semantic visual tokens, the shared presentation components under `src/ui/`, Lucide icons, and a responsive application shell. Existing feature behavior and API contracts remain unchanged. See `../docs/features/ui/F011-application-visual-system.md`.
 
-F009 is ready for manual review: the sidebar opens a per-day list with up to three priorities, progress, inline add/edit/delete, completion controls, and past-date navigation. See `../docs/features/priorities/F009-daily-priorities.md`.
 
 F012 uses `VITE_API_BASE_URL` only for the Production build. Never place server credentials in a `VITE_` variable. Firebase serves the generated `dist/` files; deployment remains manual. See `../docs/infra/production.md`.
 

@@ -67,6 +67,8 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F046 | [Finance-only environment banner](ui/F046-finance-only-banner.md) | Review | `feature/F046-finance-only-banner` | Not created |
 
+| F047 | [Remove Daily Priorities](ui/F047-remove-daily-priorities.md) | Review | `feature/F047-remove-daily-priorities` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.
