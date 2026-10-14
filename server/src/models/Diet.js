@@ -6,6 +6,8 @@ const nutrition = Object.fromEntries(fields.map((key) => [key, { type: Number, r
 const owner = { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true };
 const mealSchema = new mongoose.Schema({
   userId: owner,
+  mcpIdempotencyKey: { type: String, maxlength: 128 },
+  mcpRequestHash: String,
   consumedOn: { type: String, required: true },
   name: { type: String, required: true, maxlength: 120 },
   mealType: { type: String, enum: categories, required: true },
@@ -16,6 +18,7 @@ const mealSchema = new mongoose.Schema({
   ...nutrition
 }, { timestamps: true, collection: 'dietMeals' });
 mealSchema.index({ userId: 1, consumedOn: 1 });
+mealSchema.index({ userId: 1, mcpIdempotencyKey: 1 }, { unique: true, partialFilterExpression: { mcpIdempotencyKey: { $type: 'string' } } });
 const targetSchema = new mongoose.Schema({
   userId: { ...owner, unique: true },
   waterMilliliters: { type: Number, min: 1, default: undefined },

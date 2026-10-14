@@ -9,7 +9,7 @@ test('F041 OAuth PKCE, tools, own-data scope, refresh rotation and revocation', 
  const {Grant,Client,Authorization,Bucket} = require('../src/models/Mcp');
  const User=require('../src/models/User'),Session=require('../src/models/Session'),Flags=require('../src/models/InvitedEmail');
  const {Meal,Targets,WaterEntry,LibraryMeal}=require('../src/models/Diet'),{Library,Reference}=require('../src/models/MealLibrary');
- await Promise.all([Grant,Client,Authorization,Bucket,Library,Reference,Targets,LibraryMeal].map(model=>model.init()));
+ await Promise.all([Grant,Client,Authorization,Bucket,Library,Reference,Targets,LibraryMeal,Meal].map(model=>model.init()));
  const users=await User.create(['owner','other','unverified'].map((name,i)=>({name,email:name+'@example.invalid',passwordHash:'fixture',emailVerifiedAt:i===2?null:new Date()})));
  await Flags.create(users.map(u=>({email:u.email,diet:true,mcp:true})));
  const tokens=users.map(()=>crypto.randomBytes(32).toString('hex')); const hash=require('../src/services/mcpAuth').hash;
@@ -65,6 +65,41 @@ test('F041 OAuth PKCE, tools, own-data scope, refresh rotation and revocation', 
  assert.equal((await rpc('tools/call',{name:'diet_get_day',arguments:{date:'2026-02-30'}})).body.result.isError,true);
  assert.equal((await exchange({...tokenInput,resource:base+'/wrong'})).status,400);
 
+ // Read-only connections cannot call the writer or upgrade through refresh.
+ const mealArgs={date,name:'MCP lunch',mealType:'lunch',servingDescription:'one bowl',nutrition,idempotencyKey:'fixture-meal-1'};
+ assert.equal((await rpc('tools/call',{name:'diet_post_meal',arguments:mealArgs})).body.result.isError,true);
+ assert.equal((await exchange({client_id:client,grant_type:'refresh_token',refresh_token:refresh,resource,scope:'diet:read diet:meals:create'})).status,400);
+ assert.equal(await Meal.countDocuments(),before);
+ const writeParams=new URLSearchParams(params);writeParams.set('scope','diet:read diet:meals:create');
+ const writeAuth=await fetch(base+'/authorize?'+writeParams,{redirect:'manual'});assert.equal(writeAuth.status,302);
+ const writeTicket=new URLSearchParams(new URL(writeAuth.headers.get('location')).hash.split('?')[1]).get('mcp_request');
+ assert.equal((await request('/api/mcp/consent/'+writeTicket,{headers:own})).body.scope,'diet:read diet:meals:create');
+ const writeConsent=await request('/api/mcp/consent/'+writeTicket,{method:'POST',headers:own,body:{allow:true}});
+ const writeCode=new URL(writeConsent.body.redirectUrl).searchParams.get('code');
+ const writeIssued=await exchange({...tokenInput,code:writeCode});assert.equal(writeIssued.status,200,JSON.stringify(writeIssued.body));
+ const writeRefresh=await exchange({client_id:client,grant_type:'refresh_token',refresh_token:writeIssued.body.refresh_token,resource});
+ assert.equal(writeRefresh.status,200);assert.equal(writeRefresh.body.scope,'diet:read diet:meals:create');
+ const readAccess=access;access=writeRefresh.body.access_token;
+ const writeTools=(await rpc('tools/list')).body.result.tools;assert.equal(writeTools.length,6);
+ assert.equal(writeTools.find(tool=>tool.name==='diet_post_meal').annotations.readOnlyHint,false);
+ const callMeal=args=>rpc('tools/call',{name:'diet_post_meal',arguments:args});
+ const saved=await callMeal(mealArgs);assert.ok(saved.body.result.structuredContent,JSON.stringify(saved.body));
+ const mealId=saved.body.result.structuredContent.meal.id;
+ const retried=await Promise.all([callMeal(mealArgs),callMeal(mealArgs)]);
+ assert.ok(retried.every(result=>result.body.result.structuredContent.meal.id===mealId));
+ assert.equal(await Meal.countDocuments(),before+1);
+ assert.equal(String((await Meal.findById(mealId)).userId),String(users[0]._id));
+ assert.equal((await callMeal({...mealArgs,name:'different meal'})).body.result.isError,true);
+ for(const args of [{...mealArgs,userId:String(users[1]._id)},{...mealArgs,date:'2026-02-30'},{...mealArgs,nutrition:{...nutrition,calories:1.5}},{...mealArgs,nutrition:{...nutrition,fatGrams:-1}},{...mealArgs,nutrition:{calories:100}},{...mealArgs,idempotencyKey:''}]) assert.equal((await callMeal(args)).body.result.isError,true);
+ assert.equal((await rpc('tools/call',{name:'diet_post_meal',arguments:mealArgs},{'X-Astitva-Member':String(users[1]._id)})).status,403);
+ // Two first attempts with the same key must create only one meal.
+ const concurrent=await Promise.all([callMeal({...mealArgs,idempotencyKey:'fixture-meal-2'}),callMeal({...mealArgs,idempotencyKey:'fixture-meal-2'})]);
+ assert.equal(concurrent[0].body.result.structuredContent.meal.id,concurrent[1].body.result.structuredContent.meal.id);
+ assert.equal(await Meal.countDocuments(),before+2);
+ const loggedDay=await request('/api/diet/days/'+date,{headers:own});assert.equal(loggedDay.body.meals.length,3);
+ await Grant.updateOne({accessHash:hash(access)},{$set:{revokedAt:new Date()}});
+ assert.equal((await callMeal({...mealArgs,idempotencyKey:'revoked'})).status,401);
+ access=readAccess;
  const refreshed=await exchange({client_id:client,grant_type:'refresh_token',refresh_token:refresh,resource});assert.equal(refreshed.status,200,JSON.stringify(refreshed.body));
  assert.equal((await rpc('tools/list')).status,401);access=refreshed.body.access_token;
  assert.equal((await exchange({client_id:client,grant_type:'refresh_token',refresh_token:refresh,resource})).status,400);
@@ -86,6 +121,6 @@ test('F041 OAuth PKCE, tools, own-data scope, refresh rotation and revocation', 
  assert.equal((await rpc('tools/list')).status,401);
  assert.equal((await exchange({client_id:client,grant_type:'refresh_token',refresh_token:refreshed.body.refresh_token,resource})).status,400);
  assert.equal((await request('/revoke',{method:'POST',headers:form,body:new URLSearchParams({client_id:client,token:access}).toString()})).status,200);
- assert.equal(await Meal.countDocuments(),before);
+ assert.equal(await Meal.countDocuments(),before+2);
  assert.ok(await Session.exists({tokenHash:hash(tokens[0])}));
 });

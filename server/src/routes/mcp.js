@@ -23,7 +23,7 @@ function installMcp(app, runtime) {
   management.get('/consent/:ticket', async (req, res) => {
     const row = resource && await consentRequest(req.params.ticket);
     if (!row) return res.status(404).json({ error: 'Connection request expired or unavailable. Restart login from your assistant.' });
-    res.json({ clientName: row.clientName, redirectUri: row.redirectUri, account: req.mcpUser.email, scope: A.scope });
+    res.json({ clientName: row.clientName, redirectUri: row.redirectUri, account: req.mcpUser.email, scope: row.scope || A.scope });
   });
   management.post('/consent/:ticket', async (req, res) => {
     if (!resource || !req.body || typeof req.body.allow !== 'boolean' || Object.keys(req.body).some(key => key !== 'allow')) return res.status(400).json({ error: 'Choose Allow or Deny.' });
@@ -50,10 +50,10 @@ function installMcp(app, runtime) {
   });
   protocol.use(express.json({ limit: '16kb' }), express.urlencoded({ extended: false, limit: '16kb' }));
   protocol.get('/.well-known/oauth-authorization-server', (req, res) => res.json({
-    ...createOAuthMetadata({ provider, issuerUrl: new URL(origin), scopesSupported: [A.scope] }),
+    ...createOAuthMetadata({ provider, issuerUrl: new URL(origin), scopesSupported: A.supportedScopes }),
     token_endpoint_auth_methods_supported: ['none'], revocation_endpoint_auth_methods_supported: ['none']
   }));
-  protocol.use(mcpAuthRouter({ provider, issuerUrl: new URL(origin), resourceServerUrl: new URL(resource), scopesSupported: [A.scope], resourceName: 'Astitva Diet (read-only)' }));
+  protocol.use(mcpAuthRouter({ provider, issuerUrl: new URL(origin), resourceServerUrl: new URL(resource), scopesSupported: A.supportedScopes, resourceName: 'Astitva Diet' }));
   protocol.all('/mcp', async (req, res) => {
     const match = /^Bearer ([a-f0-9]{64})$/i.exec(req.get('Authorization') || '');
     let auth;
@@ -67,7 +67,7 @@ function installMcp(app, runtime) {
       const limit = await A.consumeToolLimit(auth.extra.userId);
       if (!limit.allowed) { res.setHeader('Retry-After', String(limit.retryAfter)); return res.status(429).json({ error: 'RATE_LIMITED', retryAfter: limit.retryAfter }); }
     }
-    const server = createDietMcp(auth.extra.userId);
+    const server = createDietMcp(auth.extra.userId, undefined, auth.scopes);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     res.on('close', () => { transport.close().catch(() => {}); server.close().catch(() => {}); });
     await server.connect(transport);

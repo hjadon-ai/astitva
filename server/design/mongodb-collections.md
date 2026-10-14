@@ -167,3 +167,7 @@ F036 managed ownership: existing dietMeals, dietNutritionTargets, dietWaterEntri
 ### F045 private read positions (Firestore)
 
 No MongoDB changes. `chats/{chatId}/readStates/{userId}` stores `createdAt` timestamp and `messageId`, the last received message viewed at the bottom of an unlocked visible thread. Server-only reads/writes; default-deny Firestore rules apply. Timestamp plus document ID breaks equal-time ties; transaction prevents cursor regression. Unread counts use aggregate queries, never message previews. Read state is removed with recursive conversation deletion. Deploy `firestore.indexes.json` before backend rollout.
+
+### F051 MCP meal logging
+
+`dietMeals` optionally stores `mcpIdempotencyKey` (1–128 ASCII letters/digits/underscore/hyphen) and `mcpRequestHash` (SHA-256 normalized meal input). A partial unique `(userId, mcpIdempotencyKey)` index prevents concurrent retry duplicates without affecting ordinary meals. Keys live with their meal; deletion removes retry protection. `mcpAuthorizations.scope` persists requested permissions until consent/code exchange. `mcpGrants.scope` persists granted space-separated permissions (`diet:read`, `diet:meals:create`); legacy requests/grants default to read-only. Refresh can retain or narrow, never expand, permissions.

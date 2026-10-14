@@ -69,6 +69,8 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F047 | [Remove Daily Priorities](ui/F047-remove-daily-priorities.md) | Review | `feature/F047-remove-daily-priorities` | Not created |
 
+| F051 | [MCP meal logging](diet/F051-mcp-meal-logging.md) | Review | `feature/F051-mcp-meal-logging` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.
