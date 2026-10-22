@@ -2,7 +2,7 @@ import { readApiJson } from './apiResponse';
 import { useSharedWorkspace } from './SharedWorkspace.jsx';
 import SignedInHome, { PublicHomeIntro, PublicHomeSections } from './HomeContent';
 import { disableWebNotifications, setWebNotificationsAllowed } from './webNotifications';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, LogIn, Mail, UserPlus } from 'lucide-react';
 import Diet from './Diet';
 import Finance from './Finance';
@@ -429,11 +429,13 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  function expireSession() {
+  // Keep this stable when background account checks update the user.
+  // Settings effects must not reload content solely because this callback changed.
+  const expireSession = useCallback(() => {
     disableWebNotifications(apiRequest).catch(() => {});
     setSessionToken(null);
     setUser(null);
-  }
+  }, []);
 
   async function refreshUser() {
     try { setUser((await apiRequest('/api/auth/me')).user); }

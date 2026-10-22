@@ -3055,6 +3055,220 @@
           }
         }
       ]
+    },
+    {
+      "name": "Diet nutrition range report",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/diet/reports/nutrition?start=2026-10-01&end=2026-10-31&mealType=lunch&nutrients=proteinGrams,fiberGrams",
+        "description": "Uses the saved application login cookie, like Get day. For cookie-free testing, select Bearer Token in Postman Authorization and supply a valid application sessionToken. An explicit invalid Authorization header overrides cookies."
+      },
+      "response": []
+    },
+    {
+      "name": "Admin architecture reference",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/admin/architecture"
+      },
+      "response": []
+    },
+    {
+      "name": "MCP water and meal deletion (OAuth; cookie-free)",
+      "item": [
+        {
+          "name": "Log water (MCP)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "MCP OAuth bearer only (not application sessionToken). Disable cookie jar, remove Origin and managed-workspace headers. Obtain the appropriate scope via OAuth. Delete only after confirming the exact meal; keep the water key identical for retries and use a new key per drink.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"diet_add_water\",\n    \"arguments\": {\n      \"date\": \"{{dietDate}}\",\n      \"amountMilliliters\": 250,\n      \"idempotencyKey\": \"{{mcpWaterRequestKey}}\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mcp"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete confirmed meal (MCP)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "MCP OAuth bearer only (not application sessionToken). Disable cookie jar, remove Origin and managed-workspace headers. Obtain the appropriate scope via OAuth. Delete only after confirming the exact meal; keep the water key identical for retries and use a new key per drink.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"diet_delete_meal\",\n    \"arguments\": {\n      \"mealId\": \"{{mealId}}\",\n      \"confirmed\": true\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mcp"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Diet calorie deficit report (daily, weekly, monthly)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "description": "Uses the saved application login cookie like Get day. Optionally configure a valid application Bearer token. period: daily/weekly/monthly; date: reference YYYY-MM-DD; timezone: IANA name. Period totals exclude today/future/unlogged days; inspect todayPartial and coverage.",
+        "url": "{{baseUrl}}/api/diet/reports/calorie-deficit?period=weekly&date={{dietDate}}&timezone=America/Los_Angeles"
+      },
+      "response": []
+    },
+    {
+      "name": "MCP deficit reports and targets (OAuth; cookie-free)",
+      "item": [
+        {
+          "name": "Get calorie deficit (MCP)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "description": "MCP OAuth token only; disable cookie jar. Read tools need diet:read; target setting needs diet:targets:write and explicit confirmation of the full replacement. Calories are derived from macros. Does not change maintenance.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"diet_get_calorie_deficit\",\n    \"arguments\": {\n      \"period\": \"weekly\",\n      \"date\": \"{{dietDate}}\",\n      \"timezone\": \"America/Los_Angeles\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mcp"
+          },
+          "response": []
+        },
+        {
+          "name": "Get targets (MCP)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "description": "MCP OAuth token only; disable cookie jar. Read tools need diet:read; target setting needs diet:targets:write and explicit confirmation of the full replacement. Calories are derived from macros. Does not change maintenance.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"diet_get_targets\",\n    \"arguments\": {}\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mcp"
+          },
+          "response": []
+        },
+        {
+          "name": "Set confirmed targets (MCP)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mcpAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json, text/event-stream"
+              }
+            ],
+            "description": "MCP OAuth token only; disable cookie jar. Read tools need diet:read; target setting needs diet:targets:write and explicit confirmation of the full replacement. Calories are derived from macros. Does not change maintenance.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"diet_set_targets\",\n    \"arguments\": {\n      \"proteinGrams\": 100,\n      \"carbohydrateGrams\": 200,\n      \"fatGrams\": 50,\n      \"fiberGrams\": 30,\n      \"waterMilliliters\": 2000,\n      \"confirmed\": true\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mcp"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

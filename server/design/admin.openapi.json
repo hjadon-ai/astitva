@@ -395,6 +395,26 @@
           }
         }
       }
+    },
+    "/api/admin/architecture": {
+      "get": {
+        "summary": "Read the static Admin architecture and security reference",
+        "tags": [
+          "Admin"
+        ],
+        "description": "Verified Admin session required. No live configuration or secret values; Cache-Control: no-store.",
+        "responses": {
+          "200": {
+            "description": "Reviewed reference: diagram nodes/edges, security controls, configuration names and sources"
+          },
+          "401": {
+            "description": "Missing or expired session"
+          },
+          "403": {
+            "description": "Verified server-allowlisted Admin required"
+          }
+        }
+      }
     }
   },
   "components": {

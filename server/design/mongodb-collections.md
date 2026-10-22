@@ -171,3 +171,9 @@ No MongoDB changes. `chats/{chatId}/readStates/{userId}` stores `createdAt` time
 ### F051 MCP meal logging
 
 `dietMeals` optionally stores `mcpIdempotencyKey` (1–128 ASCII letters/digits/underscore/hyphen) and `mcpRequestHash` (SHA-256 normalized meal input). A partial unique `(userId, mcpIdempotencyKey)` index prevents concurrent retry duplicates without affecting ordinary meals. Keys live with their meal; deletion removes retry protection. `mcpAuthorizations.scope` persists requested permissions until consent/code exchange. `mcpGrants.scope` persists granted space-separated permissions (`diet:read`, `diet:meals:create`); legacy requests/grants default to read-only. Refresh can retain or narrow, never expand, permissions.
+
+### F055 MCP water retry protection
+
+`dietWaterEntries` optionally stores `mcpIdempotencyKey` and `mcpRequestHash` (SHA-256 normalized input), with a partial unique `(userId, mcpIdempotencyKey)` index. Keys stay with entries; deleting water removes its retry protection. Existing REST entries have neither field. No new collection. OAuth grants may independently contain `diet:water:create` or `diet:meals:delete`; refresh cannot expand existing grants.
+
+F055 target permission extension adds `diet:targets:write` to the existing OAuth scope allowlist. It writes only the existing owner-unique `dietNutritionTargets` record through the same validator/writer as REST. No schema changes or new collections. Read-only report/targets tools require `diet:read`.

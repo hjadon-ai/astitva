@@ -27,10 +27,13 @@ const targetSchema = new mongoose.Schema({
 
 const waterEntrySchema = new mongoose.Schema({
   userId: owner,
+  mcpIdempotencyKey: { type: String, maxlength: 128 },
+  mcpRequestHash: String,
   consumedOn: { type: String, required: true },
   amountMilliliters: { type: Number, required: true, min: 1, max: 5000 }
 }, { timestamps: true, collection: 'dietWaterEntries' });
 waterEntrySchema.index({ userId: 1, consumedOn: 1 });
+waterEntrySchema.index({ userId: 1, mcpIdempotencyKey: 1 }, { unique: true, partialFilterExpression: { mcpIdempotencyKey: { $type: 'string' } } });
 
 const libraryMealSchema = new mongoose.Schema({
   userId: owner,

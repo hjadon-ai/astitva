@@ -1605,7 +1605,7 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Read the authorized owner’s body measurements and goal estimate",
+        "summary": "Read the authorized owner\u2019s body measurements and goal estimate",
         "responses": {
           "200": {
             "description": "Body & Goals result",
@@ -1918,6 +1918,448 @@
           }
         ]
       }
+    },
+    "/api/diet/reports/nutrition": {
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "summary": "Nutrition totals by inclusive calendar date range",
+        "description": "1\u2013366 inclusive days. Existing Diet authorization and managed-workspace checks apply. No-store; recorded portion values are not multiplied by quantity. Unknown/repeated parameters and duplicate nutrients are rejected.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "mealType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "breakfast",
+                "lunch",
+                "dinner",
+                "snack"
+              ]
+            },
+            "description": "Omit for all meal types."
+          },
+          {
+            "name": "nutrients",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "proteinGrams,fiberGrams",
+            "description": "Distinct comma-separated calories, proteinGrams, carbohydrateGrams, fatGrams, fiberGrams. Omit for all five."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Totals and zero-filled daily report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "start",
+                    "end",
+                    "mealType",
+                    "nutrients",
+                    "mealCount",
+                    "totals",
+                    "days"
+                  ],
+                  "properties": {
+                    "start": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "end": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "mealType": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "nutrients": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "mealCount": {
+                      "type": "integer"
+                    },
+                    "totals": {
+                      "type": "object",
+                      "description": "Only requested nutrients are present.",
+                      "properties": {
+                        "calories": {
+                          "type": "integer"
+                        },
+                        "proteinGrams": {
+                          "type": "number",
+                          "multipleOf": 0.1
+                        },
+                        "carbohydrateGrams": {
+                          "type": "number",
+                          "multipleOf": 0.1
+                        },
+                        "fatGrams": {
+                          "type": "number",
+                          "multipleOf": 0.1
+                        },
+                        "fiberGrams": {
+                          "type": "number",
+                          "multipleOf": 0.1
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "days": {
+                      "type": "array",
+                      "maxItems": 366,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "mealCount": {
+                            "type": "integer"
+                          },
+                          "totals": {
+                            "type": "object",
+                            "description": "Only requested nutrients are present.",
+                            "properties": {
+                              "calories": {
+                                "type": "integer"
+                              },
+                              "proteinGrams": {
+                                "type": "number",
+                                "multipleOf": 0.1
+                              },
+                              "carbohydrateGrams": {
+                                "type": "number",
+                                "multipleOf": 0.1
+                              },
+                              "fatGrams": {
+                                "type": "number",
+                                "multipleOf": 0.1
+                              },
+                              "fiberGrams": {
+                                "type": "number",
+                                "multipleOf": 0.1
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid dates/range/filters"
+          },
+          "401": {
+            "description": "Missing, invalid or expired session"
+          },
+          "403": {
+            "description": "Verification, Diet permission or workspace authorization required"
+          }
+        }
+      }
+    },
+    "/api/diet/reports/calorie-deficit": {
+      "get": {
+        "tags": [
+          "Diet"
+        ],
+        "summary": "Estimated daily, weekly or monthly calorie deficit from recorded meals",
+        "description": "Week is Monday\u2013Sunday, month is calendar month containing date. Reuses current eligible Body & Goals maintenance, not intake target. Today is partial and excluded from period totals; future/unlogged days never imply zero intake. Missing baseline or no past logged days returns 200/unavailable with null deficit totals. Existing own/managed Diet authorization applies; no owner ID input. Cache-Control: no-store.",
+        "security": [
+          {
+            "sessionCookie": []
+          },
+          {
+            "bearerSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+              ]
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "America/Los_Angeles"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Period/day estimates with coverage and explicit unavailable reasons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "type": "string",
+                      "enum": [
+                        "daily",
+                        "weekly",
+                        "monthly"
+                      ]
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "timezone": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "end": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "asOfDate": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "available",
+                        "unavailable"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "nullable": true,
+                      "enum": [
+                        "MAINTENANCE_UNAVAILABLE",
+                        "NO_RECORDED_PAST_DAYS",
+                        null
+                      ]
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "maintenanceCaloriesPerDay": {
+                      "type": "number",
+                      "nullable": true
+                    },
+                    "maintenanceBasis": {
+                      "type": "string",
+                      "enum": [
+                        "current-body-goals-estimate"
+                      ]
+                    },
+                    "maintenanceReason": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "totalBasis": {
+                      "type": "string",
+                      "enum": [
+                        "past-days-with-recorded-meals-only"
+                      ]
+                    },
+                    "coverage": {
+                      "type": "object",
+                      "properties": {
+                        "totalDays": {
+                          "type": "integer"
+                        },
+                        "pastRecordedDays": {
+                          "type": "integer"
+                        },
+                        "unloggedPastDays": {
+                          "type": "integer"
+                        },
+                        "partialDays": {
+                          "type": "integer"
+                        },
+                        "futureDays": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "recordedDays": {
+                          "type": "integer"
+                        },
+                        "consumedCalories": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "estimatedNetDeficitCalories": {
+                          "type": "number",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "todayPartial": {
+                      "type": "object",
+                      "required": [
+                        "date",
+                        "status",
+                        "mealCount",
+                        "consumedCalories",
+                        "estimatedDeficitCalories"
+                      ],
+                      "properties": {
+                        "date": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "recorded",
+                            "unlogged",
+                            "partial",
+                            "future"
+                          ]
+                        },
+                        "mealCount": {
+                          "type": "integer"
+                        },
+                        "consumedCalories": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "estimatedDeficitCalories": {
+                          "type": "number",
+                          "nullable": true,
+                          "description": "Positive deficit, negative surplus; null for missing baseline or unlogged/future day."
+                        }
+                      },
+                      "nullable": true
+                    },
+                    "days": {
+                      "type": "array",
+                      "maxItems": 31,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "date",
+                          "status",
+                          "mealCount",
+                          "consumedCalories",
+                          "estimatedDeficitCalories"
+                        ],
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "recorded",
+                              "unlogged",
+                              "partial",
+                              "future"
+                            ]
+                          },
+                          "mealCount": {
+                            "type": "integer"
+                          },
+                          "consumedCalories": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "estimatedDeficitCalories": {
+                            "type": "number",
+                            "nullable": true,
+                            "description": "Positive deficit, negative surplus; null for missing baseline or unlogged/future day."
+                          }
+                        }
+                      }
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid, unknown, missing or repeated query parameters"
+          },
+          "401": {
+            "description": "Invalid/expired/missing session"
+          },
+          "403": {
+            "description": "Verification, feature or workspace access denied"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1927,6 +2369,11 @@
         "in": "cookie",
         "name": "astitva_session",
         "description": "Dev uses astitva_dev_session; Stage uses astitva_stage_session."
+      },
+      "bearerSession": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Opaque application session token, not MCP OAuth."
       }
     },
     "schemas": {
