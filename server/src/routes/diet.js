@@ -95,6 +95,22 @@ router.use(requireFeature('diet'));
 router.use('/libraries', require('./mealLibraries'));
 router.use('/body-goals', require('./bodyGoals'));
 
+router.get('/reports/calorie-deficit', async (request, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  const { parseDeficitReport, getCalorieDeficitReport } = require('../services/calorieDeficitReport');
+  const parsed = parseDeficitReport(request.query);
+  if (parsed.error) return response.status(400).json({ error: parsed.error, code: parsed.code });
+  response.json(await getCalorieDeficitReport(request.dietUserId, parsed.value));
+});
+
+router.get('/reports/nutrition', async (request, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  const { parseNutritionReport, getNutritionReport } = require('../services/dietNutritionReport');
+  const parsed = parseNutritionReport(request.query);
+  if (parsed.error) return response.status(400).json({ error: parsed.error, code: parsed.code });
+  response.json(await getNutritionReport(request.dietUserId, parsed.value));
+});
+
 router.get('/history', async (request,response) => {
   const range=historyRange(request.query.end,request.query.timezone);
   if(range.error)return response.status(400).json({error:range.error});
@@ -118,17 +134,11 @@ router.post('/meals', async (request, response) => {
 });
 
 router.put('/targets', async (request, response) => {
-  const input = validateTargets(request.body);
-  if (input.fields) return errorResponse(response, 400, 'TARGETS_INVALID', 'Enter six valid daily targets.', { fields: input.fields });
-  const filter = { userId: request.dietUserId };
-  let target;
-  try {
-    target = await Targets.findOneAndUpdate(filter, { $set: input.value }, { upsert: true, new: true, runValidators: true });
-  } catch (error) {
-    if (error.code !== 11000) throw error;
-    target = await Targets.findOneAndUpdate(filter, { $set: input.value }, { new: true, runValidators: true });
+  try { response.json(await require('../services/dietTargets').saveTargets(request.dietUserId, request.body)); }
+  catch (error) {
+    if (error.code !== 'TARGETS_INVALID') throw error;
+    return errorResponse(response, 400, error.code, error.message, { fields: error.fields });
   }
-  response.json({ targets: publicTargets(target), macroCalories: macroCalories(target) });
 });
 
 router.post('/water-entries', async (request, response) => {

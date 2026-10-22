@@ -1,5 +1,6 @@
+import Architecture from './Architecture';
 import {AdminMealLibraries} from './NamedMealLibraries';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppShell, Button, ConfirmDialog, FormField, LoadingState, PageHeader, StatusBanner, Surface } from './ui';
 
 const defaults = { diet: false, finance: false, family: true, chat: false, mcp: false };
@@ -70,7 +71,9 @@ function NotificationSettings({ settings, run, onSaved, reload }) {
 export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, onUserRefresh, embedded = false }) {
   const [notificationSettings, setNotificationSettings] = useState(null);
   const [denied, setDenied] = useState(!user.isAdmin);
-  const [tab, setTab] = useState('users');
+  const readTab = () => new URLSearchParams(window.location.hash.split('?')[1] || '').get('view') === 'architecture' ? 'architecture' : 'users';
+  const [tab, setTab] = useState(readTab);
+  useEffect(() => { const changed = () => setTab(readTab()); window.addEventListener('hashchange', changed); return () => window.removeEventListener('hashchange', changed); }, []);
   const [message, setMessage] = useState(null);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState('');
@@ -155,9 +158,10 @@ export default function Admin({ user, runtime, onLogout, apiRequest, onExpired, 
           const result = await run('/api/admin/notifications');
           if (result) setNotificationSettings(result.settings);
         }}>Notifications</Button>
+        <a className="button button-secondary" aria-current={tab === 'architecture' ? 'page' : undefined} href="/#settings?section=admin&amp;view=architecture" onClick={() => { setTab('architecture'); setMessage(null); }}>Architecture &amp; Security</a>
       </div>
       {message && <StatusBanner tone={message.tone} role={message.tone === 'error' ? 'alert' : 'status'}>{message.text}</StatusBanner>}
-      {tab === 'meal-libraries' ? <AdminMealLibraries apiRequest={apiRequest}/> : tab === 'notifications' ? notificationSettings && <NotificationSettings key={notificationSettings.expectedVersion || 'new'}
+      {tab === 'architecture' ? <Architecture apiRequest={apiRequest} onExpired={onExpired} /> : tab === 'meal-libraries' ? <AdminMealLibraries apiRequest={apiRequest}/> : tab === 'notifications' ? notificationSettings && <NotificationSettings key={notificationSettings.expectedVersion || 'new'}
         settings={notificationSettings} run={run} onSaved={setNotificationSettings} reload={async () => {
           const result = await run('/api/admin/notifications'); if (result) setNotificationSettings(result.settings);
         }} /> : tab === 'users' ? <>

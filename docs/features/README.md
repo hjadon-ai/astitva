@@ -71,6 +71,15 @@ For copyable prompts and the review-to-merge workflow, see [Efficient feature wo
 
 | F051 | [MCP meal logging](diet/F051-mcp-meal-logging.md) | Review | `feature/F051-mcp-meal-logging` | Not created |
 
+| F053 | [Nutrition report by date range](diet/F053-nutrition-range-report.md) | Review | `feature/F053-nutrition-range-report` | Not created |
+
+
+| F052 | [Admin architecture and security](ui/F052-admin-architecture.md) | Review | `feature/F052-admin-architecture` | Not created |
+
+| F054 | [Daily, weekly and monthly calorie deficit report](diet/F054-period-calorie-deficit-report.md) | Review | `feature/F054-period-calorie-deficit-report` | Not created |
+
+| F055 | [MCP water, meal deletion, deficit reports and targets](diet/F055-mcp-water-and-meal-deletion.md) | Review | `feature/F055-mcp-water-meal-delete` | Not created |
+
 ## Rules
 
 - Create a feature document from `FEATURE_TEMPLATE.md` before implementation.

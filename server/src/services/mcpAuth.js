@@ -7,7 +7,10 @@ const { featuresForEmail } = require('../middleware/featureAccess');
 const { AccessDeniedError, InvalidClientMetadataError, InvalidGrantError, InvalidScopeError, InvalidTargetError, InvalidTokenError } = require('@modelcontextprotocol/sdk/server/auth/errors.js');
 const scope = 'diet:read';
 const writeScope = 'diet:meals:create';
-const supportedScopes = [scope, writeScope];
+const waterScope = 'diet:water:create';
+const deleteMealScope = 'diet:meals:delete';
+const targetsScope = 'diet:targets:write';
+const supportedScopes = [scope, writeScope, waterScope, deleteMealScope, targetsScope];
 function requestedScopes(scopes) {
   const selected = scopes?.length ? [...new Set(scopes)] : [scope];
   if (selected.some(s => !supportedScopes.includes(s))) throw new InvalidScopeError('Unsupported Diet permission.');
@@ -103,4 +106,4 @@ async function consumeToolLimit(userId) {
   catch (error) { if (error.code !== 11000) throw error; row = await Bucket.findOneAndUpdate({ key }, { $inc: { count: 1 } }, { returnDocument: 'after' }); }
   return { allowed: row.count <= 30, retryAfter: 60 - Math.floor(Date.now() / 1000) % 60 };
 }
-module.exports = { scope, writeScope, supportedScopes, hash, random, future, live, validRedirect, eligibleUser, sessionUser, createProvider, consumeToolLimit };
+module.exports = { scope, writeScope, waterScope, deleteMealScope, targetsScope, supportedScopes, hash, random, future, live, validRedirect, eligibleUser, sessionUser, createProvider, consumeToolLimit };

@@ -25,6 +25,12 @@ tags:
   - name: Anonymous Chat
 
 paths:
+  /api/diet/reports/calorie-deficit:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1reports~1calorie-deficit'
+  /api/admin/architecture:
+    $ref: './admin.openapi.json#/paths/~1api~1admin~1architecture'
+  /api/diet/reports/nutrition:
+    $ref: './diet.openapi.json#/paths/~1api~1diet~1reports~1nutrition'
   /api/diet/libraries:
     $ref: './meal-libraries.openapi.json#/paths/~1api~1diet~1libraries'
   /api/diet/libraries/import-preview:
